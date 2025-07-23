@@ -1,4 +1,5 @@
 This is where we'll create the Website's Frontend & Backend of the Beepney project.
 
 Who will be the Viewer on this side?
-    - Admin
+    - Driver
+    - Commuter
