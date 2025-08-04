@@ -1,13 +1,19 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Tabs } from "expo-router";
+import React from "react";
+import { Platform, Pressable, View, PressableProps } from "react-native";
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import TabBarBackground from "../../components/ui/TabBarBackground";
+import { Colors } from "../../constants/Colors";
+import { useColorScheme } from "../../hooks/useColorScheme";
+import HomeIcon from "../../assets/images/home.svg";
+import RideHailingIcon from "../../assets/images/ride-hailing.svg";
+import SOSIcon from "../../assets/images/Emergency button.svg";
+import StationsIcon from "../../assets/images/Station.svg";
+import RentalIcon from "../../assets/images/rental.svg";
 
+{
+  /* LOGOS */
+}
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -15,51 +21,74 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
+          android: {
+            position: "absolute",
+            height: 90, // <-- Increase this to make the navbar taller
+            paddingBottom: 20, // optional, for icon spacing
+            paddingTop: 10,
+            backgroundColor: "white", // optional fallback if blur doesn't work
+            borderTopWidth: 0, // option
           },
           default: {},
         }),
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="Home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color }) => (
+            <HomeIcon width={28} height={28} fill={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="RideHailing"
         options={{
-          title: 'Ride-Hailing',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "TricyCall",
+          tabBarIcon: ({ color }) => (
+            <RideHailingIcon width={28} height={28} fill={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="SOS"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: " ",
+          tabBarButton: (props) => (
+            <Pressable
+              android_ripple={null}
+              style={({ pressed }) => ({
+                opacity: pressed ? 1 : 1,
+              })}
+              {...props}
+            />
+          ),
+          tabBarIcon: ({ color }) => (
+            <SOSIcon width={50} height={50} fill={color} />
+          ),
         }}
       />
-        <Tabs.Screen
+      <Tabs.Screen
         name="Stations"
         options={{
-          title: 'Stations',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Stations",
+          tabBarIcon: ({ color }) => (
+            <StationsIcon width={28} height={28} fill={color} />
+          ),
         }}
       />
-        <Tabs.Screen
+      <Tabs.Screen
         name="Renting"
         options={{
-          title: 'Renting',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Renting",
+          tabBarIcon: ({ color }) => (
+            <RentalIcon width={28} height={28} fill={color} />
+          ),
         }}
       />
     </Tabs>
