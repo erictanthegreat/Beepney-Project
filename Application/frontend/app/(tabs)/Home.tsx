@@ -267,7 +267,7 @@ const featStyles = StyleSheet.create({
     marginRight: 10,
     backgroundColor: "#FFFFFF",
     borderColor: "#CBCBCB",
-    borderRadius: 10,
+    borderRadius: 11,
     borderWidth: 1,
     padding: 15,
   },
