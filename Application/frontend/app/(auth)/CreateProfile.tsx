@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Image,
   Text,
@@ -8,8 +8,11 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { router } from "expo-router";
+import AttachIcon from "../../assets/images/attach file.svg";
 
 export default function CreateProfile() {
+  const [step, setStep] = useState(1); // 👈 step state
+
   return (
     <View style={viewStyles.container}>
       <View>
@@ -21,58 +24,118 @@ export default function CreateProfile() {
         <Text style={textStyles.subheader}>Sign In to Continue</Text>
       </View>
 
-      <View style={styleName.rowContainer}>
-        <View style={inputName.inputGroup}>
-          <Text style={inputName.label}>First Name</Text>
-          <TextInput
-            style={inputName.input}
-            placeholder="E.g Juan"
-            placeholderTextColor="#B6B6B6"
-            keyboardType="default"
-          />
-        </View>
+      {step === 1 && (
+        <>
+          <View style={styleName.rowContainer}>
+            <View style={inputName.inputGroup}>
+              <Text style={inputName.label}>First Name</Text>
+              <TextInput
+                style={inputName.input}
+                placeholder="E.g Juan"
+                placeholderTextColor="#B6B6B6"
+                keyboardType="default"
+              />
+            </View>
 
-        <View style={inputName.inputGroup}>
-          <Text style={inputName.label}>Last Name</Text>
-          <TextInput
-            style={inputName.input}
-            placeholder="E.g Dela Cruz"
-            placeholderTextColor="#B6B6B6"
-            keyboardType="default"
-          />
-        </View>
-      </View>
+            <View style={inputName.inputGroup}>
+              <Text style={inputName.label}>Last Name</Text>
+              <TextInput
+                style={inputName.input}
+                placeholder="E.g Dela Cruz"
+                placeholderTextColor="#B6B6B6"
+                keyboardType="default"
+              />
+            </View>
+          </View>
 
-      <View style={inputStyles.inputGroup}>
-        <Text style={inputStyles.label}>Email</Text>
-        <TextInput
-          style={inputStyles.input}
-          placeholder="Enter your email"
-          placeholderTextColor="#B6B6B6"
-          keyboardType="email-address"
-        />
-      </View>
-      <View style={inputStyles.inputGroup}>
-        <Text style={inputStyles.label}>Password</Text>
-        <TextInput
-          style={inputStyles.input}
-          placeholder="Enter your password"
-          placeholderTextColor="#B6B6B6"
-          secureTextEntry
-        />
-      </View>
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Email</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="Enter your email"
+              placeholderTextColor="#B6B6B6"
+              keyboardType="email-address"
+            />
+          </View>
+
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Password</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="Enter your password"
+              placeholderTextColor="#B6B6B6"
+              secureTextEntry
+            />
+          </View>
+
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Confirm Password</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="Enter your password"
+              placeholderTextColor="#B6B6B6"
+              secureTextEntry
+            />
+          </View>
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <View style={inputId.inputGroup}>
+            <Text style={inputStyles.label}>ID Discount</Text>
+            <TouchableOpacity style={inputId.buttonId}>
+              <AttachIcon></AttachIcon>
+              <Text>
+                <Text style={inputId.buttonText}>Tap here</Text>
+                <Text style={{ flexDirection: "row", textAlign: "center" }}>
+                  {" "}
+                  to take the back {"\n"} picture of the ID
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={inputId.inputGroup}>
+            <TouchableOpacity style={inputId.buttonId}>
+              <AttachIcon
+                width={32}
+                color="#5E7A90"
+                style={{
+                  marginBottom: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              ></AttachIcon>
+              <Text>
+                <Text style={inputId.buttonText}>Tap here</Text>
+                <Text style={{ flexDirection: "row", textAlign: "center" }}>
+                  {" "}
+                  to take the back {"\n"} picture of the ID
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => alert("Signed In!")}
+        onPress={() => {
+          if (step === 1) {
+            setStep(2); // go to step 2
+          } else {
+            alert("Signed In!");
+          }
+        }}
       >
-        <Text style={styles.buttonText}>Next</Text>
+        <Text style={styles.buttonText}>{step === 1 ? "Next" : "Submit"}</Text>
       </TouchableOpacity>
 
       <Text style={{ marginTop: 20 }}>
         Already have an Account?{" "}
         <Text
-          style={{ color: "#073051", fontWeight: "bold" }} // fixed hex color
+          style={{ color: "#073051", fontWeight: "bold" }}
           onPress={() => router.push("../index.tsx")}
         >
           Sign-up
@@ -120,9 +183,9 @@ const styleName = StyleSheet.create({
   rowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 20, // optional, for layout margin
+    paddingHorizontal: 20,
     marginTop: 20,
-    gap: 10, // works in RN 0.71+, otherwise use marginRight in inputGroup
+    gap: 10,
   },
 });
 
@@ -131,7 +194,6 @@ const inputName = StyleSheet.create({
     width: "43.3%",
     marginTop: 20,
   },
-
   label: {
     fontSize: 16,
     marginBottom: 6,
@@ -147,6 +209,29 @@ const inputName = StyleSheet.create({
     paddingLeft: 10,
     fontSize: 16,
     backgroundColor: "#fff",
+  },
+});
+
+const inputId = StyleSheet.create({
+  inputGroup: {
+    width: "43.3%",
+    marginTop: 20,
+  },
+  buttonId: {
+    height: 90,
+    width: 250,
+    borderColor: "#ccc",
+    paddingLeft: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  buttonText: {
+    alignItems: "center",
+    color: "#073051",
+    fontWeight: "bold",
+    textAlign: "center",
+    flexDirection: "row",
+    marginTop: 40,
   },
 });
 
