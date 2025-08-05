@@ -16,6 +16,8 @@ import ApprovalIcon from "../../assets/images/approval.svg";
 export default function CreateProfile() {
   const [step, setStep] = useState(1);
 
+  //CAMERA PERMISSION FUNCTIONS
+
   //BACK BUTTON
   useEffect(() => {
     const handleBackPress = () => {
