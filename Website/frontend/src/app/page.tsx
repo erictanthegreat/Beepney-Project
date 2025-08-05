@@ -47,7 +47,7 @@ export default function Home() {
           type="text"
           placeholder="Username"
           className="w-full p-3 mb-4 border-1 border-gray-400 rounded-md placeholder-[#BABABA] text-black focus:outline-none focus:ring-0"
-          style={{ borderRadius: "6px" }}
+          style={{ borderRadius: "10px" }}
         />
 
         <div className="w-full mb-4 relative">
@@ -55,7 +55,7 @@ export default function Home() {
             type={showPassword ? "text" : "password"}
             placeholder="Password"
             className="w-full p-3 border-1 border-gray-400 rounded-md placeholder-[#BABABA] text-black focus:outline-none focus:ring-0"
-            style={{ borderRadius: "6px" }}
+            style={{ borderRadius: "10px" }}
           />
           <button
             type="button"
@@ -73,7 +73,7 @@ export default function Home() {
 
         <button
           onClick={handleUsernameLogin}
-          className="w-full py-3 rounded-md transition mt-6"
+          className="w-full py-3 rounded-[10px] transition mt-6"
           style={{ backgroundColor: "#1E86DA", color: "#ffffff" }}
         >
           Sign in with Username
@@ -87,7 +87,7 @@ export default function Home() {
 
         <button
           onClick={handleGoogleLogin}
-          className="w-full py-3 rounded-md transition flex items-center justify-center gap-2"
+          className="w-full py-3 rounded-[10px] transition flex items-center justify-center gap-2"
           style={{ backgroundColor: "#073051", color: "#ffffff" }}
         >
           <Image
