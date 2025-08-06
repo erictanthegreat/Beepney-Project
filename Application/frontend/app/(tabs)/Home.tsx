@@ -12,6 +12,7 @@ import RHIcon from "../../assets/images/ride history.svg";
 import DDIcon from "../../assets/images/scan.svg";
 import RideHIcon from "../../assets/images/ride hailing.svg";
 import FareIcon from "../../assets/images/fare.svg";
+import { router } from "expo-router";
 
 export default class Home extends Component {
   state = {
@@ -67,7 +68,9 @@ export default class Home extends Component {
     return (
       <View style={{ flex: 1 }}>
         <View style={styles.container}>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push("/(profile)/CommuterProfile")}
+          >
             <ProfileIcon style={iconStyles.prof} />
           </TouchableOpacity>
           <Text
@@ -75,13 +78,14 @@ export default class Home extends Component {
               fontSize: 15,
               color: "#073051",
               marginTop: 60,
-              marginLeft: 10,
+              marginLeft: 5,
               fontFamily: "Poppins-regular",
             }}
           >
             {" "}
             Hello, Ayath!{" "}
           </Text>
+
           <TouchableOpacity>
             <NotifIcon style={iconStyles.notif} />
           </TouchableOpacity>

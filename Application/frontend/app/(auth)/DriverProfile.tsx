@@ -9,12 +9,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import "@fontsource/poppins";
+
 import { router } from "expo-router";
 
 import AttachIcon from "../../assets/images/attach file.svg";
 import ApprovalIcon from "../../assets/images/approval.svg";
 
-export default function CreateProfile() {
+export default function DriverProfile() {
   const [step, setStep] = useState(1);
 
   //CAMERA PERMISSION FUNCTIONS
@@ -50,55 +51,23 @@ export default function CreateProfile() {
 
       {step === 1 && (
         <>
-          <View style={styleName.rowContainer}>
-            <View style={inputName.inputGroup}>
-              <Text style={inputName.label}>First Name</Text>
-              <TextInput
-                style={inputName.input}
-                placeholder="E.g Juan"
-                placeholderTextColor="#B6B6B6"
-                keyboardType="default"
-              />
-            </View>
-
-            <View style={inputName.inputGroup}>
-              <Text style={inputName.label}>Last Name</Text>
-              <TextInput
-                style={inputName.input}
-                placeholder="E.g Dela Cruz"
-                placeholderTextColor="#B6B6B6"
-                keyboardType="default"
-              />
-            </View>
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Phone Number</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="Enter a 10-digit number"
+              placeholderTextColor="#B6B6B6"
+              keyboardType="numeric"
+            />
           </View>
 
           <View style={inputStyles.inputGroup}>
-            <Text style={inputStyles.label}>Email</Text>
+            <Text style={inputStyles.label}>Full Address</Text>
             <TextInput
               style={inputStyles.input}
-              placeholder="Enter your email"
+              placeholder="Street Address, Apt/Unit/etc., City, Province, Country"
               placeholderTextColor="#B6B6B6"
               keyboardType="default"
-            />
-          </View>
-
-          <View style={inputStyles.inputGroup}>
-            <Text style={inputStyles.label}>Password</Text>
-            <TextInput
-              style={inputStyles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#B6B6B6"
-              secureTextEntry
-            />
-          </View>
-
-          <View style={inputStyles.inputGroup}>
-            <Text style={inputStyles.label}>Confirm Password</Text>
-            <TextInput
-              style={inputStyles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#B6B6B6"
-              secureTextEntry
             />
           </View>
         </>
@@ -107,7 +76,7 @@ export default function CreateProfile() {
       {step === 2 && (
         <>
           <View style={inputId.inputGroup}>
-            <Text style={inputStyles.label}>ID Discount</Text>
+            <Text style={inputStyles.label}>Driver&apos;s License </Text>
             <TouchableOpacity style={inputId.buttonId}>
               <AttachIcon
                 width={32}
@@ -144,17 +113,45 @@ export default function CreateProfile() {
               </Text>
             </TouchableOpacity>
           </View>
+        </>
+      )}
+      {step === 3 && (
+        <>
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Name of the Operator/Company</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="e.g 997 Sandigan Transport Service Cooperative"
+              placeholderTextColor="#B6B6B6"
+              keyboardType="default"
+            />
+          </View>
 
-          <Text style={{ marginTop: 20 }}>
-            <Text style={inputId.idText}>
-              (e.g PWD ID, Senior Citizen ID, Solo Parent ID
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>
+              Number of the Operator/Company
             </Text>
-            <Text style={inputId.idText}> {"\n"} and Student ID </Text>
-          </Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="Enter a 10-digit number"
+              placeholderTextColor="#B6B6B6"
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Vehicle&apos;s Plate Number</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="e.g 001 2345"
+              placeholderTextColor="#B6B6B6"
+              keyboardType="default"
+            />
+          </View>
         </>
       )}
 
-      {step === 3 && (
+      {step === 4 && (
         <View style={{ alignItems: "center" }}>
           <Text
             style={{
@@ -192,13 +189,21 @@ export default function CreateProfile() {
             setStep(2); // Go to step 2
           } else if (step === 2) {
             setStep(3); // Go to step 3
-          } else {
-            alert("Signed In!"); // Final action at step 3
+          } else if (step === 3) {
+            setStep(4); // Go to step 4
+          } else if (step === 4) {
+            router.push("/(tabs)/Home"); // Final action at step 4
           }
         }}
       >
         <Text style={styles.buttonText}>
-          {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
+          {step === 1
+            ? "Next"
+            : step === 2
+              ? "Next"
+              : step === 3
+                ? "Submit"
+                : "Confirm"}
         </Text>
       </TouchableOpacity>
 
@@ -249,40 +254,6 @@ const textStyles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
     color: "#073051",
-  },
-});
-
-const styleName = StyleSheet.create({
-  rowContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: 20,
-    gap: 10,
-  },
-});
-
-const inputName = StyleSheet.create({
-  inputGroup: {
-    width: "43.3%",
-    marginTop: 20,
-  },
-  label: {
-    fontSize: 16,
-    marginBottom: 6,
-    fontWeight: "bold",
-    color: "#073051",
-    fontFamily: "Poppins-Regular",
-  },
-  input: {
-    height: 45,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingLeft: 10,
-    fontSize: 13,
-    backgroundColor: "#fff",
-    fontFamily: "Poppins-Regular",
   },
 });
 
@@ -348,9 +319,10 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#208FCB",
     paddingVertical: 12,
+    marginTop: 80,
     paddingHorizontal: 32,
     borderRadius: 15,
-    marginTop: 40,
+    height: 50,
     width: "80%",
     alignItems: "center",
   },

@@ -28,7 +28,7 @@ export default class Index extends Component {
           <TextInput
             style={inputStyles.input}
             placeholder="Enter your email"
-            keyboardType="email-address"
+            keyboardType="default"
           />
         </View>
         <View style={inputStyles.inputGroup}>

@@ -13,7 +13,7 @@ import { useColorScheme } from "../hooks/useColorScheme";
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    Poppins: require("../assets/fonts/Poppins-Medium.ttf"),
   });
 
   if (!loaded) {
@@ -27,6 +27,14 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen
           name="(auth)/CreateProfile"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="(auth)/DriverProfile"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="(profile)/CommuterProfile"
           options={{ headerShown: false }}
         />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
