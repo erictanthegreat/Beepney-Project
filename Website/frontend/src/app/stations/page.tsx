@@ -3,7 +3,7 @@
 import React from 'react';
 import Header from '../../components/ui/header';
 
-const StationsPage: React.FC = () => {
+const StationsPage = () => {
   return (
     <>
       <Header />
