@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import Table from "../../components/ui/TableComponent";
+import "@fontsource/poppins";
 import ProfileIcon from "../../assets/images/profile.svg";
 import NotifIcon from "../../assets/images/notif.svg";
 import JeepIcon from "../../assets/images/jeep.svg";
@@ -267,7 +268,7 @@ const featStyles = StyleSheet.create({
     marginRight: 10,
     backgroundColor: "#FFFFFF",
     borderColor: "#CBCBCB",
-    borderRadius: 11,
+    borderRadius: 10,
     borderWidth: 1,
     padding: 15,
   },

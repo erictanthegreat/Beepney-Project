@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { router } from "expo-router";
+import "@fontsource/poppins";
 
 export default class Index extends Component {
   render() {

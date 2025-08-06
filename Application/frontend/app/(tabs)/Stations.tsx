@@ -1,5 +1,6 @@
-import React, { Component } from 'react'
-import { Text, View } from 'react-native'
+import React, { Component } from "react";
+import { Text, View } from "react-native";
+import "@fontsource/poppins";
 
 export default class Stations extends Component {
   render() {
@@ -7,6 +8,6 @@ export default class Stations extends Component {
       <View>
         <Text> Stations </Text>
       </View>
-    )
+    );
   }
 }
