@@ -19,7 +19,7 @@ const navItems = [
   { name: 'Fare Matrix', href: '/fare-matrix' },
 ];
 
-const Header: React.FC = () => {
+const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
 
