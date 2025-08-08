@@ -78,6 +78,6 @@ const styles = StyleSheet.create({
   cellText: {
     color: "#073051",
     textAlign: "center",
-    fontFamily: "Poppins-regular",
+    fontFamily: "Poppins",
   },
 });

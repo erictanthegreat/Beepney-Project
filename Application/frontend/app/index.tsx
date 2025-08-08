@@ -50,7 +50,7 @@ export default class Index extends Component {
         <Text style={{ marginTop: 20 }}>
           Don&apos;t have an Account?{" "}
           <Text
-            style={{ color: "#073051", fontWeight: "bold" }} // fixed hex color
+            style={{ color: "#073051", fontFamily: "Poppins" }} // fixed hex color
             onPress={() => router.push("/(auth)/CreateProfile")}
           >
             Sign-up
@@ -81,7 +81,7 @@ const imageStyles = StyleSheet.create({
 const textStyles = StyleSheet.create({
   header: {
     fontSize: 32,
-    fontFamily: "Poppins-Regular",
+
     fontWeight: "bold",
     textAlign: "center",
     color: "#073051",
@@ -89,7 +89,7 @@ const textStyles = StyleSheet.create({
   },
   subheader: {
     fontSize: 19,
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
     textAlign: "center",
     marginTop: 10,
   },
@@ -105,7 +105,7 @@ const inputStyles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "bold",
     color: "#073051",
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
   input: {
     height: 45,
@@ -115,6 +115,7 @@ const inputStyles = StyleSheet.create({
     paddingLeft: 10,
     fontSize: 16,
     backgroundColor: "#fff",
+    fontFamily: "Poppins",
   },
 });
 
@@ -131,6 +132,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: "Poppins",
   },
 });

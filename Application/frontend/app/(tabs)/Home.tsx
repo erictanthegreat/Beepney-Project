@@ -79,7 +79,7 @@ export default class Home extends Component {
               color: "#073051",
               marginTop: 60,
               marginLeft: 5,
-              fontFamily: "Poppins-regular",
+              fontFamily: "Poppins",
             }}
           >
             {" "}
@@ -92,7 +92,6 @@ export default class Home extends Component {
         </View>
 
         <View style={{ flex: 1 }}>
-          {/* Overview Header Row */}
           <View style={styles.headerRow}>
             <Text style={styles.text}>Overview</Text>
             <View style={styles.segmentContainer}>
@@ -152,22 +151,34 @@ export default class Home extends Component {
 
           {/* Other Features */}
           <View style={featStyles.container}>
-            <TouchableOpacity style={featStyles.featureButton}>
+            <TouchableOpacity
+              onPress={() => router.push("/(feat)/FareCalculator")}
+              style={featStyles.featureButton}
+            >
               <FCIcon style={featStyles.icon} />
               <Text style={featStyles.text}>Fare Calculator</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={featStyles.featureButton}>
-              <RHIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>Ride History</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={featStyles.featureButton}>
+            <TouchableOpacity
+              onPress={() => router.push("/(feat)/ScanDriverDets")}
+              style={featStyles.featureButton}
+            >
               <DDIcon style={featStyles.icon} />
               <Text style={featStyles.text}>Scan QR</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={featStyles.featureButton}>
+            <TouchableOpacity
+              onPress={() => router.push("/(feat)/RideHistory")}
+              style={featStyles.featureButton}
+            >
+              <RHIcon style={featStyles.icon} />
+              <Text style={featStyles.text}>Ride History</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/RideHailing")}
+              style={featStyles.featureButton}
+            >
               <RideHIcon style={featStyles.icon} />
               <Text style={featStyles.text}>Ride-Hailing</Text>
             </TouchableOpacity>
@@ -190,11 +201,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 20,
     marginBottom: 15,
+    fontFamily: "Poppins",
   },
   text: {
     fontWeight: "bold",
     fontSize: 23,
     color: "#073051",
+    fontFamily: "Poppins",
   },
 
   segmentContainer: {
@@ -247,7 +260,7 @@ const fareStyle = StyleSheet.create({
     color: "#073051",
     marginTop: 5,
     marginLeft: 10,
-    fontFamily: "Poppins-regular",
+    fontFamily: "Poppins",
   },
   button: {
     backgroundColor: "#FFFFFF",
@@ -265,7 +278,7 @@ const fareStyle = StyleSheet.create({
 const featStyles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    flexWrap: "wrap", // wrap to new line after 2 items
+    flexWrap: "wrap",
     justifyContent: "space-between",
     marginTop: 25,
     marginLeft: 10,
@@ -277,7 +290,7 @@ const featStyles = StyleSheet.create({
     padding: 15,
   },
   featureButton: {
-    width: "47%", // nearly half width (with spacing)
+    width: "47%",
     marginBottom: 20,
     alignItems: "center",
   },
@@ -285,7 +298,7 @@ const featStyles = StyleSheet.create({
     color: "#1E86DA",
     textAlign: "center",
     marginTop: 8,
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
   icon: {
     alignItems: "center",

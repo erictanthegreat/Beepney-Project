@@ -1,13 +1,32 @@
 import React, { Component } from "react";
-import { Text, View } from "react-native";
+import { Text, View, StyleSheet } from "react-native";
 import "@fontsource/poppins";
+import BackButton from "@/components/Backbutton";
 
-export default class SOS extends Component {
+export default class Renting extends Component {
   render() {
     return (
-      <View>
-        <Text> SOS </Text>
+      <View style={rentStyles.container}>
+        <BackButton />
+        <Text style={rentStyles.header}> SOS Call/Report </Text>
+        <Text
+          style={{ marginLeft: 25, color: "#595959", fontFamily: "Poppins" }}
+        >
+          Make your commuter experience safe.
+        </Text>
       </View>
     );
   }
 }
+
+const rentStyles = StyleSheet.create({
+  header: {
+    fontWeight: "bold",
+    alignItems: "flex-start",
+    fontSize: 25,
+    marginLeft: 20,
+    marginTop: 10,
+    color: "#073051",
+  },
+  container: {},
+});

@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform, Pressable, View, PressableProps } from "react-native";
+import { Platform, Pressable } from "react-native";
+import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
 
 import TabBarBackground from "../../components/ui/TabBarBackground";
 import { Colors } from "../../constants/Colors";
@@ -10,10 +11,6 @@ import RideHailingIcon from "../../assets/images/ride-hailing.svg";
 import SOSIcon from "../../assets/images/Emergency button.svg";
 import StationsIcon from "../../assets/images/Station.svg";
 import RentalIcon from "../../assets/images/rental.svg";
-
-{
-  /* LOGOS */
-}
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -27,11 +24,11 @@ export default function TabLayout() {
         tabBarStyle: Platform.select({
           android: {
             position: "absolute",
-            height: 90, // <-- Increase this to make the navbar taller
-            paddingBottom: 20, // optional, for icon spacing
+            height: 90,
+            paddingBottom: 20,
             paddingTop: 10,
-            backgroundColor: "white", // optional fallback if blur doesn't work
-            borderTopWidth: 0, // option
+            backgroundColor: "white",
+            borderTopWidth: 0,
           },
           default: {},
         }),
@@ -59,13 +56,13 @@ export default function TabLayout() {
         name="SOS"
         options={{
           title: " ",
-          tabBarButton: (props) => (
+          tabBarButton: ({ ref: _ref, ...rest }: BottomTabBarButtonProps) => (
             <Pressable
-              android_ripple={null}
+              android_ripple={undefined}
               style={({ pressed }) => ({
                 opacity: pressed ? 1 : 1,
               })}
-              {...props}
+              {...rest} // Pass all other props except ref
             />
           ),
           tabBarIcon: ({ color }) => (

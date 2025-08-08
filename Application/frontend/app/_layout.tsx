@@ -34,10 +34,27 @@ export default function RootLayout() {
           options={{ headerShown: false }}
         ></Stack.Screen>
         <Stack.Screen
+          name="(feat)/FareCalculator"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="(feat)/FareMatrix"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="(feat)/RideHistory"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="(feat)/ScanDriverDets"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
           name="(profile)/CommuterProfile"
           options={{ headerShown: false }}
         />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
