@@ -4,21 +4,41 @@ import React from "react";
 import Image from "next/image";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
   const [showPassword, setShowPassword] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const router = useRouter();
 
-  const handleUsernameLogin = () => {
-    // for testing, not yet implemented backend
-    alert("Username login clicked");
-    router.push("/dashboard");
+  const handleUsernameLogin = async () => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      alert("Login failed: " + error.message);
+    } else {
+      console.log("User logged in:", data);
+      router.push("/dashboard");
+    }
   };
 
-  const handleGoogleLogin = () => {
-    // for testing, not yet implemented backend
-    alert("Google login clicked");
-    router.push("/dashboard");
+  const handleGoogleLogin = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin + "/dashboard", // Set a redirect URL after login
+      },
+    });
+
+    if (error) {
+      alert("Google login failed: " + error.message);
+    } else {
+      console.log("Google login data:", data);
+    }
   };
 
   return (
@@ -44,8 +64,10 @@ export default function Home() {
         </p>
 
         <input
-          type="text"
-          placeholder="Username"
+          type="email"
+          placeholder="Username (Email)"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full p-3 mb-4 border-1 border-gray-400 rounded-md placeholder-[#BABABA] text-black focus:outline-none focus:ring-0"
           style={{ borderRadius: "10px" }}
         />
@@ -54,6 +76,8 @@ export default function Home() {
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-3 border-1 border-gray-400 rounded-md placeholder-[#BABABA] text-black focus:outline-none focus:ring-0"
             style={{ borderRadius: "10px" }}
           />
@@ -69,7 +93,6 @@ export default function Home() {
             )}
           </button>
         </div>
-
 
         <button
           onClick={handleUsernameLogin}

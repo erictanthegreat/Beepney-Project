@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BellIcon } from '@heroicons/react/24/solid';
 import {
@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -22,6 +24,23 @@ const navItems = [
 const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
 
   return (
     <header className="w-full border-b border-[#D1D1D1] bg-white">
@@ -78,7 +97,17 @@ const Header = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium md:w-9 md:h-9 sm:w-8 sm:h-8">
-                ET
+                {loading ? (
+                  <div className="w-full h-full bg-gray-400 rounded-full animate-pulse" />
+                ) : (
+                  <Image
+                    src={user?.user_metadata?.avatar_url || "/Default Profile.svg"}
+                    alt="User Avatar"
+                    width={60}
+                    height={60}
+                    className="rounded-full"
+                  />
+                )}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white shadow-md border rounded-md">
@@ -87,7 +116,7 @@ const Header = () => {
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-600 hover:!text-red-700"
-                onSelect={() => router.push('/')}
+                onSelect={handleLogout}
               >
                 Logout
               </DropdownMenuItem>

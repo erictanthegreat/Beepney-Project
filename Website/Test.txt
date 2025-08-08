@@ -3,3 +3,14 @@ This is where we'll create the Website's Frontend & Backend of the Beepney proje
 Who will be the Viewer on this side?
     - Driver
     - Commuter
+
+    [initials of the user's name for when they don't have a profile picture.]
+  const getUserInitials = () => {
+    if (user?.user_metadata) {
+      const firstName = user.user_metadata.first_name || '';
+      const lastName = user.user_metadata.last_name || '';
+      const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+      return initials;
+    }
+    return 'UN';
+  };
