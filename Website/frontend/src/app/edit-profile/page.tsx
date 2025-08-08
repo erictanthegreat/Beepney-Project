@@ -6,7 +6,7 @@ import Header from '../../components/ui/header';
 import { useRouter } from 'next/navigation';
 
 const EditProfilePage = () => {
-  const [user, setUser] = useState<any>(null); // Store user data
+  const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const router = useRouter();
@@ -49,7 +49,7 @@ const EditProfilePage = () => {
       alert('Error updating profile: ' + error.message);
     } else {
       alert('Profile updated successfully!');
-      router.push('/dashboard');  // Redirect to the dashboard after saving
+      router.push('/dashboard');
     }
   };
 
