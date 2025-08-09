@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
+import { router } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import DropDown from "@/components/ui/DropDown";
@@ -23,7 +24,7 @@ export default class Renting extends Component {
   render() {
     return (
       <FlatList
-        data={[]} // No list items, we just want scroll behavior
+        data={[]}
         ListHeaderComponent={
           <>
             <BackButton />
@@ -43,20 +44,14 @@ export default class Renting extends Component {
                 <TouchableOpacity>
                   <OriginIcon style={fareStyles.icon} />
                 </TouchableOpacity>
-                <TextInput
-                  style={{ marginTop: 5, flex: 1 }}
-                  placeholder="Enter Origin"
-                />
+                <TextInput placeholder="Enter Origin" />
               </View>
 
               <View style={fareStyles.cont}>
                 <TouchableOpacity>
                   <DestIcon style={fareStyles.icon} />
                 </TouchableOpacity>
-                <TextInput
-                  style={{ marginTop: 5, flex: 1 }}
-                  placeholder="Enter Destination"
-                />
+                <TextInput placeholder="Enter Destination" />
               </View>
 
               <DropDown
@@ -99,10 +94,12 @@ export default class Renting extends Component {
                 <FareIcon style={fareStyles.fare} />
               </TouchableOpacity>
             </View>
-
             <View style={{ flexDirection: "row" }}>
               <Text style={fareStyles.fare2}>Ride History</Text>
-              <TouchableOpacity style={fareStyles.fareButton}>
+              <TouchableOpacity
+                onPress={() => router.push("/RideHistory")}
+                style={fareStyles.fareButton}
+              >
                 <Text style={fareStyles.fareButton2}>See all</Text>
               </TouchableOpacity>
             </View>
@@ -135,7 +132,6 @@ const fareStyles = StyleSheet.create({
   },
   buttText: {
     color: "white",
-    fontWeight: "bold",
     fontSize: 16,
     fontFamily: "Poppins",
   },
@@ -171,7 +167,7 @@ const fareStyles = StyleSheet.create({
     fontSize: 23,
     color: "#073051",
     marginTop: 5,
-    marginLeft: 10,
+    marginLeft: 20,
     fontFamily: "Poppins",
   },
   fare2: {
@@ -179,7 +175,7 @@ const fareStyles = StyleSheet.create({
     fontSize: 23,
     color: "#073051",
     marginTop: 5,
-    marginLeft: 10,
+    marginLeft: 20,
     marginRight: 97,
 
     fontFamily: "Poppins",
@@ -189,7 +185,8 @@ const fareStyles = StyleSheet.create({
     borderColor: "#CBCBCB",
     borderWidth: 1,
     paddingVertical: 10,
-    marginLeft: 40,
+    marginLeft: 30,
+    paddingRight: 20,
     borderRadius: 15,
     width: "27.5%",
     alignItems: "center",
@@ -203,7 +200,7 @@ const fareStyles = StyleSheet.create({
     height: 20,
     flexDirection: "row",
     fontFamily: "Poppins",
-    marginLeft: 10,
+    marginLeft: 30,
   },
   icon: {
     width: 24,

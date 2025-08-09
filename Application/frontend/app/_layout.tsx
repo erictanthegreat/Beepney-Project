@@ -48,7 +48,6 @@ export default function RootLayout() {
           name="(feat)/ScanDriverDets"
           options={{ headerShown: false }}
         ></Stack.Screen>
-        <Stack.Screen name="/(driver)/Home"></Stack.Screen>
         <Stack.Screen
           name="(profile)/CommuterProfile"
           options={{ headerShown: false }}
