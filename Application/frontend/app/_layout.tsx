@@ -17,7 +17,6 @@ export default function RootLayout() {
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -49,11 +48,17 @@ export default function RootLayout() {
           name="(feat)/ScanDriverDets"
           options={{ headerShown: false }}
         ></Stack.Screen>
+        <Stack.Screen name="/(driver)/Home"></Stack.Screen>
         <Stack.Screen
           name="(profile)/CommuterProfile"
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(profile)/DriverProfile"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
+        <Stack.Screen name="(driver)" options={{ headerShown: false }} />
 
         <Stack.Screen name="+not-found" />
       </Stack>

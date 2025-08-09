@@ -11,7 +11,7 @@ import { AntDesign } from "@expo/vector-icons";
 export default function DropDown({ data = [], onSelect }) {
   const [selected, setSelected] = useState(data[0] || "Select");
   const [visible, setVisible] = useState(false);
-  const [buttonWidth, setButtonWidth] = useState(100); // Button width changes dynamically
+  const [buttonWidth, setButtonWidth] = useState(100);
   const dropdownWidth = 145;
 
   const handleSelect = (item) => {
@@ -32,7 +32,7 @@ export default function DropDown({ data = [], onSelect }) {
           style={styles.buttonText}
           onLayout={(e) => {
             const textWidth = e.nativeEvent.layout.width;
-            setButtonWidth(textWidth + 50); // +50 for padding and icon
+            setButtonWidth(textWidth + 50);
           }}
         >
           {selected}

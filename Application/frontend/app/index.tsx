@@ -42,7 +42,7 @@ export default class Index extends Component {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => router.push("/(tabs)/Home")}
+          onPress={() => router.push("/(commuter)/Home")}
         >
           <Text style={styles.buttonText}>Sign In</Text>
         </TouchableOpacity>
@@ -50,7 +50,7 @@ export default class Index extends Component {
         <Text style={{ marginTop: 20 }}>
           Don&apos;t have an Account?{" "}
           <Text
-            style={{ color: "#073051", fontFamily: "Poppins" }} // fixed hex color
+            style={{ color: "#073051", fontFamily: "Poppins" }}
             onPress={() => router.push("/(auth)/CreateProfile")}
           >
             Sign-up

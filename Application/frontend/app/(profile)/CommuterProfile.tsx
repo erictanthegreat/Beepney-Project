@@ -37,13 +37,20 @@ export default function CommuterProfile() {
       <BackButton />
       <View style={profStyles.container}>
         <Text style={profStyles.header}>Profile</Text>
-        <DriverButton style={profStyles.icon} />
+
+        {/* Toggle button: switch to Driver interface */}
+        <TouchableOpacity
+          onPress={() => router.replace("/(driver)/DriverHome")}
+          style={profStyles.icon}
+        >
+          <DriverButton />
+        </TouchableOpacity>
       </View>
       <Text style={{ marginLeft: 20, color: "#595959" }}>
         View your profile.
       </Text>
 
-      {/* Profile */}
+      {/* Profile Image */}
       <View style={profStyles.profileContainer}>
         {profileImage ? (
           <Image
@@ -58,7 +65,7 @@ export default function CommuterProfile() {
         </TouchableOpacity>
       </View>
 
-      {/* Container */}
+      {/* Profile Form */}
       <View style={credStyles.container}>
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Name</Text>
@@ -87,7 +94,7 @@ export default function CommuterProfile() {
           style={credStyles.driverRow}
         >
           <Text style={credStyles.driverText}>Drive with Beepney</Text>
-          <DriverIcon></DriverIcon>
+          <DriverIcon />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -95,8 +102,7 @@ export default function CommuterProfile() {
           style={credStyles.logoutRow}
         >
           <Text style={credStyles.logoutText}>Logout</Text>
-          <LogoutIcon></LogoutIcon>
-          {/* <Text style={credStyles.logoutIcon}>⇦</Text> */}
+          <LogoutIcon />
         </TouchableOpacity>
       </View>
     </View>
@@ -118,14 +124,7 @@ const profStyles = StyleSheet.create({
     color: "#073051",
   },
   icon: {
-    flexDirection: "row",
     marginTop: 5,
-  },
-  icon2: {
-    alignItems: "center",
-    flexDirection: "row",
-    marginLeft: 125,
-    marginTop: 40,
   },
   profileContainer: {
     position: "relative",
@@ -138,7 +137,6 @@ const profStyles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
   },
-
   editIcon: {
     position: "absolute",
     bottom: 5,
@@ -152,8 +150,8 @@ const credStyles = StyleSheet.create({
     padding: 20,
     margin: 20,
     borderRadius: 10,
-    elevation: 2, // shadow for Android
-    shadowColor: "#000", // shadow for iOS
+    elevation: 2,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,

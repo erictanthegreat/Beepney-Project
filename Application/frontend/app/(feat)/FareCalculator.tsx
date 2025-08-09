@@ -137,6 +137,7 @@ const fareStyles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
+    fontFamily: "Poppins",
   },
   container: {
     backgroundColor: "#fff",
@@ -196,12 +197,13 @@ const fareStyles = StyleSheet.create({
   fareButton2: {
     backgroundColor: "#FFFFFF",
     borderColor: "#CBCBCB",
+    color: "#1E86DA",
     borderRadius: 15,
     width: 50,
     height: 20,
     flexDirection: "row",
     fontFamily: "Poppins",
-    marginLeft: 15,
+    marginLeft: 10,
   },
   icon: {
     width: 24,

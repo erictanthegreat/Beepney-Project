@@ -14,7 +14,7 @@ import RideHIcon from "../../assets/images/ride hailing.svg";
 import FareIcon from "../../assets/images/fare.svg";
 import { router } from "expo-router";
 
-export default class Home extends Component {
+export default class DriverHome extends Component {
   state = {
     activeTab: 1,
   };
@@ -69,7 +69,7 @@ export default class Home extends Component {
       <View style={{ flex: 1 }}>
         <View style={styles.container}>
           <TouchableOpacity
-            onPress={() => router.push("/(profile)/CommuterProfile")}
+            onPress={() => router.push("/(profile)/DriverProfile")}
           >
             <ProfileIcon style={iconStyles.prof} />
           </TouchableOpacity>
@@ -164,7 +164,7 @@ export default class Home extends Component {
               style={featStyles.featureButton}
             >
               <DDIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>Scan QR</Text>
+              <Text style={featStyles.text}>Generate QR</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -176,7 +176,7 @@ export default class Home extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(tabs)/RideHailing")}
+              onPress={() => router.push("/(driver)/DriverRideHailing")}
               style={featStyles.featureButton}
             >
               <RideHIcon style={featStyles.icon} />

@@ -3,16 +3,16 @@ import { Text, View, StyleSheet } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 
-export default class Renting extends Component {
+export default class DriverRideHailing extends Component {
   render() {
     return (
       <View style={rentStyles.container}>
         <BackButton />
-        <Text style={rentStyles.header}> SOS Call/Report </Text>
+        <Text style={rentStyles.header}> TricyCall </Text>
         <Text
           style={{ marginLeft: 25, color: "#595959", fontFamily: "Poppins" }}
         >
-          Make your commuter experience safe.
+          Book your tricycle—fast, safe, local.
         </Text>
       </View>
     );
