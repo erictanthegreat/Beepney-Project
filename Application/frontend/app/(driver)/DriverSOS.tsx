@@ -8,7 +8,6 @@ export default class DriverSOS extends Component {
   render() {
     return (
       <View style={{ flex: 1 }}>
-        {/* Static Header */}
         <View>
           <BackButton />
           <Text style={soStyles.header}> SOS Call/Report </Text>
@@ -17,7 +16,7 @@ export default class DriverSOS extends Component {
           </Text>
         </View>
 
-        {/* Scrollable Content */}
+        {/* Hotlines */}
         <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
           <Text style={soStyles.label}>Ambulance</Text>
           <HotlineCard
