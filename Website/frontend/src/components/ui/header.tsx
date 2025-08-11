@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, forwardRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BellIcon } from '@heroicons/react/24/solid';
 import {
@@ -21,7 +21,8 @@ const navItems = [
   { name: 'Fare Matrix', href: '/fare-matrix' },
 ];
 
-const Header = () => {
+// Forward the ref to the header element
+const Header = forwardRef<HTMLElement, {}>((_, ref) => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -43,7 +44,7 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full border-b border-[#D1D1D1] bg-white">
+    <header ref={ref} className="w-full border-b border-[#D1D1D1] bg-white">
       <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-4 md:px-8 py-3">
         
         {/* Logo */}
@@ -126,6 +127,8 @@ const Header = () => {
       </div>
     </header>
   );
-};
+});
+
+Header.displayName = 'Header';
 
 export default Header;
