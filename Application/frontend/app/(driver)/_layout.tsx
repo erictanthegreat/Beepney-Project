@@ -47,8 +47,12 @@ export default function DriverLayout() {
         name="DriverRideHailing"
         options={{
           title: "TricyCall",
-          tabBarIcon: ({ color }) => (
-            <RideHailingIcon width={28} height={28} fill={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <RideHailingIcon
+              fill={focused ? "red" : "#000"}
+              width={28}
+              height={28}
+            />
           ),
         }}
       />

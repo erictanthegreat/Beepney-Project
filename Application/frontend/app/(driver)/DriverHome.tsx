@@ -160,7 +160,7 @@ export default class DriverHome extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/ScanDriverDets")}
+              onPress={() => router.push("/(feat)/GenerateQR")}
               style={featStyles.featureButton}
             >
               <DDIcon style={featStyles.icon} />

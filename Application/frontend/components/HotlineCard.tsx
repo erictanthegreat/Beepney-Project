@@ -1,20 +1,36 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { router } from "expo-router";
 
-export default function HotlineCard({ name, type, number }) {
+type HotlineCardProps = {
+  name: string;
+  type: string;
+  number: string;
+};
+
+export default function HotlineCard({ name, type, number }: HotlineCardProps) {
   return (
-    <View style={styles.card}>
-      {/* Blue dot */}
-      <View style={styles.dot} />
+    <TouchableOpacity
+      onPress={() =>
+        router.push({
+          pathname: "/(feat)/SOS",
+          params: { name, type, number },
+        })
+      }
+    >
+      <View style={styles.card}>
+        {/* Blue dot */}
+        <View style={styles.dot} />
 
-      {/* Text content */}
-      <View>
-        <Text style={styles.title}>
-          {name} <Text style={styles.type}>({type})</Text>
-        </Text>
-        <Text style={styles.number}>{number}</Text>
+        {/* Text content */}
+        <View>
+          <Text style={styles.title}>
+            {name} <Text style={styles.type}>({type})</Text>
+          </Text>
+          <Text style={styles.number}>{number}</Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
