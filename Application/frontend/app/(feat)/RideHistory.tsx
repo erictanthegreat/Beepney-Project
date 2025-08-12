@@ -2,29 +2,64 @@ import React, { Component } from "react";
 import { Text, View, StyleSheet } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
+import EmptyStateIcon from "../../assets/images/empty.svg";
 
-export default class Renting extends Component {
+export default class RideHistory extends Component {
+  state = {
+    rides: [], // <-- Replace with your fetched ride history
+  };
+
   render() {
+    const { rides } = this.state;
+    const isEmpty = rides.length === 0;
+
     return (
-      <View style={rentStyles.container}>
+      <View>
         <BackButton />
-        <Text style={rentStyles.header}> Ride History </Text>
+        <Text style={styles.header}> Ride History </Text>
         <Text style={{ marginLeft: 25, color: "#595959" }}>
-          This is where your rides are saved for transparency.
+          {isEmpty
+            ? "Book Your Barkada Trip with Beepney."
+            : "This is where your rides are saved for transparency."}
         </Text>
+
+        {isEmpty ? (
+          // Empty State UI
+          <View style={styles.emptyContainer}>
+            <EmptyStateIcon />
+            <Text style={styles.emptyText}>
+              Whoops......Looks like there's {"\n"}nothing here.
+            </Text>
+          </View>
+        ) : (
+          // Non-Empty State UI
+          <View style={{ margin: 20 }}>
+            {/* Replace with your rides list */}
+            <Text>Ride #1 - Example</Text>
+            <Text>Ride #2 - Example</Text>
+          </View>
+        )}
       </View>
     );
   }
 }
 
-const rentStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   header: {
     fontWeight: "bold",
-    alignItems: "flex-start",
     fontSize: 25,
     marginLeft: 20,
     marginTop: 10,
     color: "#073051",
+    fontFamily: "Poppins",
   },
-  container: {},
+  emptyContainer: {
+    alignItems: "center",
+    marginTop: 150,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 15,
+    marginTop: 15,
+  },
 });

@@ -9,45 +9,67 @@ import {
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import PostIcon from "../../assets/images/add.svg";
-import { Button } from "@react-navigation/elements";
+import EmptyStateIcon from "../../assets/images/empty.svg"; // your empty icon
 import { router } from "expo-router";
 
 export default class DriverRenting extends Component {
+  state = {
+    rentals: [], // store available rentals here
+  };
+
   render() {
+    const { rentals } = this.state;
+    const isEmpty = rentals.length === 0;
+
     return (
       <View style={{ flex: 1 }}>
         <View>
           <BackButton />
-          <Text style={rentStyles.header}> Jeepney/Van Rental </Text>
+          <Text style={styles.header}> Jeepney/Van Rental </Text>
           <Text
             style={{ marginLeft: 25, color: "#595959", fontFamily: "Poppins" }}
           >
             Book Your Barkada Trip with Beepney
           </Text>
+
           <TouchableOpacity
             onPress={() => router.push("/(feat)/PostRental")}
-            style={rentStyles.Button}
+            style={styles.Button}
           >
-            <Text style={rentStyles.postHeader}>Post Rental Info</Text>
+            <Text style={styles.postHeader}>Post Rental Info</Text>
             <PostIcon />
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          contentContainerStyle={{
-            marginLeft: 25,
-            marginTop: 20,
-            paddingBottom: 100,
-          }}
-        >
-          <Text style={rentStyles.subHeader}>Available for Renting</Text>
-        </ScrollView>
+        {isEmpty ? (
+          // Empty State
+          <View style={styles.emptyContainer}>
+            <EmptyStateIcon />
+            <Text style={styles.emptyText}>
+              Whoops......Looks like there's {"\n"}nothing here.
+            </Text>
+          </View>
+        ) : (
+          // Non-empty rental list
+          <ScrollView
+            contentContainerStyle={{
+              marginLeft: 25,
+              marginTop: 20,
+              paddingBottom: 100,
+            }}
+          >
+            <Text style={styles.subHeader}>Available for Renting</Text>
+            {rentals.map((item, index) => (
+              <Text key={index}>{item.title}</Text>
+            ))}
+          </ScrollView>
+        )}
       </View>
     );
   }
 }
 
-const rentStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   header: {
     fontWeight: "bold",
     alignItems: "flex-start",
@@ -78,5 +100,16 @@ const rentStyles = StyleSheet.create({
     color: "#073051",
     fontWeight: "bold",
     fontSize: 17,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    marginBottom: 100,
+    alignItems: "center",
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 15,
+    marginTop: 15,
   },
 });
