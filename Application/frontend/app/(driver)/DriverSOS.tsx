@@ -26,14 +26,14 @@ export default class DriverSOS extends Component {
             number="09XX-XXX-XXX"
           />
           <HotlineCard
-            name="Ambulance Hotline 1"
-            type="NICC"
+            name="Ambulance Hotline 2"
+            type="Test"
             number="09XX-XXX-XXX"
           />
 
           <Text style={soStyles.label}>Police Station</Text>
           <HotlineCard
-            name="Ambulance Hotline 1"
+            name="Police Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
           />

@@ -56,6 +56,18 @@ export default function RootLayout() {
           name="(profile)/DriverProfile"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="(feat)/SOS"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="(feat)/GenerateQR"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
+        <Stack.Screen
+          name="(feat)/PostRental"
+          options={{ headerShown: false }}
+        ></Stack.Screen>
         <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
         <Stack.Screen name="(driver)" options={{ headerShown: false }} />
 

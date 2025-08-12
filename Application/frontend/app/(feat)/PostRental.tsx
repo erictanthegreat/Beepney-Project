@@ -1,0 +1,152 @@
+import React, { Component } from "react";
+import { Text, View, StyleSheet, ScrollView, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import "@fontsource/poppins";
+import BackButton from "@/components/Backbutton";
+import Input from "../../components/Input";
+import CustomButton from "../../components/ui/CustomButton";
+
+type RentingState = {
+  services: string[];
+};
+
+export default class Renting extends Component<{}, RentingState> {
+  constructor(props: {}) {
+    super(props);
+    this.state = {
+      services: [""], // Start with one default input
+    };
+  }
+
+  addService = () => {
+    this.setState((prevState) => ({
+      services: [...prevState.services, ""],
+    }));
+  };
+
+  updateService = (text: string, index: number) => {
+    const updatedServices = [...this.state.services];
+    updatedServices[index] = text;
+    this.setState({ services: updatedServices });
+  };
+
+  removeService = (index: number) => {
+    const updatedServices = [...this.state.services];
+    updatedServices.splice(index, 1);
+    this.setState({ services: updatedServices });
+  };
+
+  render() {
+    return (
+      <View style={rentStyles.container}>
+        <BackButton />
+        <Text style={rentStyles.header}>Jeepney/Van Rental</Text>
+        <Text style={{ marginLeft: 25, color: "#595959" }}>
+          Post your rental info.
+        </Text>
+
+        <ScrollView
+          contentContainerStyle={{
+            marginLeft: 25,
+            marginTop: 20,
+            paddingBottom: 100,
+          }}
+        >
+          <Text style={rentStyles.subHeader}>Post Rental Info</Text>
+
+          <Input
+            label="Name"
+            placeholder="E.g Kevin's Rental"
+            keyboardType="default"
+            containerStyle={{ width: "90%" }}
+          />
+          <Input
+            label="Contact Number"
+            placeholder="E.g 09XX-XXX-XXXX"
+            keyboardType="numeric"
+            containerStyle={{ width: "90%" }}
+          />
+          <Input
+            label="Location"
+            placeholder="E.g To Vigan"
+            keyboardType="default"
+            containerStyle={{ width: "90%" }}
+          />
+
+          {this.state.services.map((service, index) => (
+            <View style={rentStyles.inputWrapper} key={index}>
+              <Input
+                label="Services Offered"
+                placeholder="E.g Private Transport"
+                keyboardType="default"
+                containerStyle={{ width: "100%" }}
+                value={service}
+                onChangeText={(text) => this.updateService(text, index)}
+              />
+
+              {index > 0 && (
+                <Pressable
+                  style={rentStyles.deleteInside}
+                  onPress={() => this.removeService(index)}
+                >
+                  <Ionicons name="close-circle" size={22} color="#FF4D4F" />
+                </Pressable>
+              )}
+            </View>
+          ))}
+
+          <Pressable style={rentStyles.addButton} onPress={this.addService}>
+            <Ionicons name="add-circle" size={32} color="#0D99FF" />
+          </Pressable>
+
+          <CustomButton
+            title="Done"
+            onPress={() => router.push("/(driver)/DriverRenting")}
+            style={rentStyles.custButton}
+          />
+        </ScrollView>
+      </View>
+    );
+  }
+}
+
+const rentStyles = StyleSheet.create({
+  header: {
+    fontWeight: "bold",
+    fontSize: 25,
+    marginLeft: 20,
+    marginTop: 10,
+    color: "#073051",
+    fontFamily: "Poppins",
+  },
+  container: {
+    flex: 1,
+  },
+  subHeader: {
+    color: "#073051",
+    fontWeight: "bold",
+    fontSize: 20,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  addButton: {
+    alignItems: "center",
+    marginTop: 8,
+    marginRight: 2,
+  },
+  inputWrapper: {
+    width: "90%",
+    position: "relative",
+    marginBottom: 8,
+  },
+  deleteInside: {
+    position: "absolute",
+    right: 10,
+    top: 55,
+    zIndex: 1,
+  },
+  custButton: {
+    marginLeft: 20,
+  },
+});
