@@ -11,14 +11,17 @@ import {
 import "@fontsource/poppins";
 
 import { router } from "expo-router";
-
-import AttachIcon from "../../assets/images/attach file.svg";
+import AttachComp from "../../components/Attachfile";
 import ApprovalIcon from "../../assets/images/approval.svg";
 
 export default function DriverProfile() {
   const [step, setStep] = useState(1);
 
-  //CAMERA PERMISSION FUNCTIONS
+  // CAMERA PERMISSION FUNCTIONS
+  const handleImage = (uri) => {
+    console.log("Selected Image:", uri);
+    // -> BACKEND <-
+  };
 
   //BACK BUTTON
   useEffect(() => {
@@ -76,42 +79,23 @@ export default function DriverProfile() {
       {step === 2 && (
         <>
           <View style={inputId.inputGroup}>
-            <Text style={inputStyles.label}>Driver&apos;s License </Text>
-            <TouchableOpacity style={inputId.buttonId}>
-              <AttachIcon
-                width={32}
-                color="#D1D1D1"
-                style={{
-                  marginBottom: 8,
-                }}
-              ></AttachIcon>
-              <Text>
-                <Text style={inputId.buttonText}>Tap here</Text>
-                <Text style={{ textAlign: "center" }}>
-                  {" "}
-                  to take the back {"\n"} picture of the ID
-                </Text>
-              </Text>
-            </TouchableOpacity>
+            <Text style={inputStyles.label}>Driver's License</Text>
+
+            <AttachComp
+              label={["Tap here to take the front", "picture of the ID"].join(
+                "\n"
+              )}
+              onImageSelected={handleImage}
+            />
           </View>
 
           <View style={inputId.inputGroup}>
-            <TouchableOpacity style={inputId.buttonId}>
-              <AttachIcon
-                width={32}
-                color="#5E7A90"
-                style={{
-                  marginBottom: 8,
-                }}
-              ></AttachIcon>
-              <Text>
-                <Text style={inputId.buttonText}>Tap here</Text>
-                <Text style={{ textAlign: "center" }}>
-                  {" "}
-                  to take the back {"\n"} picture of the ID
-                </Text>
-              </Text>
-            </TouchableOpacity>
+            <AttachComp
+              label={["Tap here to take the back", "picture of the ID"].join(
+                "\n"
+              )}
+              onImageSelected={handleImage}
+            />
           </View>
         </>
       )}
@@ -186,13 +170,13 @@ export default function DriverProfile() {
         style={styles.button}
         onPress={() => {
           if (step === 1) {
-            setStep(2); // Go to step 2
+            setStep(2);
           } else if (step === 2) {
-            setStep(3); // Go to step 3
+            setStep(3);
           } else if (step === 3) {
-            setStep(4); // Go to step 4
+            setStep(4);
           } else if (step === 4) {
-            router.push("/(tabs)/Home"); // Final action at step 4
+            router.push("/(commuter)/Home");
           }
         }}
       >
