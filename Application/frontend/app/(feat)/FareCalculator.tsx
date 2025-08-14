@@ -15,16 +15,52 @@ import FareIcon from "@/assets/images/fare.svg";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 
+const MAPBOX_TOKEN =
+  "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"; // Replace with your token
+
 export default class FareCalculator extends Component {
   state = {
     vehicleType: "",
-    IdType: "",
+    paymentMethod: "",
     openDropdown: null,
+    origin: "",
+    destination: "",
+    originSuggestions: [],
+    destinationSuggestions: [],
   };
 
   handleToggle = (index, open) => {
     this.setState({
       openDropdown: open ? index : null,
+    });
+  };
+
+  fetchSuggestions = async (query, type) => {
+    if (!query.trim()) {
+      this.setState({ [`${type}Suggestions`]: [] });
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          query
+        )}.json?country=PH&autocomplete=true&limit=5&access_token=${MAPBOX_TOKEN}`
+      );
+      const data = await res.json();
+
+      this.setState({
+        [`${type}Suggestions`]: data.features || [],
+      });
+    } catch (err) {
+      console.error("Mapbox fetch error:", err);
+    }
+  };
+
+  handleSelectSuggestion = (place, type) => {
+    this.setState({
+      [type]: place.place_name,
+      [`${type}Suggestions`]: [],
     });
   };
 
@@ -45,30 +81,79 @@ export default class FareCalculator extends Component {
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
+                {/* ORIGIN */}
                 <View style={fareStyles.cont}>
                   <TouchableOpacity>
                     <OriginIcon style={fareStyles.icon} />
                   </TouchableOpacity>
-                  <TextInput placeholder="Enter Origin" />
+                  <TextInput
+                    placeholder="Enter Origin"
+                    value={this.state.origin}
+                    onChangeText={(text) => {
+                      this.setState({ origin: text });
+                      this.fetchSuggestions(text, "origin");
+                    }}
+                    style={{ flex: 1 }}
+                  />
                 </View>
+                {this.state.originSuggestions.length > 0 && (
+                  <FlatList
+                    data={this.state.originSuggestions}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={fareStyles.suggestionItem}
+                        onPress={() =>
+                          this.handleSelectSuggestion(item, "origin")
+                        }
+                      >
+                        <Text>{item.place_name}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
 
+                {/* DESTINATION */}
                 <View style={fareStyles.cont}>
                   <TouchableOpacity>
                     <DestIcon style={fareStyles.icon} />
                   </TouchableOpacity>
-                  <TextInput placeholder="Enter Destination" />
+                  <TextInput
+                    placeholder="Enter Destination"
+                    value={this.state.destination}
+                    onChangeText={(text) => {
+                      this.setState({ destination: text });
+                      this.fetchSuggestions(text, "destination");
+                    }}
+                    style={{ flex: 1 }}
+                  />
                 </View>
+                {this.state.destinationSuggestions.length > 0 && (
+                  <FlatList
+                    data={this.state.destinationSuggestions}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={fareStyles.suggestionItem}
+                        onPress={() =>
+                          this.handleSelectSuggestion(item, "destination")
+                        }
+                      >
+                        <Text>{item.place_name}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                )}
 
+                {/* DROPDOWNS */}
                 <DropDown
                   data={["Regular", "Student"]}
                   onSelect={(value) => this.setState({ IdType: value })}
                   isOpen={this.state.openDropdown === 1}
                   onToggle={(open) => this.handleToggle(1, open)}
-                  containerStyle={undefined}
                 />
 
                 <DropDown
-                  containerStyle={{ zIndex: 20, elevation: 10 }}
                   data={[
                     "E-Tricycles",
                     "Tricycle",
@@ -85,13 +170,16 @@ export default class FareCalculator extends Component {
                   onToggle={(open) => this.handleToggle(2, open)}
                 />
 
+                {/* BUTTON */}
                 <TouchableOpacity
                   style={fareStyles.button}
                   onPress={() =>
                     console.log(
                       "Selected:",
                       this.state.vehicleType,
-                      this.state.IdType
+                      this.state.paymentMethod,
+                      this.state.origin,
+                      this.state.destination
                     )
                   }
                 >
@@ -137,7 +225,6 @@ const fareStyles = StyleSheet.create({
     fontFamily: "Poppins",
     marginLeft: 25,
   },
-
   header: {
     fontWeight: "bold",
     fontSize: 25,
@@ -176,16 +263,6 @@ const fareStyles = StyleSheet.create({
     paddingHorizontal: 15,
     flexDirection: "row",
     alignItems: "center",
-  },
-  text: {
-    borderWidth: 1,
-    borderRadius: 15,
-    marginBottom: 10,
-    height: 60,
-    borderColor: "#073051",
-    fontFamily: "Poppins",
-    color: "#9A9A9A",
-    paddingLeft: 20,
   },
   fare: {
     fontWeight: "bold",
@@ -230,5 +307,12 @@ const fareStyles = StyleSheet.create({
     width: 24,
     height: 24,
     marginRight: 10,
+  },
+  suggestionItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    backgroundColor: "#f9f9f9",
   },
 });
