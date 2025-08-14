@@ -7,19 +7,32 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import "@fontsource/poppins";
 import { router } from "expo-router";
-
-import AttachIcon from "../../assets/images/attach file.svg";
+import AttachComp from "../../components/Attachfile";
 import ApprovalIcon from "../../assets/images/approval.svg";
+import DropDown from "@/components/ui/DropDown";
 
 export default function CreateProfile() {
   const [step, setStep] = useState(1);
 
-  //CAMERA PERMISSION FUNCTIONS
+  // DROPDOWN STATE (hooks instead of this.state)
+  const [idType, setIdType] = useState("");
+  const [openDropdown, setOpenDropdown] = useState(null);
 
-  //BACK BUTTON
+  const handleToggle = (index, open) => {
+    setOpenDropdown(open ? index : null);
+  };
+
+  // CAMERA PERMISSION FUNCTIONS
+  const handleImage = (uri) => {
+    console.log("Selected Image:", uri);
+    // -> BACKEND <-
+  };
+
+  // BACK BUTTON HANDLING
   useEffect(() => {
     const handleBackPress = () => {
       if (step > 1) {
@@ -39,6 +52,7 @@ export default function CreateProfile() {
 
   return (
     <View style={viewStyles.container}>
+      {/* STATIC HEADER */}
       <View>
         <Image
           source={require("@/assets/images/Beepney LOGO.png")}
@@ -57,7 +71,6 @@ export default function CreateProfile() {
                 style={inputName.input}
                 placeholder="E.g Juan"
                 placeholderTextColor="#B6B6B6"
-                keyboardType="default"
               />
             </View>
 
@@ -67,7 +80,6 @@ export default function CreateProfile() {
                 style={inputName.input}
                 placeholder="E.g Dela Cruz"
                 placeholderTextColor="#B6B6B6"
-                keyboardType="default"
               />
             </View>
           </View>
@@ -78,7 +90,6 @@ export default function CreateProfile() {
               style={inputStyles.input}
               placeholder="Enter your email"
               placeholderTextColor="#B6B6B6"
-              keyboardType="default"
             />
           </View>
 
@@ -108,41 +119,27 @@ export default function CreateProfile() {
         <>
           <View style={inputId.inputGroup}>
             <Text style={inputStyles.label}>ID Discount</Text>
-            <TouchableOpacity style={inputId.buttonId}>
-              <AttachIcon
-                width={32}
-                color="#D1D1D1"
-                style={{
-                  marginBottom: 8,
-                }}
-              ></AttachIcon>
-              <Text>
-                <Text style={inputId.buttonText}>Tap here</Text>
-                <Text style={{ textAlign: "center" }}>
-                  {" "}
-                  to take the back {"\n"} picture of the ID
-                </Text>
-              </Text>
-            </TouchableOpacity>
+            <DropDown
+              data={["Student", "PWD", "Senior Citizen", "Solo Parent"]}
+              onSelect={(value) => setIdType(value)}
+              isOpen={openDropdown === 1}
+              onToggle={(open) => handleToggle(1, open)}
+            />
+            <AttachComp
+              label={["Tap here to take the front", "picture of the ID"].join(
+                "\n"
+              )}
+              onImageSelected={handleImage}
+            />
           </View>
 
           <View style={inputId.inputGroup}>
-            <TouchableOpacity style={inputId.buttonId}>
-              <AttachIcon
-                width={32}
-                color="#5E7A90"
-                style={{
-                  marginBottom: 8,
-                }}
-              ></AttachIcon>
-              <Text>
-                <Text style={inputId.buttonText}>Tap here</Text>
-                <Text style={{ textAlign: "center" }}>
-                  {" "}
-                  to take the back {"\n"} picture of the ID
-                </Text>
-              </Text>
-            </TouchableOpacity>
+            <AttachComp
+              label={["Tap here to take the back", "picture of the ID"].join(
+                "\n"
+              )}
+              onImageSelected={handleImage}
+            />
           </View>
 
           <Text style={{ marginTop: 20 }}>
@@ -180,7 +177,7 @@ export default function CreateProfile() {
             your account {"\n"} {"\t"} gets verified. Thank you!{" "}
           </Text>
           <View>
-            <ApprovalIcon style={{ marginTop: 20 }}></ApprovalIcon>
+            <ApprovalIcon style={{ marginTop: 20 }} />
           </View>
         </View>
       )}
@@ -189,11 +186,11 @@ export default function CreateProfile() {
         style={styles.button}
         onPress={() => {
           if (step === 1) {
-            setStep(2); // Go to step 2
+            setStep(2);
           } else if (step === 2) {
-            setStep(3); // Go to step 3
+            setStep(3);
           } else {
-            alert("Signed In!"); // Final action at step 3
+            router.push("/");
           }
         }}
       >
@@ -288,33 +285,13 @@ const inputName = StyleSheet.create({
 
 const inputId = StyleSheet.create({
   inputGroup: {
-    width: "43.3%",
+    width: "80%",
     marginTop: 20,
-    marginRight: 150,
-  },
-  buttonId: {
-    height: 90,
-    width: 300,
-    borderColor: "#ccc",
-    paddingLeft: 10,
-    borderWidth: 1,
-    borderRadius: 10,
-    alignItems: "center",
-    paddingTop: 12,
-  },
-  buttonText: {
-    alignItems: "center",
-    color: "#073051",
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 40,
-    fontFamily: "Poppins-Regular",
   },
   idText: {
     alignItems: "center",
     color: "#073051",
     textAlign: "center",
-    flexDirection: "row",
     marginTop: 45,
     fontFamily: "Poppins-Regular",
     fontSize: 17,
@@ -331,7 +308,7 @@ const inputStyles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "bold",
     color: "#073051",
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
   input: {
     height: 45,

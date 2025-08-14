@@ -15,104 +15,129 @@ import FareIcon from "@/assets/images/fare.svg";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 
-export default class Renting extends Component {
+export default class FareCalculator extends Component {
   state = {
     vehicleType: "",
-    paymentMethod: "",
+    IdType: "",
+    openDropdown: null,
+  };
+
+  handleToggle = (index, open) => {
+    this.setState({
+      openDropdown: open ? index : null,
+    });
   };
 
   render() {
     return (
-      <FlatList
-        data={[]}
-        ListHeaderComponent={
-          <>
-            <BackButton />
-            <Text style={fareStyles.header}>Calculate Your Ride</Text>
-            <Text
-              style={{
-                marginLeft: 25,
-                color: "#595959",
-                fontFamily: "Poppins",
-              }}
-            >
-              Calculate your fare for a fair trip.
-            </Text>
+      <View style={{ flex: 1 }}>
+        {/* Fixed Header */}
+        <View style={fareStyles.headerContainer}>
+          <BackButton />
+          <Text style={fareStyles.header}>Calculate Your Ride</Text>
+          <Text style={fareStyles.subHeader}>
+            Calculate your fare for a fair trip.
+          </Text>
+        </View>
 
-            <View style={fareStyles.container}>
-              <View style={fareStyles.cont}>
-                <TouchableOpacity>
-                  <OriginIcon style={fareStyles.icon} />
+        <FlatList
+          data={[]}
+          ListHeaderComponent={
+            <>
+              <View style={fareStyles.container}>
+                <View style={fareStyles.cont}>
+                  <TouchableOpacity>
+                    <OriginIcon style={fareStyles.icon} />
+                  </TouchableOpacity>
+                  <TextInput placeholder="Enter Origin" />
+                </View>
+
+                <View style={fareStyles.cont}>
+                  <TouchableOpacity>
+                    <DestIcon style={fareStyles.icon} />
+                  </TouchableOpacity>
+                  <TextInput placeholder="Enter Destination" />
+                </View>
+
+                <DropDown
+                  data={["Regular", "Student"]}
+                  onSelect={(value) => this.setState({ IdType: value })}
+                  isOpen={this.state.openDropdown === 1}
+                  onToggle={(open) => this.handleToggle(1, open)}
+                  containerStyle={undefined}
+                />
+
+                <DropDown
+                  containerStyle={{ zIndex: 20, elevation: 10 }}
+                  data={[
+                    "E-Tricycles",
+                    "Tricycle",
+                    "Taxi",
+                    "Pedicab",
+                    "PUJ Traditional",
+                    "PUJ Modern",
+                    "UV Express",
+                    "PUB Traditional",
+                    "PUB Modern",
+                  ]}
+                  onSelect={(value) => this.setState({ paymentMethod: value })}
+                  isOpen={this.state.openDropdown === 2}
+                  onToggle={(open) => this.handleToggle(2, open)}
+                />
+
+                <TouchableOpacity
+                  style={fareStyles.button}
+                  onPress={() =>
+                    console.log(
+                      "Selected:",
+                      this.state.vehicleType,
+                      this.state.IdType
+                    )
+                  }
+                >
+                  <Text style={fareStyles.buttText}>Calculate Fare</Text>
                 </TouchableOpacity>
-                <TextInput placeholder="Enter Origin" />
               </View>
 
-              <View style={fareStyles.cont}>
-                <TouchableOpacity>
-                  <DestIcon style={fareStyles.icon} />
+              <View style={{ flexDirection: "row", marginBottom: 30 }}>
+                <Text style={fareStyles.fare}>Detailed Fare Matrices</Text>
+                <TouchableOpacity style={fareStyles.fareButton}>
+                  <FareIcon style={fareStyles.fare} />
                 </TouchableOpacity>
-                <TextInput placeholder="Enter Destination" />
               </View>
-
-              <DropDown
-                data={["Regular", "Student"]}
-                onSelect={(value) => this.setState({ vehicleType: value })}
-              />
-
-              <DropDown
-                data={[
-                  "E-Tricycles",
-                  "Trycicle",
-                  "Taxi",
-                  "Pedicab",
-                  "PUJ Traditional",
-                  "PUJ Modern",
-                  "UV Express",
-                  "PUB Traditional",
-                  "PUB Modern",
-                ]}
-                onSelect={(value) => this.setState({ paymentMethod: value })}
-              />
-
-              <TouchableOpacity
-                style={fareStyles.button}
-                onPress={() =>
-                  console.log(
-                    "Selected:",
-                    this.state.vehicleType,
-                    this.state.paymentMethod
-                  )
-                }
-              >
-                <Text style={fareStyles.buttText}>Calculate Fare</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={{ flexDirection: "row", marginBottom: 30 }}>
-              <Text style={fareStyles.fare}>Detailed Fare Matrices</Text>
-              <TouchableOpacity style={fareStyles.fareButton}>
-                <FareIcon style={fareStyles.fare} />
-              </TouchableOpacity>
-            </View>
-            <View style={{ flexDirection: "row" }}>
-              <Text style={fareStyles.fare2}>Ride History</Text>
-              <TouchableOpacity
-                onPress={() => router.push("/RideHistory")}
-                style={fareStyles.fareButton}
-              >
-                <Text style={fareStyles.fareButton2}>See all</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        }
-        renderItem={() => null}
-        keyExtractor={(_, index) => index.toString()}
-      />
+              <View style={{ flexDirection: "row" }}>
+                <Text style={fareStyles.fare2}>Ride History</Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/RideHistory")}
+                  style={fareStyles.fareButton}
+                >
+                  <Text style={fareStyles.fareButton2}>See all</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          }
+          renderItem={() => null}
+          keyExtractor={(_, index) => index.toString()}
+        />
+      </View>
     );
   }
 }
 
 const fareStyles = StyleSheet.create({
+  headerContainer: {
+    paddingTop: 10,
+    paddingBottom: 5,
+    borderBottomColor: "#e0e0e0",
+  },
+  subHeader: {
+    marginTop: 2,
+    marginBottom: 5,
+    color: "#595959",
+    fontFamily: "Poppins",
+    marginLeft: 25,
+  },
+
   header: {
     fontWeight: "bold",
     fontSize: 25,
@@ -177,7 +202,6 @@ const fareStyles = StyleSheet.create({
     marginTop: 5,
     marginLeft: 20,
     marginRight: 97,
-
     fontFamily: "Poppins",
   },
   fareButton: {

@@ -29,7 +29,7 @@ export default class Stations extends Component {
         >
           {this.state.mapReady && (
             <Mapbox.Camera
-              zoomLevel={14}
+              zoomLevel={13}
               centerCoordinate={[123.186389, 13.624444]}
             />
           )}

@@ -1,22 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  Animated,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 
-export default function DropDown({ data = [], onSelect }) {
+export default function DropDown({ data = [], onSelect, isOpen, onToggle }) {
   const [selected, setSelected] = useState(data[0] || "Select");
-  const [visible, setVisible] = useState(false);
   const [buttonWidth, setButtonWidth] = useState(100);
   const dropdownWidth = 145;
 
+  // Animation value for height
+  const animatedHeight = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedHeight, {
+      toValue: isOpen ? data.length * 45 : 0, // each item ~45px tall
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [isOpen, data.length]);
+
   const handleSelect = (item) => {
     setSelected(item);
-    setVisible(false);
+    onToggle(false);
     if (onSelect) onSelect(item);
   };
 
@@ -25,7 +36,7 @@ export default function DropDown({ data = [], onSelect }) {
       {/* Button */}
       <TouchableOpacity
         style={[styles.button, { width: buttonWidth }]}
-        onPress={() => setVisible((prev) => !prev)}
+        onPress={() => onToggle(!isOpen)}
         activeOpacity={0.8}
       >
         <Text
@@ -38,30 +49,33 @@ export default function DropDown({ data = [], onSelect }) {
           {selected}
         </Text>
         <AntDesign
-          name="down"
+          name={isOpen ? "up" : "down"}
           size={14}
           color="white"
           style={{ marginLeft: 6 }}
         />
       </TouchableOpacity>
 
-      {/* Dropdown Menu */}
-      {visible && (
-        <View style={[styles.dropdown, { width: dropdownWidth }]}>
-          <FlatList
-            data={data}
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={() => handleSelect(item)}
-              >
-                <Text style={styles.dropdownText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
+      {/* Animated Dropdown Menu (pushes content down) */}
+      <Animated.View
+        style={[
+          styles.dropdown,
+          { width: dropdownWidth, height: animatedHeight, overflow: "hidden" },
+        ]}
+      >
+        <FlatList
+          data={data}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => handleSelect(item)}
+            >
+              <Text style={styles.dropdownText}>{item}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -84,17 +98,17 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   dropdown: {
-    backgroundColor: "#0A3553",
+    backgroundColor: "#fff",
     borderRadius: 8,
     marginTop: 4,
     elevation: 2,
   },
   dropdownItem: {
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
   },
   dropdownText: {
     fontSize: 16,
-    color: "white",
+    color: "#0A3553",
   },
 });
