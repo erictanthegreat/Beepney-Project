@@ -3,10 +3,28 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Header from '../../components/ui/header';
 import { MapPinIcon } from '@heroicons/react/24/outline';
-import { ChevronLeftIcon } from '@heroicons/react/24/outline';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'; // Ensure correct import for ToggleGroup and Item
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+
+function ArrowLeftIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2.5}
+      stroke="currentColor"
+      className={className}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+      />
+    </svg>
+  );
+}
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
@@ -21,18 +39,16 @@ const StationsPage = () => {
     location: '',
     operationTimeAM: '08:00',
     operationTimePM: '21:00',
-    vehicleTypes: [] as string[], // Changed from a single string to an array
+    vehicleTypes: [] as string[],
     coordinates: null as null | [number, number],
   });
 
-  // Update header height
   useEffect(() => {
     if (headerRef.current) {
       setHeaderHeight(headerRef.current.offsetHeight);
     }
   }, []);
 
-  // Initialize Mapbox map and handle click
   useEffect(() => {
     if (mapContainerRef.current && mapboxgl.accessToken) {
       const map = new mapboxgl.Map({
@@ -47,12 +63,10 @@ const StationsPage = () => {
       map.on('click', (e) => {
         const { lng, lat } = e.lngLat;
 
-        // Remove existing marker if any
         if (markerRef.current) {
           markerRef.current.remove();
         }
 
-        // Create a new marker and add it to the map
         const marker = new mapboxgl.Marker({ color: '#1E86DA' })
           .setLngLat([lng, lat])
           .addTo(map);
@@ -67,7 +81,6 @@ const StationsPage = () => {
         setIsAddingStation(true);
       });
 
-      // Cleanup on unmount
       return () => {
         if (markerRef.current) {
           markerRef.current.remove();
@@ -97,7 +110,6 @@ const StationsPage = () => {
       coordinates: null,
     });
 
-    // Remove marker when done adding
     if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
@@ -115,7 +127,6 @@ const StationsPage = () => {
       coordinates: null,
     });
 
-    // Remove marker when going back
     if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
@@ -156,7 +167,7 @@ const StationsPage = () => {
                     height: 50,
                   }}
                 >
-                  <ChevronLeftIcon className="w-7 h-7" />
+                  <ArrowLeftIcon className="w-5 h-5" />
                 </div>
                 <span
                   style={{
@@ -170,6 +181,7 @@ const StationsPage = () => {
                 </span>
               </div>
 
+              {/* Station */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Station Name</label>
                 <input
@@ -183,6 +195,7 @@ const StationsPage = () => {
                 />
               </div>
 
+              {/* Location */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Location Name</label>
                 <input
@@ -196,6 +209,7 @@ const StationsPage = () => {
                 />
               </div>
 
+              {/* Operation Time */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Operation Time</label>
                 <div className="flex gap-2 mt-1">
@@ -218,7 +232,7 @@ const StationsPage = () => {
                 </div>
               </div>
 
-              {/* Vehicle Type ToggleGroup */}
+              {/* Vehicle Type (ToggleGroup) */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Vehicle Type</label>
                 <ToggleGroup
