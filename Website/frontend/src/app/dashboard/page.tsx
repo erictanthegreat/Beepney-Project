@@ -1,19 +1,62 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../../components/ui/header';
-import { FunnelIcon, BarsArrowDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableHead
+} from '@/components/ui/table';
+import {
+  MagnifyingGlassIcon,
+  BarsArrowDownIcon,
+  EllipsisVerticalIcon,
+  FunnelIcon
+} from '@heroicons/react/24/outline';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationLink
+} from '@/components/ui/pagination';
+
+// Sample data for the table
+const data = [
+  { id: 1, name: 'John Doe', submittedInfo: 'Driver License Info', type: "Driver's Information", submittedAt: '2023-09-15 14:23', status: 'Pending' },
+  { id: 2, name: 'Jane Smith', submittedInfo: 'Discount Info', type: 'Discount', submittedAt: '2023-09-16 10:50', status: 'Approved' },
+  { id: 3, name: 'Mark Johnson', submittedInfo: 'Driver License Renewal', type: "Driver's Information", submittedAt: '2023-09-17 09:15', status: 'Declined' },
+  { id: 4, name: 'Sarah Lee', submittedInfo: 'Senior Discount Proof', type: 'Discount', submittedAt: '2023-09-18 11:30', status: 'Pending' },
+  { id: 5, name: 'Tom Williams', submittedInfo: 'Vehicle Registration', type: "Driver's Information", submittedAt: '2023-09-19 14:45', status: 'Approved' },
+  { id: 6, name: 'Emily Davis', submittedInfo: 'Student Discount Proof', type: 'Discount', submittedAt: '2023-09-20 08:50', status: 'Pending' }
+];
 
 const DashboardPage = () => {
+  const [approvalStatus, setApprovalStatus] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
+
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const currentData = data.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleStatusChange = (id: number, status: string) => {
+    setApprovalStatus(`Submission ${id} is now ${status}`);
+  };
+
   return (
     <>
       <Header />
 
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
-        
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          
-          {/* Search Engine */}
+          {/* Search */}
           <div className="relative w-full max-w-md md:w-[320px] min-w-0">
             <input
               type="text"
@@ -27,27 +70,102 @@ const DashboardPage = () => {
 
           {/* Sort & Filter */}
           <div className="flex flex-wrap md:flex-nowrap gap-4">
-            <button
-              className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
-                hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
-            >
+            <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
               <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
               <span>Sort</span>
             </button>
-            <button
-              className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
-                hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
-            >
+            <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
               <FunnelIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
               <span>Filter</span>
             </button>
           </div>
         </div>
 
-        <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">Database</h1>
+        {/* Header + Pagination */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
+          <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">Database</h1>
 
-        {/* Dashboard: content goes here */}
-        {/* https://ui.shadcn.com/docs/components/data-table */}
+          <Pagination className="flex justify-end w-full sm:w-auto">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200 ${
+                    currentPage === 1 ? 'pointer-events-none opacity-50' : ''
+                  }`}
+                />
+              </PaginationItem>
+
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    isActive={currentPage === i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200 ${
+                      currentPage === i + 1 ? 'bg-[#D1D1D1] text-[#6B6B6B]' : ''
+                    }`}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200 ${
+                    currentPage === totalPages ? 'pointer-events-none opacity-50' : ''
+                  }`}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+
+        {/* Table */}
+        <Table className="shadow-none border border-[#D1D1D1] rounded-md overflow-hidden">
+          <TableHeader>
+            <tr>
+              <TableHead /* className="text-[#1E86DA]" */>ID</TableHead>
+              <TableHead /* className="text-[#1E86DA]" */>Name</TableHead>
+              <TableHead /* className="text-[#1E86DA]" */>Submitted Info</TableHead>
+              <TableHead /* className="text-[#1E86DA]" */>Type</TableHead>
+              <TableHead /* className="text-[#1E86DA]" */>Submitted At</TableHead>
+              <TableHead /* className="text-[#1E86DA]" */>Status</TableHead>
+              <TableHead  /* className="text-[#1E86DA]" */>Actions</TableHead>
+            </tr>
+          </TableHeader>
+          
+          <TableBody>
+            {currentData.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>{item.id}</TableCell>
+                <TableCell>{item.name}</TableCell>
+                <TableCell>
+                  <a href="#" className="text-blue-600">{item.submittedInfo}</a>
+                </TableCell>
+                <TableCell>{item.type}</TableCell>
+                <TableCell>{item.submittedAt}</TableCell>
+                <TableCell>{item.status}</TableCell>
+                <TableCell>
+                  <button
+                    className="flex items-center justify-center w-6 h-6 text-gray-500"
+                    onClick={() => alert(`Show details for submission ${item.id}`)}
+                  >
+                    <EllipsisVerticalIcon className="h-5 w-5" />
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* Approval status */}
+        {approvalStatus && (
+          <div className="mt-4 p-4 bg-green-100 text-green-800 border border-green-300 rounded-md">
+            {approvalStatus}
+          </div>
+        )}
       </main>
     </>
   );
