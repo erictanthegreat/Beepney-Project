@@ -16,7 +16,7 @@ import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 
 const MAPBOX_TOKEN =
-  "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"; // Replace with your token
+  "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
 export default class FareCalculator extends Component {
   state = {
@@ -81,7 +81,7 @@ export default class FareCalculator extends Component {
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
-                {/* ORIGIN */}
+                {/* ORIGIN INPUT */}
                 <View style={fareStyles.cont}>
                   <TouchableOpacity>
                     <OriginIcon style={fareStyles.icon} />
@@ -113,7 +113,7 @@ export default class FareCalculator extends Component {
                   />
                 )}
 
-                {/* DESTINATION */}
+                {/* DESTINATION INPUT */}
                 <View style={fareStyles.cont}>
                   <TouchableOpacity>
                     <DestIcon style={fareStyles.icon} />
@@ -145,7 +145,7 @@ export default class FareCalculator extends Component {
                   />
                 )}
 
-                {/* DROPDOWNS */}
+                {/* FIRST DROPDOWN */}
                 <DropDown
                   data={["Regular", "Student"]}
                   onSelect={(value) => this.setState({ IdType: value })}
@@ -153,6 +153,7 @@ export default class FareCalculator extends Component {
                   onToggle={(open) => this.handleToggle(1, open)}
                 />
 
+                {/* SECOND DROPDOWN */}
                 <DropDown
                   data={[
                     "E-Tricycles",
@@ -170,7 +171,7 @@ export default class FareCalculator extends Component {
                   onToggle={(open) => this.handleToggle(2, open)}
                 />
 
-                {/* BUTTON */}
+                {/* CALCULATE FARE BUTTON */}
                 <TouchableOpacity
                   style={fareStyles.button}
                   onPress={() =>
@@ -187,19 +188,28 @@ export default class FareCalculator extends Component {
                 </TouchableOpacity>
               </View>
 
-              <View style={{ flexDirection: "row", marginBottom: 30 }}>
-                <Text style={fareStyles.fare}>Detailed Fare Matrices</Text>
+              {/* DETAILED FARE MATRICES */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 30,
+                }}
+              >
+                <Text style={fareStyles.fareText}>Detailed Fare Matrices</Text>
                 <TouchableOpacity style={fareStyles.fareButton}>
-                  <FareIcon style={fareStyles.fare} />
+                  <FareIcon style={fareStyles.fareIcon} />
                 </TouchableOpacity>
               </View>
-              <View style={{ flexDirection: "row" }}>
-                <Text style={fareStyles.fare2}>Ride History</Text>
+
+              {/* RIDE HISTORY */}
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={fareStyles.fareText}>Ride History</Text>
                 <TouchableOpacity
                   onPress={() => router.push("/RideHistory")}
                   style={fareStyles.fareButton}
                 >
-                  <Text style={fareStyles.fareButton2}>See all</Text>
+                  <Text style={fareStyles.fareButtonText}>See all</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -264,44 +274,31 @@ const fareStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  fare: {
+  fareText: {
     fontWeight: "bold",
     fontSize: 23,
     color: "#073051",
-    marginTop: 5,
     marginLeft: 20,
     fontFamily: "Poppins",
   },
-  fare2: {
-    fontWeight: "bold",
-    fontSize: 23,
-    color: "#073051",
-    marginTop: 5,
-    marginLeft: 20,
-    marginRight: 97,
-    fontFamily: "Poppins",
+  fareIcon: {
+    width: 24,
+    height: 24,
   },
   fareButton: {
     backgroundColor: "#FFFFFF",
     borderColor: "#CBCBCB",
     borderWidth: 1,
     paddingVertical: 10,
-    marginLeft: 30,
-    paddingRight: 20,
+    paddingHorizontal: 20,
+    marginLeft: 20,
     borderRadius: 15,
-    width: "27.5%",
     alignItems: "center",
+    justifyContent: "center",
   },
-  fareButton2: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#CBCBCB",
+  fareButtonText: {
     color: "#1E86DA",
-    borderRadius: 15,
-    width: 50,
-    height: 20,
-    flexDirection: "row",
     fontFamily: "Poppins",
-    marginLeft: 30,
   },
   icon: {
     width: 24,
