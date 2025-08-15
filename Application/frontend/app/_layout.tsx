@@ -7,8 +7,9 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
-
+import "react-native-gesture-handler";
 import { useColorScheme } from "../hooks/useColorScheme";
+import React from "react";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -31,23 +32,23 @@ export default function RootLayout() {
         <Stack.Screen
           name="(auth)/DriverProfile"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen
           name="(feat)/FareCalculator"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen
           name="(feat)/FareMatrix"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen
           name="(feat)/RideHistory"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen
           name="(feat)/ScanDriverDets"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen
           name="(profile)/CommuterProfile"
           options={{ headerShown: false }}
@@ -56,21 +57,17 @@ export default function RootLayout() {
           name="(profile)/DriverProfile"
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="(feat)/SOS"
-          options={{ headerShown: false }}
-        ></Stack.Screen>
+        <Stack.Screen name="(feat)/SOS" options={{ headerShown: false }} />
         <Stack.Screen
           name="(feat)/GenerateQR"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen
           name="(feat)/PostRental"
           options={{ headerShown: false }}
-        ></Stack.Screen>
+        />
         <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
         <Stack.Screen name="(driver)" options={{ headerShown: false }} />
-
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

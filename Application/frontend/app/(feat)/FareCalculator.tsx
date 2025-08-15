@@ -207,7 +207,7 @@ export default class FareCalculator extends Component {
                 <Text style={fareStyles.fareText}>Ride History</Text>
                 <TouchableOpacity
                   onPress={() => router.push("/RideHistory")}
-                  style={fareStyles.fareButton}
+                  style={fareStyles.fareButton2}
                 >
                   <Text style={fareStyles.fareButtonText}>See all</Text>
                 </TouchableOpacity>
@@ -290,11 +290,18 @@ const fareStyles = StyleSheet.create({
     borderColor: "#CBCBCB",
     borderWidth: 1,
     paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginLeft: 20,
+    paddingHorizontal: 40,
+    marginLeft: 25,
     borderRadius: 15,
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  fareButton2: {
+    backgroundColor: "#FFFFFF",
+    borderColor: "#CBCBCB",
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    marginLeft: 120,
+    borderRadius: 15,
   },
   fareButtonText: {
     color: "#1E86DA",

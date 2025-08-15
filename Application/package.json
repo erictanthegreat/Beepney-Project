@@ -1,7 +1,10 @@
 {
   "dependencies": {
+    "@rnmapbox/maps": "^10.1.41",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "expo": "^53.0.20",
+    "expo-router": "~5.1.4",
     "lucide-react": "^0.539.0",
     "react-native-dropdown-picker": "^5.4.6",
     "tailwind-merge": "^3.3.1",
