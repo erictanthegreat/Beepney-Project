@@ -132,7 +132,6 @@ const DashboardPage = () => {
               <TableHead /* className="text-[#1E86DA]" */>Type</TableHead>
               <TableHead /* className="text-[#1E86DA]" */>Submitted At</TableHead>
               <TableHead /* className="text-[#1E86DA]" */>Status</TableHead>
-              <TableHead  /* className="text-[#1E86DA]" */>Actions</TableHead>
             </tr>
           </TableHeader>
           

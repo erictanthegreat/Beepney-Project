@@ -17,11 +17,7 @@ function ArrowLeftIcon({ className }: { className?: string }) {
       stroke="currentColor"
       className={className}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
     </svg>
   );
 }
@@ -67,9 +63,7 @@ const StationsPage = () => {
           markerRef.current.remove();
         }
 
-        const marker = new mapboxgl.Marker({ color: '#1E86DA' })
-          .setLngLat([lng, lat])
-          .addTo(map);
+        const marker = new mapboxgl.Marker({ color: '#1E86DA' }).setLngLat([lng, lat]).addTo(map);
 
         markerRef.current = marker;
 
@@ -181,7 +175,7 @@ const StationsPage = () => {
                 </span>
               </div>
 
-              {/* Station */}
+              {/* Station Name */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Station Name</label>
                 <input
@@ -195,7 +189,7 @@ const StationsPage = () => {
                 />
               </div>
 
-              {/* Location */}
+              {/* Location Name */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Location Name</label>
                 <input
@@ -232,7 +226,7 @@ const StationsPage = () => {
                 </div>
               </div>
 
-              {/* Vehicle Type (ToggleGroup) */}
+              {/* Vehicle Type (ToggleGroup with SVGs) */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Vehicle Type</label>
                 <ToggleGroup
@@ -245,16 +239,36 @@ const StationsPage = () => {
                     }));
                   }}
                   variant="outline"
-                  className="mt-2"
+                  className="mt-2 flex w-full h-11"
                 >
-                  <ToggleGroupItem value="JEEPNEY" className="w-10 h-10">
-                    A
+                  <ToggleGroupItem
+                    value="JEEPNEY"
+                    className="flex-1 flex justify-center items-center h-full
+                              border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
+                              data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
+                              cursor-pointer transition-colors duration-200"
+                  >
+                    <img src="/jeepney.svg" alt="Jeepney" className="h-10 w-10" />
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="TRICYCLE" className="w-10 h-10">
-                    B
+
+                  <ToggleGroupItem
+                    value="TRICYCLE"
+                    className="flex-1 flex justify-center items-center h-full
+                              border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
+                              data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
+                              cursor-pointer transition-colors duration-200"
+                  >
+                    <img src="/tricycle.svg" alt="Tricycle" className="h-12 w-12" />
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="EXPRESS-VAN" className="w-10 h-10">
-                    C
+
+                  <ToggleGroupItem
+                    value="EXPRESS-VAN"
+                    className="flex-1 flex justify-center items-center h-full
+                              border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
+                              data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
+                              cursor-pointer transition-colors duration-200"
+                  >
+                    <img src="/van.svg" alt="Express Van" className="h-10 w-10" />
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
