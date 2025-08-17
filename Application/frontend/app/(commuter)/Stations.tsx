@@ -21,9 +21,9 @@ export default class Stations extends Component {
 
   render() {
     return (
-      <View style={styles.container}>
+      <View style={statStyles.container}>
         <Mapbox.MapView
-          style={styles.map}
+          style={statStyles.map}
           styleURL={Mapbox.StyleURL.Street}
           onDidFinishLoadingMap={this.handleMapReady}
         >
@@ -35,9 +35,9 @@ export default class Stations extends Component {
           )}
         </Mapbox.MapView>
 
-        <View style={styles.topBar}>
+        <View style={statStyles.topBar}>
           <BackButton />
-          <Text style={styles.title}>Stations</Text>
+          <Text style={statStyles.title}>Stations</Text>
           <View style={{ width: 50 }} />
         </View>
       </View>
@@ -45,7 +45,7 @@ export default class Stations extends Component {
   }
 }
 
-const styles = StyleSheet.create({
+const statStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
