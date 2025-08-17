@@ -13,7 +13,7 @@ import { router } from "expo-router";
 
 export default class DriverRenting extends Component {
   state = {
-    rentals: [], // store available rentals here
+    rentals: [], // store available rentals
   };
 
   render() {
