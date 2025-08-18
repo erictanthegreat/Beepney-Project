@@ -9,13 +9,41 @@ import {
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import PostIcon from "../../assets/images/add.svg";
-import EmptyStateIcon from "../../assets/images/empty.svg"; // your empty icon
+import EmptyStateIcon from "../../assets/images/empty.svg";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import ContactIcon from "@/assets/images/contact.svg";
+import LocationIcon from "@/assets/images/location.svg";
+import VehicleIcon from "@/assets/images/vehicle type.svg";
 
-export default class DriverRenting extends Component {
-  state = {
-    rentals: [], // store available rentals here
+// ✅ Rental type
+type Rental = {
+  name: string;
+  contact: string;
+  location: string;
+  services: string[];
+  vehicleType: "jeep" | "van" | "both";
+};
+
+type DriverRentingState = {
+  rentals: Rental[];
+};
+
+export default class DriverRenting extends Component<{}, DriverRentingState> {
+  state: DriverRentingState = {
+    rentals: [],
   };
+
+  async componentDidMount() {
+    try {
+      const stored = await AsyncStorage.getItem("rentals");
+      if (stored) {
+        this.setState({ rentals: JSON.parse(stored) });
+      }
+    } catch (e) {
+      console.error("Error loading rentals:", e);
+    }
+  }
 
   render() {
     const { rentals } = this.state;
@@ -42,7 +70,6 @@ export default class DriverRenting extends Component {
         </View>
 
         {isEmpty ? (
-          // Empty State
           <View style={styles.emptyContainer}>
             <EmptyStateIcon />
             <Text style={styles.emptyText}>
@@ -50,7 +77,6 @@ export default class DriverRenting extends Component {
             </Text>
           </View>
         ) : (
-          // Non-empty rental list
           <ScrollView
             contentContainerStyle={{
               marginLeft: 25,
@@ -60,7 +86,52 @@ export default class DriverRenting extends Component {
           >
             <Text style={styles.subHeader}>Available for Renting</Text>
             {rentals.map((item, index) => (
-              <Text key={index}>{item.title}</Text>
+              <View key={index} style={styles.rentalCard}>
+                <Text style={styles.rentalName}>{item.name}</Text>
+                <Text style={styles.label}>
+                  <ContactIcon width={17} height={17} /> Contact No.
+                  <Text style={styles.content}>{item.contact}</Text>
+                </Text>
+                <Text style={styles.label}>
+                  <VehicleIcon width={17} height={17} /> Types of Vehicle(s):
+                  <Text>{item.vehicleType}</Text>
+                </Text>
+                <Text style={styles.label}>
+                  <LocationIcon width={17} height={17} /> Location:
+                  <Text style={styles.content}> {item.location}</Text>
+                </Text>
+
+                <Text style={styles.label}>Services Offered:</Text>
+                {item.services && item.services.length > 0 ? (
+                  item.services.map((service, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "flex-start",
+                        marginLeft: 15,
+                        marginTop: 2,
+                      }}
+                    >
+                      <Text style={{ fontSize: 20, color: "#0D99FF" }}>
+                        {"\u2022"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.content,
+                          { marginLeft: 6, fontSize: 18 },
+                        ]}
+                      >
+                        {service}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={[styles.content, { marginLeft: 15 }]}>
+                    No services listed
+                  </Text>
+                )}
+              </View>
             ))}
           </ScrollView>
         )}
@@ -77,6 +148,17 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginTop: 10,
     color: "#073051",
+  },
+  label: {
+    color: "#073051",
+    fontSize: 17,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+  content: {
+    color: "#0D99FF",
+    fontFamily: "Poppins",
+    fontWeight: "bold",
   },
   Button: {
     borderWidth: 1.5,
@@ -111,5 +193,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 15,
     marginTop: 15,
+  },
+  rentalCard: {
+    backgroundColor: "#f5f5f5",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#CCCCCC",
+    width: "90%",
+  },
+  rentalName: {
+    fontWeight: "bold",
+    fontSize: 18,
+    marginBottom: 5,
   },
 });

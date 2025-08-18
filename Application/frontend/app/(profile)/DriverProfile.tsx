@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import DriverButton from "../../assets/images/driver.svg";
+
 import BackButton from "../../components/Backbutton";
 import ProfileIcon from "../../assets/images/prof.svg";
 import EditIcon from "../../assets/images/Edit.svg";
-import DriverIcon from "../../assets/images/driber.svg";
+
 import LogoutIcon from "../../assets/images/logout.svg";
 import CommuterIcon from "../../assets/images/commuter.svg";
 

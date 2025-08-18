@@ -70,6 +70,10 @@ export default function RootLayout() {
               name="(feat)/PostRental"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="(feat)/CalculatedFare"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
             <Stack.Screen name="(driver)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />

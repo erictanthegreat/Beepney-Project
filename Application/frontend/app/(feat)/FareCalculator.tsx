@@ -21,20 +21,23 @@ const MAPBOX_TOKEN =
 export default class FareCalculator extends Component {
   state = {
     vehicleType: "",
-    paymentMethod: "",
     openDropdown: null,
     origin: "",
     destination: "",
+    originCoords: null,
+    destinationCoords: null,
     originSuggestions: [],
     destinationSuggestions: [],
   };
 
+  // Dropdown
   handleToggle = (index, open) => {
     this.setState({
       openDropdown: open ? index : null,
     });
   };
 
+  // --- Fetch address using Mapbox Geocoding API ---
   fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
       this.setState({ [`${type}Suggestions`]: [] });
@@ -45,7 +48,7 @@ export default class FareCalculator extends Component {
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           query
-        )}.json?country=PH&autocomplete=true&limit=5&access_token=${MAPBOX_TOKEN}`
+        )}.json?autocomplete=true&limit=5&bbox=122.9184,13.3456,123.6199,14.3121&access_token=${MAPBOX_TOKEN}`
       );
       const data = await res.json();
 
@@ -60,6 +63,7 @@ export default class FareCalculator extends Component {
   handleSelectSuggestion = (place, type) => {
     this.setState({
       [type]: place.place_name,
+      [`${type}Coords`]: place.center, // [lng, lat]
       [`${type}Suggestions`]: [],
     });
   };
@@ -83,9 +87,7 @@ export default class FareCalculator extends Component {
               <View style={fareStyles.container}>
                 {/* ORIGIN INPUT */}
                 <View style={fareStyles.cont}>
-                  <TouchableOpacity>
-                    <OriginIcon style={fareStyles.icon} />
-                  </TouchableOpacity>
+                  <OriginIcon style={fareStyles.icon} />
                   <TextInput
                     placeholder="Enter Origin"
                     value={this.state.origin}
@@ -115,9 +117,7 @@ export default class FareCalculator extends Component {
 
                 {/* DESTINATION INPUT */}
                 <View style={fareStyles.cont}>
-                  <TouchableOpacity>
-                    <DestIcon style={fareStyles.icon} />
-                  </TouchableOpacity>
+                  <DestIcon style={fareStyles.icon} />
                   <TextInput
                     placeholder="Enter Destination"
                     value={this.state.destination}
@@ -166,7 +166,7 @@ export default class FareCalculator extends Component {
                     "PUB Traditional",
                     "PUB Modern",
                   ]}
-                  onSelect={(value) => this.setState({ paymentMethod: value })}
+                  onSelect={(value) => this.setState({ vehicleType: value })}
                   isOpen={this.state.openDropdown === 2}
                   onToggle={(open) => this.handleToggle(2, open)}
                 />
@@ -174,15 +174,7 @@ export default class FareCalculator extends Component {
                 {/* CALCULATE FARE BUTTON */}
                 <TouchableOpacity
                   style={fareStyles.button}
-                  onPress={() =>
-                    console.log(
-                      "Selected:",
-                      this.state.vehicleType,
-                      this.state.paymentMethod,
-                      this.state.origin,
-                      this.state.destination
-                    )
-                  }
+                  onPress={() => router.push("/(feat)/CalculatedFare")}
                 >
                   <Text style={fareStyles.buttText}>Calculate Fare</Text>
                 </TouchableOpacity>
