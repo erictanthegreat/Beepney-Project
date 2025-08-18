@@ -49,7 +49,7 @@ const StationsPage = () => {
     if (mapContainerRef.current && mapboxgl.accessToken) {
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/streets-v11',
+        style: 'mapbox://styles/mapbox/streets-v11', // mapbox://styles/erictan333/cmegqorhl000x01rk93obhmj0
         center: [123.1900, 13.6200],
         zoom: 14,
       });
