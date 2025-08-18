@@ -367,8 +367,17 @@ export default function RideHailing() {
 }
 
 const rideStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  map: { position: "absolute", top: 0, left: 0, width, height },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  map: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width,
+    height,
+  },
   header: {
     fontWeight: "bold",
     fontSize: 25,
@@ -454,8 +463,13 @@ const rideStyles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 15,
   },
-  selectedButton: { borderColor: "#0D99FF" },
-  text: { color: "#CBCBCB", marginTop: 5 },
+  selectedButton: {
+    borderColor: "#0D99FF",
+  },
+  text: {
+    color: "#CBCBCB",
+    marginTop: 5,
+  },
   iconCont: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -463,5 +477,7 @@ const rideStyles = StyleSheet.create({
     marginTop: 10,
     marginRight: 20,
   },
-  iconWithText: { alignItems: "center" },
+  iconWithText: {
+    alignItems: "center",
+  },
 });
