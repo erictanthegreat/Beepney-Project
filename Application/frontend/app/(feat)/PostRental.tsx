@@ -3,19 +3,30 @@ import { Text, View, StyleSheet, ScrollView, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import "@fontsource/poppins";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import BackButton from "@/components/Backbutton";
 import Input from "../../components/Input";
 import CustomButton from "../../components/ui/CustomButton";
+import SegmentedButton from "../../components/SegmentedButton";
 
 type RentingState = {
   services: string[];
+  name: string;
+  contact: string;
+  location: string;
+  vehicleType: "Jeep" | "Van" | "Jeep & Van";
 };
 
 export default class Renting extends Component<{}, RentingState> {
   constructor(props: {}) {
     super(props);
     this.state = {
-      services: [""], // Start with one default input
+      services: [""],
+      name: "",
+      contact: "",
+      location: "",
+      vehicleType: "Jeep",
     };
   }
 
@@ -37,6 +48,24 @@ export default class Renting extends Component<{}, RentingState> {
     this.setState({ services: updatedServices });
   };
 
+  saveRental = async () => {
+    const { name, contact, location, services, vehicleType } = this.state;
+    const newRental = { name, contact, location, services, vehicleType };
+
+    try {
+      const existing = await AsyncStorage.getItem("rentals");
+      const rentals = existing ? JSON.parse(existing) : [];
+
+      rentals.push(newRental);
+
+      await AsyncStorage.setItem("rentals", JSON.stringify(rentals));
+
+      router.push("/(driver)/DriverRenting");
+    } catch (e) {
+      console.error("Error saving rental:", e);
+    }
+  };
+
   render() {
     return (
       <View style={rentStyles.container}>
@@ -50,7 +79,7 @@ export default class Renting extends Component<{}, RentingState> {
           contentContainerStyle={{
             marginLeft: 25,
             marginTop: 20,
-            paddingBottom: 100,
+            paddingBottom: 70,
           }}
         >
           <Text style={rentStyles.subHeader}>Post Rental Info</Text>
@@ -60,18 +89,32 @@ export default class Renting extends Component<{}, RentingState> {
             placeholder="E.g Kevin's Rental"
             keyboardType="default"
             containerStyle={{ width: "90%" }}
+            value={this.state.name}
+            onChangeText={(text) => this.setState({ name: text })}
           />
+
+          <Text style={rentStyles.label}>Types of Vehicles</Text>
+          <SegmentedButton
+            value={this.state.vehicleType}
+            onChange={(val) => this.setState({ vehicleType: val })}
+          />
+
           <Input
             label="Contact Number"
             placeholder="E.g 09XX-XXX-XXXX"
             keyboardType="numeric"
             containerStyle={{ width: "90%" }}
+            value={this.state.contact}
+            onChangeText={(text) => this.setState({ contact: text })}
           />
+
           <Input
             label="Location"
             placeholder="E.g To Vigan"
             keyboardType="default"
             containerStyle={{ width: "90%" }}
+            value={this.state.location}
+            onChangeText={(text) => this.setState({ location: text })}
           />
 
           {this.state.services.map((service, index) => (
@@ -102,7 +145,7 @@ export default class Renting extends Component<{}, RentingState> {
 
           <CustomButton
             title="Done"
-            onPress={() => router.push("/(driver)/DriverRenting")}
+            onPress={this.saveRental}
             style={rentStyles.custButton}
           />
         </ScrollView>
@@ -127,8 +170,6 @@ const rentStyles = StyleSheet.create({
     color: "#073051",
     fontWeight: "bold",
     fontSize: 20,
-    marginTop: 20,
-    marginBottom: 8,
   },
   addButton: {
     alignItems: "center",
@@ -148,5 +189,13 @@ const rentStyles = StyleSheet.create({
   },
   custButton: {
     marginLeft: 20,
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 6,
+    fontWeight: "bold",
+    color: "#073051",
+    fontFamily: "Poppins",
+    marginTop: 10,
   },
 });

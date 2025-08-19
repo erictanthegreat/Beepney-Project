@@ -9,19 +9,13 @@ import {
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
 import * as Location from "expo-location";
-
+import { router } from "expo-router";
 import BackButton from "@/components/Backbutton";
 import BottomSheetContainer from "@/components/BottomSheetContainer";
 import CustomButton from "@/components/ui/CustomButton";
-
-import FindIcon from "../../assets/images/find.svg";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
-import SoloIcon from "@/assets/images/solo.svg";
-import GroupIcon from "../../assets/images/group.svg";
-import KmIcon from "../../assets/images/km.svg";
-import ETAIcon from "../../assets/images/eta.svg";
-import FareIcon from "../../assets/images/money.svg";
+import FareIcon from "@/assets/images/fare icon.svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -160,10 +154,10 @@ export default function RideHailing() {
   };
 
   return (
-    <View style={rideStyles.container}>
+    <View style={calcStyles.container}>
       {/* Map */}
       <Mapbox.MapView
-        style={rideStyles.map}
+        style={calcStyles.map}
         styleURL={Mapbox.StyleURL.Street}
         onDidFinishLoadingMap={() => setMapReady(true)}
       >
@@ -224,41 +218,20 @@ export default function RideHailing() {
           <DestIcon width={30} height={30} />
         </Mapbox.PointAnnotation>
       </Mapbox.MapView>
-
-      {/* Header */}
-      <View>
-        <BackButton />
-        <Text style={rideStyles.header}>TricyCall</Text>
-        <Text style={rideStyles.subHeader}>
-          Book your tricycle—fast, safe, local.
-        </Text>
-      </View>
-
-      {/* Floating "Where to go?" button */}
-      <View style={rideStyles.bttContainer}>
-        <TouchableOpacity
-          style={rideStyles.button}
-          onPress={() => bottomSheetRef.current?.open()}
-        >
-          <FindIcon style={rideStyles.icon} />
-          <Text style={rideStyles.btext}>Where to go?</Text>
-        </TouchableOpacity>
-      </View>
+      <BackButton />
 
       {/* Bottom Sheet */}
       <BottomSheetContainer ref={bottomSheetRef}>
-        <View style={rideStyles.bsCont}>
-          <Text style={rideStyles.label}>Your Trip</Text>
-
+        <View style={calcStyles.bsCont}>
           {/* Pickup info */}
           <TouchableOpacity
-            style={rideStyles.tripPoint}
+            style={calcStyles.tripPoint}
             onPress={() => focusOnMarker("pickup")}
           >
-            <OriginIcon style={rideStyles.icon2} />
+            <OriginIcon style={calcStyles.icon2} />
             <View>
-              <Text style={rideStyles.pickText}>Pick Up</Text>
-              <Text style={rideStyles.poinText}>
+              <Text style={calcStyles.pickText}>Where are you?</Text>
+              <Text style={calcStyles.poinText}>
                 {pickupAddress
                   ? pickupAddress.length > 30
                     ? pickupAddress.slice(0, 30) + "..."
@@ -270,13 +243,13 @@ export default function RideHailing() {
 
           {/* Destination info */}
           <TouchableOpacity
-            style={rideStyles.tripPoint}
+            style={calcStyles.tripPoint}
             onPress={() => focusOnMarker("destination")}
           >
-            <DestIcon style={rideStyles.icon2} />
+            <DestIcon style={calcStyles.icon2} />
             <View>
-              <Text style={rideStyles.destText}>Destination</Text>
-              <Text style={rideStyles.poinText}>
+              <Text style={calcStyles.destText}>Destination</Text>
+              <Text style={calcStyles.poinText2}>
                 {destinationAddress
                   ? destinationAddress.length > 30
                     ? destinationAddress.slice(0, 30) + "..."
@@ -286,79 +259,67 @@ export default function RideHailing() {
             </View>
           </TouchableOpacity>
 
-          <View style={rideStyles.line}></View>
+          <Text
+            style={{ color: "#737F83", fontFamily: "Poppins", marginLeft: 24 }}
+          >
+            Estimated Kilometer (km): {distance.toFixed(2)} km{" "}
+          </Text>
+
+          <View style={calcStyles.line}></View>
 
           {/* Ride selection */}
-          <Text style={rideStyles.label}>Select Ride</Text>
-          <View style={rideStyles.rideCont}>
-            <TouchableOpacity
-              style={[
-                rideStyles.rideButton,
-                selectedRide === "solo" && rideStyles.selectedButton,
-              ]}
-              onPress={() => setSelectedRide("solo")}
-            >
-              <SoloIcon
-                width={50}
-                height={50}
-                fill={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
-              />
-              <Text
-                style={[
-                  rideStyles.text,
-                  selectedRide === "solo" && { color: "#0D99FF" },
-                ]}
-              >
-                Solo
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                rideStyles.rideButton,
-                selectedRide === "group" && rideStyles.selectedButton,
-              ]}
-              onPress={() => setSelectedRide("group")}
-            >
-              <GroupIcon
-                width={50}
-                height={50}
-                fill={selectedRide === "group" ? "#0D99FF" : "#CBCBCB"}
-              />
-              <Text
-                style={[
-                  rideStyles.text,
-                  selectedRide === "group" && { color: "#0D99FF" },
-                ]}
-              >
-                Group
-              </Text>
-            </TouchableOpacity>
+          <View style={{ flexDirection: "row" }}>
+            <FareIcon />
+            <Text style={calcStyles.label}>Fare Calculation</Text>
           </View>
 
-          <View style={rideStyles.line}></View>
+          <View style={calcStyles.rideCont}>
+            <View style={calcStyles.row}>
+              <Text style={calcStyles.typeFare}>Regular Fare:</Text>
+              <Text style={calcStyles.fee}>₱ 13.00</Text>
+            </View>
+            <View style={calcStyles.row}>
+              <Text style={calcStyles.typeFare}>Distance Fee:</Text>
+              <Text style={calcStyles.fee}>₱ 0.00</Text>
+            </View>
+            <View style={calcStyles.row}>
+              <Text style={calcStyles.typeFare}>Discount:</Text>
+              <Text style={calcStyles.fee}>20%</Text>
+            </View>
+          </View>
 
-          {/* Route summary */}
-          <View style={rideStyles.iconCont}>
-            <View style={rideStyles.iconWithText}>
-              <KmIcon />
-              <Text>{distance.toFixed(2)} km</Text>
+          <View style={calcStyles.line}></View>
+          <View style={calcStyles.rideCont}>
+            <View style={calcStyles.row}>
+              <Text style={calcStyles.typeFare}>Total Fare:</Text>
+              <Text style={calcStyles.fee}>₱ 11.00</Text>
             </View>
-            <View style={rideStyles.iconWithText}>
-              <ETAIcon />
-              <Text>{eta} min</Text>
-            </View>
-            <FareIcon />
           </View>
 
           {/* Confirm button */}
           <CustomButton
-            title="Confirm Hailing"
-            backgroundColor="#073051"
+            title="Pay Cashless"
+            backgroundColor="#1E86DA"
             onPress={() =>
               console.log("Pickup:", pickup, "Destination:", destination)
             }
-            style={{ alignItems: "center", marginLeft: 20, marginTop: 40 }}
+            style={{
+              width: "95%",
+              alignItems: "center",
+              marginTop: 40,
+            }}
+          />
+          <Text style={calcStyles.divider}>or</Text>
+          <CustomButton
+            title="Done"
+            backgroundColor="#073051"
+            onPress={() => router.push("/(feat)/FareCalculator")}
+            style={{
+              width: "95%",
+              alignItems: "center",
+
+              marginTop: 1,
+            }}
           />
         </View>
       </BottomSheetContainer>
@@ -366,7 +327,7 @@ export default function RideHailing() {
   );
 }
 
-const rideStyles = StyleSheet.create({
+const calcStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -378,23 +339,29 @@ const rideStyles = StyleSheet.create({
     width,
     height,
   },
-  header: {
-    fontWeight: "bold",
-    fontSize: 25,
-    marginLeft: 20,
-    marginTop: 10,
-    color: "#073051",
-  },
-  subHeader: {
-    marginLeft: 25,
-    color: "#595959",
-    fontFamily: "Poppins",
-  },
   bttContainer: {
     top: 520,
     alignItems: "center",
     justifyContent: "center",
   },
+  bsCont: {
+    marginLeft: 20,
+  },
+  rideCont: {
+    marginLeft: 20,
+    marginRight: 20,
+  },
+  tripPoint: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+
   button: {
     flexDirection: "row",
     backgroundColor: "white",
@@ -405,55 +372,6 @@ const rideStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
-  },
-  icon: { marginLeft: 20 },
-  btext: {
-    marginTop: 3,
-    marginLeft: 10,
-    color: "#737F83",
-    fontFamily: "Poppins",
-  },
-  bsCont: { marginLeft: 20 },
-  label: {
-    color: "#073051",
-    fontWeight: "bold",
-    fontSize: 17,
-    marginBottom: 10,
-  },
-  line: {
-    width: "95%",
-    height: 1,
-    backgroundColor: "#CBCBCB",
-    marginVertical: 15,
-  },
-  poinText: {
-    color: "#737F83",
-    fontFamily: "Poppins",
-    fontSize: 15,
-  },
-  pickText: {
-    color: "#1E86DA",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  destText: {
-    color: "#073051",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  icon2: {
-    marginRight: 10,
-    marginBottom: 20,
-  },
-  tripPoint: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  rideCont: {
-    flexDirection: "row",
-    gap: 40,
-    justifyContent: "flex-start",
   },
   rideButton: {
     alignItems: "center",
@@ -466,9 +384,74 @@ const rideStyles = StyleSheet.create({
   selectedButton: {
     borderColor: "#0D99FF",
   },
+
+  btext: {
+    marginTop: 3,
+    marginLeft: 10,
+    color: "#737F83",
+    fontFamily: "Poppins",
+  },
+  label: {
+    color: "#0D99FF",
+    fontWeight: "bold",
+    fontSize: 17,
+    marginBottom: 10,
+    marginLeft: 10,
+  },
+  line: {
+    width: "95%",
+    height: 1,
+    backgroundColor: "#CBCBCB",
+    marginVertical: 15,
+  },
+  poinText: {
+    color: "#737F83",
+    fontFamily: "Poppins",
+    fontSize: 15,
+  },
+  poinText2: {
+    color: "#737F83",
+    fontFamily: "Poppins",
+    fontSize: 15,
+    marginBottom: 5,
+  },
+  pickText: {
+    color: "#1E86DA",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  destText: {
+    color: "#073051",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  typeFare: {
+    color: "#737F83",
+    marginBottom: 5,
+    fontFamily: "Poppins",
+  },
+  fee: {
+    color: "#737F83",
+    fontFamily: "Poppins",
+    marginRight: 20,
+  },
   text: {
     color: "#CBCBCB",
     marginTop: 5,
+  },
+  divider: {
+    fontFamily: "Poppins",
+    textAlign: "center",
+    paddingVertical: 5,
+    color: "#737F83",
+  },
+
+  icon: {
+    marginLeft: 20,
+  },
+  icon2: {
+    marginRight: 10,
+    marginBottom: 20,
   },
   iconCont: {
     flexDirection: "row",
