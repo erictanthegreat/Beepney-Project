@@ -28,30 +28,72 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-export default function RideHailing() {
-  const bottomSheetRef = useRef<any>(null); // Ref to control Bottom Sheet
-  const mapCameraRef = useRef<any>(null); // Ref to control Map camera programmatically
+/**
+ * Calculates the tricycle fare based on distance and ride type.
+ * @param {number} distanceInKm - The distance of the trip in kilometers.
+ * @param {string} selectedRide - The type of ride, either 'solo' or 'group'.
+ * @returns {number} The calculated fare.
+ */
+const calculateTricycleFare = (distanceInKm, selectedRide) => {
+  // Define fare parameters
+  const BASE_DISTANCE_KM = 4;
+  const BASE_FARE_PESOS = 15;
+  const SUCCEEDING_FARE_PER_KM = 2.25;
+  const GROUP_FARE_ADDITIONAL = 5;
+  const SEATS = 4;
 
-  const [mapReady, setMapReady] = useState(false); // Checks if map has loaded
+  // If the distance is 0 or less, return 0 fare.
+  if (distanceInKm <= 0) {
+    return 0;
+  }
+
+  // Calculate the base fare for the initial distance.
+  let baseFare = BASE_FARE_PESOS;
+  if (distanceInKm > BASE_DISTANCE_KM) {
+    const additionalDistance = distanceInKm - BASE_DISTANCE_KM;
+    const additionalFare =
+      Math.ceil(additionalDistance) * SUCCEEDING_FARE_PER_KM;
+    baseFare += additionalFare;
+  }
+
+  // Apply additional charges based on ride selection
+  if (selectedRide === "solo") {
+    // Solo fare is the base fare multiplied by the number of seats
+    return parseFloat((baseFare * SEATS).toFixed(2));
+  } else if (selectedRide === "group") {
+    // Group fare is the base fare plus an additional fee
+    return parseFloat(((baseFare + GROUP_FARE_ADDITIONAL) * SEATS).toFixed(2));
+  }
+
+  // Return the base fare if no ride type is selected
+  return parseFloat(BASE_FARE_PESOS.toFixed(2));
+};
+
+export default function RideHailing() {
+  const bottomSheetRef = useRef<any>(null);
+  const mapCameraRef = useRef<any>(null);
+
+  const [mapReady, setMapReady] = useState(false);
   const [pickup, setPickup] = useState<[number, number]>([
     123.186389, 13.624444,
-  ]); // Pickup coordinates
+  ]);
   const [destination, setDestination] = useState<[number, number]>([
     123.19, 13.63,
-  ]); // Destination coordinates
+  ]);
   const [activeSelection, setActiveSelection] = useState<
     "pickup" | "destination" | null
-  >(null); // Which marker user selected in bottom sheet
+  >(null);
   const [selectedRide, setSelectedRide] = useState<"solo" | "group" | null>(
     null
-  ); // Type of ride selected
+  );
 
-  const [pickupAddress, setPickupAddress] = useState<string>(""); // Human-readable pickup
-  const [destinationAddress, setDestinationAddress] = useState<string>(""); // Human-readable destination
+  const [pickupAddress, setPickupAddress] = useState<string>("");
+  const [destinationAddress, setDestinationAddress] = useState<string>("");
 
-  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]); // Coordinates for route line
-  const [distance, setDistance] = useState<number>(0); // Distance of route
-  const [eta, setETA] = useState<number>(0); // Estimated time of arrival in minutes
+  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
+  const [distance, setDistance] = useState<number>(0);
+  const [eta, setETA] = useState<number>(0);
+  const [fare, setFare] = useState<number>(0);
 
   // --- Get user location and set as pickup ---
   useEffect(() => {
@@ -62,17 +104,15 @@ export default function RideHailing() {
         return;
       }
 
-      // Get current GPS location
       let location = await Location.getCurrentPositionAsync({});
       const coords: [number, number] = [
         location.coords.longitude,
         location.coords.latitude,
       ];
 
-      setPickup(coords); // Update pickup to current location
-      fetchAddress(coords, "pickup"); // Fetch human-readable pickup address
+      setPickup(coords);
+      fetchAddress(coords, "pickup");
 
-      // Center map camera on user's location
       mapCameraRef.current?.setCamera({
         centerCoordinate: coords,
         zoomLevel: 16,
@@ -89,19 +129,29 @@ export default function RideHailing() {
       const data = await res.json();
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
-        setRouteCoords(route.geometry.coordinates); // Set polyline coordinates
-        setDistance(route.distance / 1000); // Distance in km
-        setETA(Math.ceil(route.duration / 60)); // ETA in minutes
+        const calculatedDistance = route.distance / 1000;
+        setRouteCoords(route.geometry.coordinates);
+        setDistance(calculatedDistance);
+        setETA(Math.ceil(route.duration / 60));
+
+        // Calculate and set the fare based on the calculated distance and selected ride type
+        const calculatedFare = calculateTricycleFare(
+          calculatedDistance,
+          selectedRide
+        );
+        setFare(calculatedFare);
       }
     } catch (err) {
       console.log("Error fetching route:", err);
     }
   };
 
-  // Fetch route whenever pickup or destination changes
+  // Fetch route whenever pickup, destination, or selectedRide changes
   useEffect(() => {
-    fetchRoute(pickup, destination);
-  }, [pickup, destination]);
+    if (pickup && destination) {
+      fetchRoute(pickup, destination);
+    }
+  }, [pickup, destination, selectedRide]);
 
   // --- Fetch address using Mapbox Geocoding API ---
   const fetchAddress = async (
@@ -140,7 +190,6 @@ export default function RideHailing() {
       fetchAddress(coords, "destination");
     }
 
-    // Update route after dragging marker
     fetchRoute(
       marker === "pickup" ? coords : pickup,
       marker === "destination" ? coords : destination
@@ -156,7 +205,7 @@ export default function RideHailing() {
       animationDuration: 500,
     });
     setActiveSelection(marker);
-    bottomSheetRef.current?.close(); // Close bottom sheet after selection
+    bottomSheetRef.current?.close();
   };
 
   return (
@@ -303,14 +352,7 @@ export default function RideHailing() {
                 height={50}
                 fill={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
               />
-              <Text
-                style={[
-                  rideStyles.text,
-                  selectedRide === "solo" && { color: "#0D99FF" },
-                ]}
-              >
-                Solo
-              </Text>
+              <Text style={[rideStyles.text]}>Solo</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -342,13 +384,16 @@ export default function RideHailing() {
           <View style={rideStyles.iconCont}>
             <View style={rideStyles.iconWithText}>
               <KmIcon />
-              <Text>{distance.toFixed(2)} km</Text>
+              <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
             </View>
             <View style={rideStyles.iconWithText}>
               <ETAIcon />
-              <Text>{eta} min</Text>
+              <Text style={rideStyles.text2}>{eta} min</Text>
             </View>
-            <FareIcon />
+            <View style={rideStyles.iconWithText}>
+              <FareIcon />
+              <Text style={rideStyles.text2}>₱{fare.toFixed(2)}</Text>
+            </View>
           </View>
 
           {/* Confirm button */}
@@ -470,6 +515,17 @@ const rideStyles = StyleSheet.create({
     color: "#CBCBCB",
     marginTop: 5,
   },
+  fareText: {
+    fontSize: 12,
+    color: "#073051",
+    fontWeight: "bold",
+  },
+  text2: {
+    marginLeft: 5,
+    fontFamily: "Poppins",
+    color: "#737F83",
+    marginTop: 5,
+  },
   iconCont: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -479,5 +535,6 @@ const rideStyles = StyleSheet.create({
   },
   iconWithText: {
     alignItems: "center",
+    flexDirection: "row",
   },
 });
