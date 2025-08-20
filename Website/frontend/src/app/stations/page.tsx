@@ -232,7 +232,7 @@ const StationsPage = () => {
                 <ToggleGroup
                   type="multiple"
                   value={stationData.vehicleTypes}
-                  onValueChange={(values) => {
+                  onValueChange={(values: any) => {
                     setStationData((prev) => ({
                       ...prev,
                       vehicleTypes: values,
