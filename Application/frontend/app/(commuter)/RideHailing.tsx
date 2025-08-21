@@ -362,7 +362,7 @@ export default function RideHailing() {
             </View>
           </TouchableOpacity>
           {/* Pickup */}
-          <View style={rideStyles.tripPoint}></View>
+
           <View style={rideStyles.tripPoint}>
             <TextInput
               style={[
@@ -407,7 +407,7 @@ export default function RideHailing() {
             <TextInput
               style={[
                 rideStyles.textInput,
-                activeSelection === "destination" && rideStyles.activeInput,
+                activeSelection === "destination" && rideStyles.activeInput2,
               ]}
               placeholder="Enter destination address"
               value={destinationInput}
@@ -447,7 +447,7 @@ export default function RideHailing() {
               <SoloIcon
                 width={50}
                 height={50}
-                fill={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
+                color={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
               />
               <Text
                 style={[
@@ -469,7 +469,7 @@ export default function RideHailing() {
               <GroupIcon
                 width={50}
                 height={50}
-                fill={selectedRide === "group" ? "#0D99FF" : "#CBCBCB"}
+                color={selectedRide === "group" ? "#0D99FF" : "#CBCBCB"}
               />
               <Text
                 style={[
@@ -606,6 +606,10 @@ const rideStyles = StyleSheet.create({
   },
   activeInput: {
     borderColor: "#0D99FF",
+    borderWidth: 2,
+  },
+  activeInput2: {
+    borderColor: "#073051",
     borderWidth: 2,
   },
   suggestionItem: {

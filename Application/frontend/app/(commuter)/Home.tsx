@@ -5,7 +5,7 @@ import "@fontsource/poppins";
 import ProfileIcon from "../../assets/images/profile.svg";
 import NotifIcon from "../../assets/images/notif.svg";
 import JeepIcon from "../../assets/images/jeep.svg";
-import TrikeIcon from "../../assets/images/tricycle.svg";
+import TricyIcon from "../../assets/images/trike.svg";
 import BusIcon from "../../assets/images/bus.svg";
 import FCIcon from "../../assets/images/fc icon.svg";
 import RHIcon from "../../assets/images/ride history.svg";
@@ -113,21 +113,21 @@ export default class Home extends Component {
                   >
                     {tab === 1 && (
                       <JeepIcon
-                        fill={activeTab === tab ? "#ffffff" : "#888888"}
+                        color={activeTab === tab ? "#ffffff" : "#888888"}
                         width={28}
                         height={28}
                       />
                     )}
                     {tab === 2 && (
-                      <TrikeIcon
-                        fill={activeTab === tab ? "#ffffff" : "#888888"}
+                      <TricyIcon
+                        color={activeTab === tab ? "#ffffff" : "#888888"}
                         width={28}
                         height={28}
                       />
                     )}
                     {tab === 3 && (
                       <BusIcon
-                        fill={activeTab === tab ? "#ffffff" : "#888888"}
+                        color={activeTab === tab ? "#ffffff" : "#888888"}
                         width={30}
                         height={30}
                       />
@@ -180,7 +180,7 @@ export default class Home extends Component {
               style={featStyles.featureButton}
             >
               <RideHIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>Ride-Hailing</Text>
+              <Text style={featStyles.text}>File a Complaint</Text>
             </TouchableOpacity>
           </View>
         </View>

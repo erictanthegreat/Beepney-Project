@@ -18,6 +18,18 @@ import DestIcon from "@/assets/images/loc 2.svg";
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
+const baseFares: Record<string, number> = {
+  Tricycle: 15,
+  Taxi: 40,
+  "E-Tricycles": 15,
+  "PUJ Traditional": 12,
+  "PUJ Modern": 14,
+  "UV Express": 25,
+  "PUB Traditional": 20,
+  "PUB Modern": 22,
+  Pedicab: 10,
+};
+
 export default class FareCalculator extends Component {
   state = {
     vehicleType: "",

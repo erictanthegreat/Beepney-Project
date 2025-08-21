@@ -5,7 +5,7 @@ import "@fontsource/poppins";
 import ProfileIcon from "../../assets/images/profile.svg";
 import NotifIcon from "../../assets/images/notif.svg";
 import JeepIcon from "../../assets/images/jeep.svg";
-import TrikeIcon from "../../assets/images/tricycle.svg";
+import TrikeIcon from "../../assets/images/trike.svg";
 import BusIcon from "../../assets/images/bus.svg";
 import FCIcon from "../../assets/images/fc icon.svg";
 import RHIcon from "../../assets/images/ride history.svg";

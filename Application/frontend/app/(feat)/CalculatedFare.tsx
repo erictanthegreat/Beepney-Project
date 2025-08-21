@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
@@ -16,36 +17,73 @@ import CustomButton from "@/components/ui/CustomButton";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 import FareIcon from "@/assets/images/fare icon.svg";
+import { useLocalSearchParams } from "expo-router";
 
 const { width, height } = Dimensions.get("window");
 
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-export default function RideHailing() {
-  const bottomSheetRef = useRef<any>(null); // Ref to control Bottom Sheet
-  const mapCameraRef = useRef<any>(null); // Ref to control Map camera programmatically
+export default function Cacl() {
+  const bottomSheetRef = useRef<any>(null);
+  const mapCameraRef = useRef<any>(null);
 
-  const [mapReady, setMapReady] = useState(false); // Checks if map has loaded
+  // Parameters to sync the enter origin and destination from fare calculator
+  const params = useLocalSearchParams<{
+    origin?: string;
+    originCoords?: string;
+    destination?: string;
+    destinationCoords?: string;
+    vehicleType?: string;
+  }>();
+
+  // Parse coords if available
+  const initialPickup = params.originCoords
+    ? (JSON.parse(params.originCoords) as [number, number])
+    : [123.186389, 13.624444];
+
+  const initialDestination = params.destinationCoords
+    ? (JSON.parse(params.destinationCoords) as [number, number])
+    : [123.19, 13.63];
+
+  const [mapReady, setMapReady] = useState(false);
   const [pickup, setPickup] = useState<[number, number]>([
     123.186389, 13.624444,
-  ]); // Pickup coordinates
+  ]);
   const [destination, setDestination] = useState<[number, number]>([
     123.19, 13.63,
-  ]); // Destination coordinates
+  ]);
   const [activeSelection, setActiveSelection] = useState<
     "pickup" | "destination" | null
-  >(null); // Which marker user selected in bottom sheet
+  >(null);
   const [selectedRide, setSelectedRide] = useState<"solo" | "group" | null>(
     null
-  ); // Type of ride selected
+  );
 
-  const [pickupAddress, setPickupAddress] = useState<string>(""); // Human-readable pickup
-  const [destinationAddress, setDestinationAddress] = useState<string>(""); // Human-readable destination
+  const [pickupAddress, setPickupAddress] = useState<string>(
+    params.origin || ""
+  );
+  const [destinationAddress, setDestinationAddress] = useState<string>(
+    params.destination || ""
+  );
 
-  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]); // Coordinates for route line
-  const [distance, setDistance] = useState<number>(0); // Distance of route
-  const [eta, setETA] = useState<number>(0); // Estimated time of arrival in minutes
+  const [pickupInput, setPickupInput] = useState(params.origin || "");
+  const [destinationInput, setDestinationInput] = useState(
+    params.destination || ""
+  );
+
+  const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>(
+    []
+  );
+
+  const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
+  const [distance, setDistance] = useState<number>(0);
+  const [eta, setETA] = useState<number>(0);
+  const [fare, setFare] = useState<number>(0);
+
+  // Debounce timer
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- Get user location and set as pickup ---
   useEffect(() => {
@@ -90,6 +128,63 @@ export default function RideHailing() {
     } catch (err) {
       console.log("Error fetching route:", err);
     }
+  };
+
+  // --- Fetch autocomplete suggestions ---
+  const fetchSuggestions = async (
+    query: string,
+    type: "pickup" | "destination"
+  ) => {
+    if (!query) {
+      type === "pickup"
+        ? setPickupSuggestions([])
+        : setDestinationSuggestions([]);
+      return;
+    }
+
+    try {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        query
+      )}.json?autocomplete=true&limit=5&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.features) {
+        if (type === "pickup") {
+          setPickupSuggestions(data.features);
+        } else {
+          setDestinationSuggestions(data.features);
+        }
+      }
+    } catch (err) {
+      console.log("Error fetching suggestions:", err);
+    }
+  };
+
+  // --- Handle suggestion select ---
+  const handleSuggestionSelect = (
+    place: any,
+    type: "pickup" | "destination"
+  ) => {
+    const coords: [number, number] = place.center;
+    if (type === "pickup") {
+      setPickup(coords);
+      setPickupAddress(place.place_name);
+      setPickupInput(place.place_name);
+      setPickupSuggestions([]);
+    } else {
+      setDestination(coords);
+      setDestinationAddress(place.place_name);
+      setDestinationInput(place.place_name);
+      setDestinationSuggestions([]);
+    }
+
+    mapCameraRef.current?.setCamera({
+      centerCoordinate: coords,
+      zoomLevel: 16,
+      animationDuration: 500,
+    });
   };
 
   // Fetch route whenever pickup or destination changes
@@ -231,15 +326,36 @@ export default function RideHailing() {
             <OriginIcon style={calcStyles.icon2} />
             <View>
               <Text style={calcStyles.pickText}>Where are you?</Text>
-              <Text style={calcStyles.poinText}>
-                {pickupAddress
-                  ? pickupAddress.length > 30
-                    ? pickupAddress.slice(0, 30) + "..."
-                    : pickupAddress
-                  : "Fetching..."}
-              </Text>
             </View>
           </TouchableOpacity>
+          <View style={calcStyles.tripPoint}>
+            <TextInput
+              style={[
+                calcStyles.textInput,
+                activeSelection === "pickup" && calcStyles.activeInput,
+              ]}
+              placeholder="Enter pickup address"
+              value={pickupInput}
+              onChangeText={(text) => {
+                setPickupInput(text);
+                if (debounceRef.current) clearTimeout(debounceRef.current);
+                debounceRef.current = setTimeout(
+                  () => fetchSuggestions(text, "pickup"),
+                  300
+                );
+              }}
+              onFocus={() => setActiveSelection("pickup")}
+            />
+          </View>
+          {pickupSuggestions.map((sug, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={calcStyles.suggestionItem}
+              onPress={() => handleSuggestionSelect(sug, "pickup")}
+            >
+              <Text style={calcStyles.suggestionText}>{sug.place_name}</Text>
+            </TouchableOpacity>
+          ))}
 
           {/* Destination info */}
           <TouchableOpacity
@@ -249,15 +365,36 @@ export default function RideHailing() {
             <DestIcon style={calcStyles.icon2} />
             <View>
               <Text style={calcStyles.destText}>Destination</Text>
-              <Text style={calcStyles.poinText2}>
-                {destinationAddress
-                  ? destinationAddress.length > 30
-                    ? destinationAddress.slice(0, 30) + "..."
-                    : destinationAddress
-                  : "Fetching..."}
-              </Text>
             </View>
           </TouchableOpacity>
+          <View style={calcStyles.tripPoint}>
+            <TextInput
+              style={[
+                calcStyles.textInput,
+                activeSelection === "destination" && calcStyles.activeInput2,
+              ]}
+              placeholder="Enter destination address"
+              value={destinationInput}
+              onChangeText={(text) => {
+                setDestinationInput(text);
+                if (debounceRef.current) clearTimeout(debounceRef.current);
+                debounceRef.current = setTimeout(
+                  () => fetchSuggestions(text, "destination"),
+                  300
+                );
+              }}
+              onFocus={() => setActiveSelection("destination")}
+            />
+          </View>
+          {destinationSuggestions.map((sug, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={calcStyles.suggestionItem}
+              onPress={() => handleSuggestionSelect(sug, "destination")}
+            >
+              <Text style={calcStyles.suggestionText}>{sug.place_name}</Text>
+            </TouchableOpacity>
+          ))}
 
           <Text
             style={{ color: "#737F83", fontFamily: "Poppins", marginLeft: 24 }}
@@ -450,8 +587,7 @@ const calcStyles = StyleSheet.create({
     marginLeft: 20,
   },
   icon2: {
-    marginRight: 10,
-    marginBottom: 20,
+    marginRight: 5,
   },
   iconCont: {
     flexDirection: "row",
@@ -462,5 +598,34 @@ const calcStyles = StyleSheet.create({
   },
   iconWithText: {
     alignItems: "center",
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: "#CBCBCB",
+    borderRadius: 10,
+    padding: 10,
+    width: "95%",
+    marginBottom: 5,
+    fontFamily: "Poppins",
+    color: "#737F83",
+  },
+  activeInput: {
+    borderColor: "#0D99FF",
+    borderWidth: 2,
+  },
+  activeInput2: {
+    borderColor: "#073051",
+    borderWidth: 2,
+  },
+  suggestionItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    width: "95%",
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: "#333",
+    fontFamily: "Poppins",
   },
 });

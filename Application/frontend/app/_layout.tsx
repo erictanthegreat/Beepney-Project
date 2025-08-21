@@ -76,6 +76,14 @@ export default function RootLayout() {
             />
             <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
             <Stack.Screen name="(driver)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="(result)/DriverDetails"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="(result)/DriverQR"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

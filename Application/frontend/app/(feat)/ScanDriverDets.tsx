@@ -1,84 +1,57 @@
-import React, { useMemo, useState } from "react";
-import { Text, View, StyleSheet, Dimensions } from "react-native";
+import React, { Component } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  Platform,
+  StatusBar,
+  Linking,
+} from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
-import Mapbox from "@rnmapbox/maps";
-import BottomSheet from "@gorhom/bottom-sheet";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { CameraView } from "expo-camera";
+import QR from "../../assets/images/qr grid.svg";
 
-const { width, height } = Dimensions.get("window");
-
-Mapbox.setAccessToken(
-  "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"
-);
-
-export default function RideHailing() {
-  const [mapReady, setMapReady] = useState(false);
-  const snapPoints = useMemo(() => ["25%", "50%", "75%"], []);
-
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        {/* Map */}
-        <Mapbox.MapView
-          style={styles.map}
-          styleURL={Mapbox.StyleURL.Street}
-          onDidFinishLoadingMap={() => setMapReady(true)}
+export default class Renting extends Component {
+  render() {
+    return (
+      <View style={scanStyles.container}>
+        {Platform.OS === "android" ? <StatusBar hidden /> : null}
+        <CameraView
+          style={StyleSheet.absoluteFillObject}
+          facing="back"
+          onBarcodeScanned={({ data }) => {
+            Linking.openURL(data);
+          }}
         >
-          {mapReady && (
-            <Mapbox.Camera
-              zoomLevel={13}
-              centerCoordinate={[123.186389, 13.624444]}
-            />
-          )}
-        </Mapbox.MapView>
-
-        {/* Header */}
-        <View>
           <BackButton />
-          <Text style={styles.header}>TricyCall</Text>
-          <Text style={styles.subHeader}>
-            Book your tricycle—fast, safe, local.
-          </Text>
-        </View>
+          <View style={scanStyles.overlay}>
+            <QR />
+            <Text style={scanStyles.text}>
+              Scan QR to show the driver’s information for background checks.
+            </Text>
+          </View>
+        </CameraView>
       </View>
-
-      {/* Persistent Bottom Sheet */}
-      <BottomSheet
-        index={0} // start opened at 25%
-        snapPoints={snapPoints}
-        enablePanDownToClose={true}
-        backgroundStyle={{ backgroundColor: "white" }}
-      >
-        <View style={{ padding: 20 }}>
-          <Text style={{ fontSize: 16, fontFamily: "Poppins" }}>
-            Pick a destination...
-          </Text>
-        </View>
-      </BottomSheet>
-    </GestureHandlerRootView>
-  );
+    );
+  }
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    fontWeight: "bold",
-    fontSize: 25,
-    marginLeft: 20,
-    marginTop: 10,
-    color: "#073051",
+const scanStyles = StyleSheet.create({
+  container: {
+    flex: 1,
   },
-  subHeader: {
-    marginLeft: 25,
-    color: "#595959",
+  overlay: {
+    flex: 1,
+    alignContent: "center",
+    justifyContent: "center",
+    marginLeft: 30,
+  },
+  text: {
+    color: "#fff",
     fontFamily: "Poppins",
-  },
-  map: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: width,
-    height: height,
+    textAlign: "center",
+    marginTop: 80,
+    marginRight: 50,
   },
 });

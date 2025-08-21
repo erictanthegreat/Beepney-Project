@@ -4,6 +4,7 @@ import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import GeneratePaymentIcon from "../../assets/images/payment.svg";
 import GenerateProfIcon from "../../assets/images/gen prof.svg";
+import { router } from "expo-router";
 
 export default class Renting extends Component {
   render() {
@@ -23,11 +24,14 @@ export default class Renting extends Component {
               Receive Fare Payment via QR Code
             </Text>
             <Text style={genStyles.genSub}>
-              Show any of this code {"\n"} to the commuters to receive {"\n"}{" "}
+              Show any of this code {"\n"} to the commuters to receive {"\n"}
               fare payments
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={genStyles.iconButton}>
+          <TouchableOpacity
+            style={genStyles.iconButton}
+            onPress={() => router.push("/(result)/DriverDetails")}
+          >
             <GenerateProfIcon />
             <Text style={genStyles.genHeader}>Generate Driver Details</Text>
             <Text style={genStyles.genSub}>
