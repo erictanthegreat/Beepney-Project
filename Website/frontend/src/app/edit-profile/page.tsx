@@ -106,7 +106,7 @@ const EditProfilePage = () => {
     <>
       <Header />
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
-        <div className="border border-[#D1D1D1] rounded-[15px] p-6">
+        <div className="border border-[#D1D1D1] rounded-[30px] p-6">
           <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051] mb-6">Profile</h1>
           
           <form onSubmit={handleSave} className="space-y-8">
