@@ -196,7 +196,7 @@ export default function DriverProfile() {
           Already have an account?{" "}
           <Text
             style={{ color: "#073051", fontWeight: "bold" }}
-            onPress={() => router.push("/")}
+            onPress={() => router.push("/(auth)/index")}
           >
             Sign-In
           </Text>

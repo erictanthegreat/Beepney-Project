@@ -20,7 +20,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#1E86DA", //
         tabBarInactiveTintColor: "#A0A0A0", //
         headerShown: false,
-        tabBarBackground: TabBarBackground,
+
         tabBarStyle: Platform.select({
           android: {
             position: "absolute",
@@ -55,15 +55,7 @@ export default function TabLayout() {
         name="SOS"
         options={{
           title: " ",
-          tabBarButton: ({ ref: _ref, ...rest }: BottomTabBarButtonProps) => (
-            <Pressable
-              android_ripple={undefined}
-              style={({ pressed }) => ({
-                opacity: pressed ? 1 : 1,
-              })}
-              {...rest}
-            />
-          ),
+
           tabBarIcon: ({ color }) => (
             <SOSIcon width={50} height={50} color={color} />
           ),

@@ -34,6 +34,10 @@ export default function RootLayout() {
               options={{ headerShown: false }}
             />
             <Stack.Screen
+              name="(auth)/Login"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
               name="(auth)/DriverProfile"
               options={{ headerShown: false }}
             />
@@ -74,16 +78,17 @@ export default function RootLayout() {
               name="(feat)/CalculatedFare"
               options={{ headerShown: false }}
             />
-            <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
-            <Stack.Screen name="(driver)" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="(result)/DriverDetails"
-              options={{ headerShown: false }}
-            />
+
             <Stack.Screen
               name="(result)/DriverQR"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="(result)/DriverDetails"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
+            <Stack.Screen name="(driver)" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

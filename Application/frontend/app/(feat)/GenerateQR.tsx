@@ -5,43 +5,44 @@ import BackButton from "@/components/Backbutton";
 import GeneratePaymentIcon from "../../assets/images/payment.svg";
 import GenerateProfIcon from "../../assets/images/gen prof.svg";
 import { router } from "expo-router";
+import CustomButton from "@/components/ui/CustomButton";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
 
-export default class Renting extends Component {
-  render() {
-    return (
-      <View>
-        <BackButton />
-        <Text style={genStyles.header}> Generate QR Code </Text>
-        <Text style={{ marginLeft: 25, color: "#595959" }}>
-          Generate a QR Code to receive fare payments or view {"\n"}driver
-          information.
-        </Text>
+export default function Renting() {
+  return (
+    <View>
+      <BackButton />
+      <Text style={genStyles.header}> Generate QR Code </Text>
+      <Text style={{ marginLeft: 25, color: "#595959" }}>
+        Generate a QR Code to receive fare payments or view {"\n"}driver
+        information.
+      </Text>
 
-        <View style={genStyles.container}>
-          <TouchableOpacity style={genStyles.iconButton}>
-            <GeneratePaymentIcon />
-            <Text style={genStyles.genHeader}>
-              Receive Fare Payment via QR Code
-            </Text>
-            <Text style={genStyles.genSub}>
-              Show any of this code {"\n"} to the commuters to receive {"\n"}
-              fare payments
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={genStyles.iconButton}
-            onPress={() => router.push("/(result)/DriverDetails")}
-          >
-            <GenerateProfIcon />
-            <Text style={genStyles.genHeader}>Generate Driver Details</Text>
-            <Text style={genStyles.genSub}>
-              Show these code {"\n"} to the commuters to view {"\n"}your profile
-            </Text>
-          </TouchableOpacity>
-        </View>
+      <View style={genStyles.container}>
+        <TouchableOpacity style={genStyles.iconButton}>
+          <GeneratePaymentIcon />
+          <Text style={genStyles.genHeader}>
+            Receive Fare Payment via QR Code
+          </Text>
+          <Text style={genStyles.genSub}>
+            Show any of this code {"\n"} to the commuters to receive {"\n"}
+            fare payments
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={genStyles.iconButton}
+          onPress={() => router.push("/(result)/DriverDetails")}
+        >
+          <GenerateProfIcon />
+          <Text style={genStyles.genHeader}>Generate Driver Details</Text>
+          <Text style={genStyles.genSub}>
+            Show these code {"\n"} to the commuters to view {"\n"}your profile
+          </Text>
+        </TouchableOpacity>
       </View>
-    );
-  }
+    </View>
+  );
 }
 
 const genStyles = StyleSheet.create({

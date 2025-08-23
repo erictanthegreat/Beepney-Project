@@ -113,21 +113,21 @@ export default class DriverHome extends Component {
                   >
                     {tab === 1 && (
                       <JeepIcon
-                        fill={activeTab === tab ? "#ffffff" : "#888888"}
+                        color={activeTab === tab ? "#ffffff" : "#888888"}
                         width={28}
                         height={28}
                       />
                     )}
                     {tab === 2 && (
                       <TrikeIcon
-                        fill={activeTab === tab ? "#ffffff" : "#888888"}
+                        color={activeTab === tab ? "#ffffff" : "#888888"}
                         width={28}
                         height={28}
                       />
                     )}
                     {tab === 3 && (
                       <BusIcon
-                        fill={activeTab === tab ? "#ffffff" : "#888888"}
+                        color={activeTab === tab ? "#ffffff" : "#888888"}
                         width={30}
                         height={30}
                       />

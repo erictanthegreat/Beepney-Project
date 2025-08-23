@@ -52,7 +52,7 @@ const statStyles = StyleSheet.create({
     marginLeft: 35,
     borderWidth: 1,
     borderColor: "#CBCBCB",
-    backgroundColor: "#fff", // 👈 important
+    backgroundColor: "#fff",
     elevation: 3,
     borderBottomWidth: 3,
   },
