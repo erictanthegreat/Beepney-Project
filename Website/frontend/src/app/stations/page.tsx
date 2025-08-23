@@ -226,7 +226,7 @@ const StationsPage = () => {
                 </div>
               </div>
 
-              {/* Vehicle Type (ToggleGroup with SVGs) */}
+              {/* Vehicle Type */}
               <div>
                 <label className="text-[#073051] text-sm font-medium">Vehicle Type</label>
                 <ToggleGroup
@@ -248,7 +248,11 @@ const StationsPage = () => {
                               data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
                               cursor-pointer transition-colors duration-200"
                   >
-                    <img src="/jeepney.svg" alt="Jeepney" className="h-10 w-10" />
+                    {stationData.vehicleTypes.includes("JEEPNEY") ? (
+                      <img src="/jeepney_w.svg" alt="Jeepney" className="h-10 w-10" />
+                    ) : (
+                      <img src="/jeepney.svg" alt="Jeepney" className="h-10 w-10" />
+                    )}
                   </ToggleGroupItem>
 
                   <ToggleGroupItem
@@ -258,7 +262,11 @@ const StationsPage = () => {
                               data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
                               cursor-pointer transition-colors duration-200"
                   >
-                    <img src="/tricycle.svg" alt="Tricycle" className="h-12 w-12" />
+                    {stationData.vehicleTypes.includes("TRICYCLE") ? (
+                      <img src="/tricycle_w.svg" alt="Tricycle" className="h-12 w-12" />
+                    ) : (
+                      <img src="/tricycle.svg" alt="Tricycle" className="h-12 w-12" />
+                    )}
                   </ToggleGroupItem>
 
                   <ToggleGroupItem
@@ -268,7 +276,11 @@ const StationsPage = () => {
                               data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
                               cursor-pointer transition-colors duration-200"
                   >
-                    <img src="/van.svg" alt="Express Van" className="h-10 w-10" />
+                    {stationData.vehicleTypes.includes("EXPRESS-VAN") ? (
+                      <img src="/van_w.svg" alt="Express Van" className="h-10 w-10" />
+                    ) : (
+                      <img src="/van.svg" alt="Express Van" className="h-10 w-10" />
+                    )}
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>

@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '../../../components/ui/header';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
-// Define a type for the Driver
 interface Driver {
   id: number;
   name: string;
@@ -14,7 +13,6 @@ interface Driver {
   plateNumber: string;
 }
 
-// Sample driver data (replace this with API later)
 const drivers: Driver[] = [
   { id: 1, name: 'John Doe', status: 'Active', createdAt: '2023-06-10 09:00', plateNumber: 'ABC-1234' },
   { id: 2, name: 'Jane Smith', status: 'Inactive', createdAt: '2023-07-21 13:45', plateNumber: 'XYZ-5678' },
@@ -36,7 +34,6 @@ const DriverProfilePage = () => {
       setLoading(true);
       setError(null);
 
-      // Simulate API delay
       setTimeout(() => {
         const driverData = drivers.find((d) => d.id === parseInt(driverId as string, 10));
         if (driverData) {
@@ -45,12 +42,20 @@ const DriverProfilePage = () => {
           setError("No driver found with the given ID.");
         }
         setLoading(false);
-      }, 800); // short delay to simulate fetching
+      }, 800);
     }
   }, [driverId]);
 
   const handleBackClick = () => {
     router.push('/drivers');
+  };
+
+  const handleCancel = () => {
+    router.push('/drivers');
+  };
+
+  const handleSave = () => {
+    alert("Changes saved!"); // replace with API later
   };
 
   return (
@@ -77,14 +82,24 @@ const DriverProfilePage = () => {
         </div>
 
         {/* Driver Details */}
-          <div
-            className="bg-white rounded-lg p-6 sm:p-8 flex items-center justify-center border-[1px] border-[#D1D1D1] min-h-[400px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[680px] w-full">
-              
-            {loading && <p className="text-gray-500">Loading driver details...</p>}
+        <div
+          className="bg-white rounded-[30px] p-6 flex flex-col border-[1px] border-[#D1D1D1] min-h-[400px] sm:min-h-[500px] md:min-h-[600px] lg:min-h-[680px] w-full"
+        >
+          {loading && (
+            <div className="flex items-center justify-center flex-1">
+              <p className="text-gray-500">Loading driver details...</p>
+            </div>
+          )}
 
-            {!loading && error && <p className="text-red-600 font-semibold">{error}</p>}
-            
-            {!loading && driver && (
+          {!loading && error && (
+            <div className="flex items-center justify-center flex-1">
+              <p className="text-red-600 font-semibold">{error}</p>
+            </div>
+          )}
+
+          {!loading && driver && (
+            <div className="flex flex-col justify-between flex-1">
+              {/* driver info */}
               <div className="w-full space-y-6">
                 <div>
                   <h2 className="text-xl font-semibold">Name: {driver.name}</h2>
@@ -98,8 +113,28 @@ const DriverProfilePage = () => {
                   <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* bottom-right buttons */}
+              <div className="mt-8 flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
+                >
+                  <span>Cancel</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  className="bg-[#1E86DA] text-white py-2 px-6 rounded-[15px] hover:bg-[#1478C9] transition-colors duration-200"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
     </>
   );
