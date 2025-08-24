@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Header from '../../components/ui/header';
-import Overlay from '../../components/ui/overlay'; // Import the Overlay component
+import Overlay from '../../components/ui/overlay';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 const contactSections = ['Ambulance', 'Police Station', 'LTFRB'];
@@ -32,7 +32,7 @@ const ContactsPage = () => {
             <div
               className="w-[352px] h-[82px] border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer
               hover:bg-[#D1D1D1] transition-colors duration-200 group"
-              onClick={() => openOverlay(section)} // Open overlay on click
+              onClick={() => openOverlay(section)}
             >
               <button className="text-[#CBCBCB] group-hover:text-[#6B6B6B] transition-colors duration-200">
                 <PlusIcon className="h-7 w-7" />
