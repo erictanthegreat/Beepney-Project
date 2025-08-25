@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -152,4 +150,23 @@ p {
   .map-container {
     height: 75vh;
   }
+}
+
+.overlay { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  background-color: rgba(0, 0, 0, 0.5); 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  z-index: 1000; 
+} 
+
+.overlayContent { 
+  background-color: white; 
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); 
+  width: 500px; 
 }
