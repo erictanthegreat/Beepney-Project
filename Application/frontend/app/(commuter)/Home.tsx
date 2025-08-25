@@ -12,6 +12,7 @@ import RHIcon from "../../assets/images/ride history.svg";
 import DDIcon from "../../assets/images/scan.svg";
 import RideHIcon from "../../assets/images/ride hailing.svg";
 import FareIcon from "../../assets/images/fare.svg";
+import ComplaintIcon from "../../assets/images/complaint.svg";
 import { router } from "expo-router";
 
 export default class Home extends Component {
@@ -152,7 +153,7 @@ export default class Home extends Component {
           {/* Other Features */}
           <View style={featStyles.container}>
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/FareCalculator")}
+              onPress={() => router.push("/(feat)/farecalculator")}
               style={featStyles.featureButton}
             >
               <FCIcon style={featStyles.icon} />
@@ -160,7 +161,7 @@ export default class Home extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/ScanDriverDets")}
+              onPress={() => router.push("/(feat)/scandriverdets")}
               style={featStyles.featureButton}
             >
               <DDIcon style={featStyles.icon} />
@@ -168,18 +169,15 @@ export default class Home extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/RideHistory")}
+              onPress={() => router.push("/(feat)/ridehistory")}
               style={featStyles.featureButton}
             >
               <RHIcon style={featStyles.icon} />
               <Text style={featStyles.text}>Ride History</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push("/(commuter)/RideHailing")}
-              style={featStyles.featureButton}
-            >
-              <RideHIcon style={featStyles.icon} />
+            <TouchableOpacity style={featStyles.featureButton}>
+              <ComplaintIcon style={featStyles.icon} />
               <Text style={featStyles.text}>File a Complaint</Text>
             </TouchableOpacity>
           </View>

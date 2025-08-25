@@ -60,7 +60,7 @@ export default class Renting extends Component<{}, RentingState> {
 
       await AsyncStorage.setItem("rentals", JSON.stringify(rentals));
 
-      router.push("/(driver)/DriverRenting");
+      router.push("/(driver)/driverrenting");
     } catch (e) {
       console.error("Error saving rental:", e);
     }

@@ -16,7 +16,7 @@ import Animated, {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 200;
+const MAX_TRANSLATE_Y = -SCREEN_HEIGHT + 225;
 const START_POSITION = -SCREEN_HEIGHT / 9;
 
 interface BottomSheetProps {

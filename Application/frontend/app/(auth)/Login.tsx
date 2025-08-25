@@ -10,7 +10,7 @@ import {
 import { router } from "expo-router";
 import "@fontsource/poppins";
 
-export default function Index() {
+export default function login() {
   return (
     <View style={viewStyles.container}>
       <View>
@@ -41,7 +41,7 @@ export default function Index() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => router.push("/(commuter)/Home")}
+        onPress={() => router.push("/(commuter)/home")}
       >
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
@@ -50,7 +50,7 @@ export default function Index() {
         Don&apos;t have an Account?{" "}
         <Text
           style={{ color: "#073051", fontFamily: "Poppins" }}
-          onPress={() => router.push("/(auth)/CreateProfile")}
+          onPress={() => router.push("/(auth)/createprofile")}
         >
           Sign-up
         </Text>

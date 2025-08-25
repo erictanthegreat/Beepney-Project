@@ -443,18 +443,17 @@ export default function Cacl() {
             style={{
               width: "95%",
               alignItems: "center",
-              marginTop: 40,
+              marginTop: 20,
             }}
           />
           <Text style={calcStyles.divider}>or</Text>
           <CustomButton
             title="Done"
             backgroundColor="#073051"
-            onPress={() => router.push("/(feat)/FareCalculator")}
+            onPress={() => router.push("/(feat)/farecalculator")}
             style={{
               width: "95%",
               alignItems: "center",
-
               marginTop: 1,
             }}
           />
@@ -564,7 +563,7 @@ const calcStyles = StyleSheet.create({
   },
   typeFare: {
     color: "#737F83",
-    marginBottom: 5,
+
     fontFamily: "Poppins",
   },
   fee: {
