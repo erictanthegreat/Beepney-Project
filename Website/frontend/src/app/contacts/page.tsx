@@ -23,24 +23,19 @@ const contactSections = ['Ambulance', 'Police Station', 'LTFRB', 'Others'];
 
 // ✅ Format Philippine numbers to +63XXX-XXX-YYYY
 const formatPHNumber = (num: string): string => {
-  const digits = num.replace(/\D/g, '');
+  const digits = num.replace(/\D/g, ''); // remove non-digits
 
-  // Ensure it starts with country code +63
+  // Case 1: Already starts with +63 and has 12 digits total
   if (digits.startsWith('63') && digits.length === 12) {
-    // +63 + 10 digits (mobile)
     return `+63${digits.slice(2, 5)}-${digits.slice(5, 8)}-${digits.slice(8)}`;
   }
 
-  // Handle raw 10-digit numbers that might not yet have +63
+  // Case 2: Local format starting with 09 (10 digits)
   if (digits.length === 10 && digits.startsWith('9')) {
     return `+63${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
 
-  // Landline: +63 + area code + 7 digits
-  if (digits.startsWith('63') && digits.length === 11) {
-    return `+63${digits.slice(2, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
-  }
-
+  // Return original if it doesn't match
   return num;
 };
 
