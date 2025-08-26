@@ -22,36 +22,42 @@ export default class SOS extends Component {
           <Text style={soStyles.label}>Ambulance</Text>
           <HotlineCard
             name="Ambulance Hotline 1"
-            type="NICC"
+            type="BFP Naga City"
             number="09XX-XXX-XXX"
+            address="J. Miranda Ave., Zone 5, Brgy. Concepcion Pequeña, Naga City, Camarines Sur"
           />
           <HotlineCard
             name="Ambulance Hotline 2"
-            type="Test"
+            address="Carnation St., Zone 4, Brgy. Triangulo, Naga City, Camarines Sur"
+            type="Chin Po Tong Volunteer Fire Brigade"
             number="09XX-XXX-XXX"
           />
 
           <Text style={soStyles.label}>Police Station</Text>
           <HotlineCard
             name="Police Hotline 1"
-            type="NICC"
+            type="Station 1"
             number="09XX-XXX-XXX"
+            address="General Luna St., Zone 1, Brgy. Sta. Cruz, Naga City, Camarines Sur"
           />
           <HotlineCard
-            name="Ambulance Hotline 1"
-            type="NICC"
+            name="Polic Hotline 2"
+            type="Station 2"
             number="09XX-XXX-XXX"
+            address="Panganiban Drive cor. Roxas Ave., Zone 6, Concepcion Pequena, Naga City, Camarines Sur"
           />
           <Text style={soStyles.label}>LTFRB</Text>
           <HotlineCard
-            name="Ambulance Hotline 1"
-            type="NICC"
+            name="LTFRB Hotline 1"
+            type="Naga City"
             number="09XX-XXX-XXX"
+            address={""}
           />
           <HotlineCard
             name="Ambulance Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
+            address={""}
           />
         </ScrollView>
       </View>

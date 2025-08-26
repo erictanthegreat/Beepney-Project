@@ -176,7 +176,7 @@ export default function DriverProfile() {
           } else if (step === 3) {
             setStep(4);
           } else if (step === 4) {
-            router.push("/(commuter)/Home");
+            router.push("/(commuter)/home");
           }
         }}
       >
@@ -196,7 +196,7 @@ export default function DriverProfile() {
           Already have an account?{" "}
           <Text
             style={{ color: "#073051", fontWeight: "bold" }}
-            onPress={() => router.push("/(auth)/index")}
+            onPress={() => router.push("/")}
           >
             Sign-In
           </Text>

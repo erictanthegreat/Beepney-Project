@@ -11,6 +11,7 @@ export default function SOS() {
     name: string;
     type: string;
     number: string;
+    address: string;
   }>();
 
   return (

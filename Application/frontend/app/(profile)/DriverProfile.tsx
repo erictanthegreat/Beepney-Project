@@ -89,7 +89,7 @@ export default function CommuterProfile() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/index")}
+          onPress={() => router.push("/")}
           style={credStyles.logoutRow}
         >
           <Text style={credStyles.logoutText}>Logout</Text>

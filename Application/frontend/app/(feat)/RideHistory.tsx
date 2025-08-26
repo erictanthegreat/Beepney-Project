@@ -6,7 +6,7 @@ import EmptyStateIcon from "../../assets/images/empty.svg";
 
 export default class RideHistory extends Component {
   state = {
-    rides: [], // <-- Replace with your fetched ride history
+    rides: [],
   };
 
   render() {

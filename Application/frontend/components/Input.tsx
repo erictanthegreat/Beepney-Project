@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "bold",
     color: "#073051",
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
   input: {
     height: 45,

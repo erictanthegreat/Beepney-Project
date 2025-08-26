@@ -24,11 +24,13 @@ export default class DriverSOS extends Component {
             name="Ambulance Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
+            address=""
           />
           <HotlineCard
             name="Ambulance Hotline 2"
             type="Test"
             number="09XX-XXX-XXX"
+            address={""}
           />
 
           <Text style={soStyles.label}>Police Station</Text>
@@ -36,22 +38,26 @@ export default class DriverSOS extends Component {
             name="Police Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
+            address={""}
           />
           <HotlineCard
             name="Ambulance Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
+            address={""}
           />
           <Text style={soStyles.label}>LTFRB</Text>
           <HotlineCard
             name="Ambulance Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
+            address={""}
           />
           <HotlineCard
             name="Ambulance Hotline 1"
             type="NICC"
             number="09XX-XXX-XXX"
+            address={""}
           />
         </ScrollView>
       </View>

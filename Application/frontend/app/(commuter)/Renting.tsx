@@ -9,11 +9,10 @@ import {
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import EmptyStateIcon from "../../assets/images/empty.svg";
-import { router } from "expo-router";
 
 export default class DriverRenting extends Component {
   state = {
-    rentals: [], // store available rentals
+    rentals: [],
   };
 
   render() {
