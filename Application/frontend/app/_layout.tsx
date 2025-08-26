@@ -29,7 +29,7 @@ export default function RootLayout() {
         >
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="plash" options={{ headerShown: false }} />
+            <Stack.Screen name="splash" options={{ headerShown: false }} />
             <Stack.Screen name="onboarding" options={{ headerShown: false }} />
             <Stack.Screen
               name="(auth)/createprofile"
