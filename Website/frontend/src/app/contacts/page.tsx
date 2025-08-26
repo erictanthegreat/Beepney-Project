@@ -111,7 +111,7 @@ const ContactsPage: React.FC = () => {
                 {sectionHotlines.map((h, idx) => (
                   <div
                     key={h.id}
-                    className="border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 cursor-pointer hover:bg-gray-200 transition w-full h-full min-h-[100px]"
+                    className="border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 cursor-pointer hover:bg-gray-100 transition w-full h-full min-h-[100px]"
                     onClick={() => handleEditHotline(h)}
                   >
                     <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
@@ -130,7 +130,7 @@ const ContactsPage: React.FC = () => {
                 ))}
 
                 <div
-                  className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors duration-200 group w-full h-full min-h-[100px]"
+                  className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
                   onClick={() => openOverlay(key)}
                 >
                   <button className="text-[#CBCBCB] group-hover:text-[#6B6B6B] transition-colors duration-200">
