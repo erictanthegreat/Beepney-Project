@@ -119,7 +119,7 @@ const ContactsPage: React.FC = () => {
                     <div className="flex flex-col">
                       <h3 className="font-semibold text-[#000000] text-lg">
                         {key} Hotline {idx + 1}{' '}
-                        <span className="text-[#595959] font-normal">("{h.name}")</span>
+                        <span className="text-[#595959] font-normal">({h.name})</span>
                       </h3>
 
                       <p className="text-[#0F76C2] text-sm">{formatPHNumber(h.number)}</p>
