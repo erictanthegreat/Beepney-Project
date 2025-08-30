@@ -1,10 +1,19 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Linking,
+} from "react-native";
+import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import CallIcon from "../../assets/images/Call.svg";
 import ReportIcon from "../../assets/images/Report.svg";
+import SMS from "expo-sms";
 
 export default function SOS() {
   const { name, type, number } = useLocalSearchParams<{
@@ -14,6 +23,14 @@ export default function SOS() {
     address: string;
   }>();
 
+  const makeaPhonecall = () => {
+    if (Platform.OS === "android") {
+      Linking.openURL(`tel:${number}`);
+    } else {
+      Linking.openURL(`telprompt:${number}`);
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <BackButton />
@@ -22,17 +39,18 @@ export default function SOS() {
 
       <View style={styles.container}>
         {/* Hotline Details */}
-        <Text style={styles.hotlineName}>
-          {name} ({type})
-        </Text>
+        <Text style={styles.hotlineName}>{name}</Text>
+        <Text style={styles.hotlineType}>({type})</Text>
         <Text style={styles.hotlineNumber}>{number}</Text>
-
         {/* Call or Report */}
         <View style={styles.actionsContainer}>
           {/* Call Button */}
           <View style={styles.actionItem}>
-            <TouchableOpacity style={styles.CallButton}>
-              <CallIcon style={styles.icon} />
+            <TouchableOpacity
+              style={styles.CallButton}
+              onPress={() => makeaPhonecall()}
+            >
+              <CallIcon />
             </TouchableOpacity>
             <Text style={styles.callText}>Call</Text>
           </View>
@@ -71,12 +89,17 @@ const styles = StyleSheet.create({
   },
   hotlineName: {
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 22,
     marginTop: 20,
+  },
+  hotlineType: {
+    fontWeight: "bold",
+    fontSize: 17,
   },
   hotlineNumber: {
     color: "#595959",
     marginBottom: 30,
+    fontFamily: "Poppins",
   },
   actionsContainer: {
     flexDirection: "row",
@@ -116,5 +139,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "Poppins",
   },
-  icon: {},
 });

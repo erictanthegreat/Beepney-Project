@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
+import * as Location from "expo-location"; // 👈 Location API
 import { router } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
@@ -22,12 +23,20 @@ const baseFares: Record<string, number> = {
   Tricycle: 15,
   Taxi: 40,
   "E-Tricycles": 15,
-  "PUJ Traditional": 12,
-  "PUJ Modern": 14,
-  "UV Express": 25,
-  "PUB Traditional": 20,
-  "PUB Modern": 22,
+  "PUJ Traditional": 13,
+  "PUJ Modern": 15,
+  "UVE Traditional": 25,
+  "UVE Modern": 25,
+  "PUB Provincional": 11,
   Pedicab: 10,
+};
+
+const discounts: Record<string, number> = {
+  Regular: 0,
+  Student: 20,
+  "Senior Citizen": 20,
+  "Solo Parent": 20,
+  PWD: 20,
 };
 
 export default class FareCalculator extends Component {
@@ -40,22 +49,48 @@ export default class FareCalculator extends Component {
     destinationCoords: null,
     originSuggestions: [],
     destinationSuggestions: [],
+    IdType: "",
   };
 
-  // Dropdown
-  handleToggle = (index, open) => {
-    this.setState({
-      openDropdown: open ? index : null,
-    });
+  async componentDidMount() {
+    await this.getCurrentLocation();
+  }
+
+  // 🔹 Get Current Location and reverse geocode it via Mapbox
+  getCurrentLocation = async () => {
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.log("Permission denied for location");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Reverse geocode with Mapbox
+      const res = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}`
+      );
+      const data = await res.json();
+
+      if (data.features.length > 0) {
+        this.setState({
+          origin: data.features[0].place_name, // nearest address
+          originCoords: [longitude, latitude], // coords
+        });
+      }
+    } catch (err) {
+      console.error("Error getting location:", err);
+    }
   };
 
-  // --- Fetch address using Mapbox Geocoding API ---
+  // --- Fetch address suggestions (same as before) ---
   fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
       this.setState({ [`${type}Suggestions`]: [] });
       return;
     }
-
     try {
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
@@ -63,7 +98,6 @@ export default class FareCalculator extends Component {
         )}.json?autocomplete=true&limit=5&bbox=122.9184,13.3456,123.6199,14.3121&access_token=${MAPBOX_TOKEN}`
       );
       const data = await res.json();
-
       this.setState({
         [`${type}Suggestions`]: data.features || [],
       });
@@ -77,6 +111,13 @@ export default class FareCalculator extends Component {
       [type]: place.place_name,
       [`${type}Coords`]: place.center, // [lng, lat]
       [`${type}Suggestions`]: [],
+    });
+  };
+
+  // Toggle dropdown
+  handleToggle = (index, open) => {
+    this.setState({
+      openDropdown: open ? index : null,
     });
   };
 
@@ -97,7 +138,7 @@ export default class FareCalculator extends Component {
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
-                {/* ORIGIN INPUT */}
+                {/* ORIGIN INPUT (auto-filled with GPS) */}
                 <View style={fareStyles.cont}>
                   <OriginIcon style={fareStyles.icon} />
                   <TextInput
@@ -109,6 +150,10 @@ export default class FareCalculator extends Component {
                     }}
                     style={{ flex: 1 }}
                   />
+                  {/* 👇 Button to refresh current location */}
+                  <TouchableOpacity onPress={this.getCurrentLocation}>
+                    <Text style={{ color: "#1E86DA", marginLeft: 8 }}>📍</Text>
+                  </TouchableOpacity>
                 </View>
                 {this.state.originSuggestions.length > 0 && (
                   <FlatList
@@ -159,7 +204,13 @@ export default class FareCalculator extends Component {
 
                 {/* FIRST DROPDOWN */}
                 <DropDown
-                  data={["Regular", "Student"]}
+                  data={[
+                    "Regular",
+                    "Student",
+                    "Solo Parent",
+                    "PWD",
+                    "Senior Citizen",
+                  ]}
                   onSelect={(value) => this.setState({ IdType: value })}
                   isOpen={this.state.openDropdown === 1}
                   onToggle={(open) => this.handleToggle(1, open)}
@@ -197,6 +248,10 @@ export default class FareCalculator extends Component {
                           this.state.destinationCoords
                         ),
                         vehicleType: this.state.vehicleType,
+                        baseFare: String(
+                          baseFares[this.state.vehicleType] || 0
+                        ),
+                        discounts: String(discounts[this.state.IdType] || 0),
                       },
                     })
                   }
