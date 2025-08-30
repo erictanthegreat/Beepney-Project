@@ -9,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { supabase } from "@/lib/supabase";
 
+// ArrowLeftIcon component for back button
 function ArrowLeftIcon({ className }: { className?: string }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none"
@@ -35,6 +36,42 @@ const defaultStation = {
     destination: string;
     count: number;
   }[],
+};
+
+// Insert station into Supabase
+const insertStation = async (station: any) => {
+  const { data, error } = await supabase
+    .from('stations')  // Ensure 'stations' matches your table name in Supabase
+    .insert([{
+      name: station.name,
+      location: station.location,
+      operation_time_am: station.operationTimeAM,
+      operation_time_pm: station.operationTimePM,
+      vehicle_types: station.vehicleTypes,
+      coordinates: station.coordinates,
+      destinations: station.destinations,
+    }]);
+
+  if (error) {
+    console.error("Error inserting station:", error);
+    alert("Error saving station data. Please try again.");
+  } else {
+    console.log("Station saved successfully:", data);
+    alert("Station saved successfully!");
+  }
+};
+
+// Fetch all stations from Supabase
+const fetchStations = async () => {
+  const { data, error } = await supabase
+    .from('stations')  // Ensure this table name matches
+    .select('*');
+
+  if (error) {
+    console.error("Error fetching stations:", error);
+    return [];
+  }
+  return data;
 };
 
 // Reusable input with label
@@ -69,6 +106,7 @@ const StationsPage = () => {
   const [headerHeight, setHeaderHeight] = useState(0);
   const [isAddingStation, setIsAddingStation] = useState(false);
   const [stationData, setStationData] = useState(defaultStation);
+  const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);  // Store station landmarks
 
   // Reset function
   const resetStationData = () => {
@@ -84,6 +122,15 @@ const StationsPage = () => {
   useEffect(() => {
     if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
   }, []);
+
+  // Fetch stations when the component is mounted
+  useEffect(() => {
+    const loadStations = async () => {
+      const stations = await fetchStations();
+      setStationLandmarks(stations);
+    };
+    loadStations();
+  }, []); // Empty dependency array means this runs only once when the component mounts
 
   // Init map
   useEffect(() => {
@@ -108,50 +155,43 @@ const StationsPage = () => {
       setIsAddingStation(true);
     });
 
+    // Add previous station landmarks to the map
+    stationLandmarks.forEach((station) => {
+      new mapboxgl.Marker({ color: '#1E86DA' })
+        .setLngLat(station.coordinates)
+        .addTo(map);
+    });
+
     return () => { map.remove(); };
-  }, []);
-  
+  }, [stationLandmarks]); // Re-run the map init when stationLandmarks change
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setStationData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save station to Supabase
+  // Save station to Supabase and show it on the map
   const handleDone = async () => {
     if (!stationData.coordinates) {
       alert("Please select a location on the map.");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("stations")
-      .insert([
-        {
-          name: stationData.name,
-          location: stationData.location,
-          operation_time_am: stationData.operationTimeAM,
-          operation_time_pm: stationData.operationTimePM,
-          vehicle_types: stationData.vehicleTypes,
-          coordinates: stationData.coordinates, // assuming this is a Postgres array or point
-        },
-      ])
-      .select()
-      .single();
+    // Add the new station landmark to the local state
+    const newStation = { ...stationData, id: Date.now().toString() };
+    setStationLandmarks((prev) => [...prev, newStation]);
 
-    if (error) {
-      console.error("Error saving station:", error);
-      alert("Failed to save station.");
-    } else {
-      console.log("Station saved:", data);
-      alert("Station saved successfully!");
-      resetStationData();
-    }
+    // Save the station to Supabase
+    await insertStation(stationData);  // Call the function to save the station data
+
+    // Reset the form and map marker
+    resetStationData();
   };
 
   return (
     <>
       <Header ref={headerRef} />
+      
       <main className="flex h-screen overflow-hidden">
         {/* Sidebar */}
         <aside className="fixed left-0 w-[425px] border-r border-[#D1D1D1] p-6 z-10 bg-white flex flex-col overflow-y-auto"
@@ -190,8 +230,7 @@ const StationsPage = () => {
                   type="multiple"
                   value={stationData.vehicleTypes}
                   onValueChange={(values: string[]) =>
-                    setStationData((prev) => ({ ...prev, vehicleTypes: values }))
-                  }
+                    setStationData((prev) => ({ ...prev, vehicleTypes: values })) }
                   variant="outline"
                   className="mt-2 flex w-full h-11"
                 >
@@ -222,7 +261,7 @@ const StationsPage = () => {
                 </ToggleGroup>
               </div>
 
-              {/* Destinations & Count (kept but not saved yet) */}
+              {/* Destinations & Count Table */}
               <div>
                 <label className="text-[#073051] text-sm font-bold">
                   Count of Available Vehicles & Destinations
