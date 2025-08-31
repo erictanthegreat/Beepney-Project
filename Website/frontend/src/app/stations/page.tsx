@@ -24,6 +24,7 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
 // Default station data
 const defaultStation = {
+  id: null as string | number | null, // <-- added id so we can edit/delete
   name: '',
   location: '',
   operationTimeAM: '08:00',
@@ -41,7 +42,7 @@ const defaultStation = {
 // Insert station into Supabase
 const insertStation = async (station: any) => {
   const { data, error } = await supabase
-    .from('stations')  // Ensure 'stations' matches your table name in Supabase
+    .from('stations')
     .insert([{
       name: station.name,
       location: station.location,
@@ -50,28 +51,60 @@ const insertStation = async (station: any) => {
       vehicle_types: station.vehicleTypes,
       coordinates: station.coordinates,
       destinations: station.destinations,
-    }]);
+    }])
+    .select(); // return inserted row(s)
 
   if (error) {
     console.error("Error inserting station:", error);
     alert("Error saving station data. Please try again.");
-  } else {
-    console.log("Station saved successfully:", data);
-    alert("Station saved successfully!");
+    return null;
   }
+  return data?.[0] ?? null;
+};
+
+// Update existing station
+const updateStation = async (station: any) => {
+  const { data, error } = await supabase
+    .from('stations')
+    .update({
+      name: station.name,
+      location: station.location,
+      operation_time_am: station.operationTimeAM,
+      operation_time_pm: station.operationTimePM,
+      vehicle_types: station.vehicleTypes,
+      coordinates: station.coordinates,
+      destinations: station.destinations,
+    })
+    .eq('id', station.id)
+    .select();
+
+  if (error) {
+    console.error("Error updating station:", error);
+    alert("Error updating station data.");
+    return null;
+  }
+  return data?.[0] ?? null;
+};
+
+// Delete station
+const deleteStation = async (id: string | number) => {
+  const { error } = await supabase.from('stations').delete().eq('id', id);
+  if (error) {
+    console.error("Error deleting station:", error);
+    alert("Error deleting station.");
+    return false;
+  }
+  return true;
 };
 
 // Fetch all stations from Supabase
 const fetchStations = async () => {
-  const { data, error } = await supabase
-    .from('stations')  // Ensure this table name matches
-    .select('*');
-
+  const { data, error } = await supabase.from('stations').select('*');
   if (error) {
     console.error("Error fetching stations:", error);
     return [];
   }
-  return data;
+  return data ?? [];
 };
 
 // Reusable input with label
@@ -102,13 +135,16 @@ const TimeRangeInput = ({ valueAM, valuePM, onChange }: any) => (
 const StationsPage = () => {
   const headerRef = useRef<HTMLElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);     // draggable marker for current edit/add
+  const mapRef = useRef<mapboxgl.Map | null>(null);           // keep map instance
+  const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map()); // markers for listed stations
+
   const [headerHeight, setHeaderHeight] = useState(0);
   const [isAddingStation, setIsAddingStation] = useState(false);
   const [stationData, setStationData] = useState(defaultStation);
   const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);  // Store station landmarks
 
-  // Reset function
+  // Reset form & draggable marker
   const resetStationData = () => {
     setIsAddingStation(false);
     setStationData(defaultStation);
@@ -123,18 +159,19 @@ const StationsPage = () => {
     if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
   }, []);
 
-  // Fetch stations when the component is mounted
+  // Fetch stations on mount
   useEffect(() => {
     const loadStations = async () => {
       const stations = await fetchStations();
       setStationLandmarks(stations);
     };
     loadStations();
-  }, []); // Empty dependency array means this runs only once when the component mounts
+  }, []);
 
-  // Init map
+  // Init map (only once)
   useEffect(() => {
     if (!mapContainerRef.current) return;
+
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/streets-v11',
@@ -143,49 +180,132 @@ const StationsPage = () => {
     });
 
     map.addControl(new mapboxgl.NavigationControl());
+    mapRef.current = map;
 
+    // Clicking the map creates or relocates the working (draggable) marker
     map.on('click', (e) => {
       const { lng, lat } = e.lngLat;
-      if (markerRef.current) markerRef.current.remove();
 
-      markerRef.current = new mapboxgl.Marker({ color: '#1E86DA' })
-        .setLngLat([lng, lat]).addTo(map);
+      if (markerRef.current) {
+        // move existing draggable marker
+        markerRef.current.setLngLat([lng, lat]);
+      } else {
+        // create new draggable marker for adding/editing
+        markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable: true })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        markerRef.current.on('dragend', () => {
+          const coords = markerRef.current!.getLngLat();
+          setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
+        });
+      }
 
       setStationData((prev) => ({ ...prev, coordinates: [lng, lat] }));
       setIsAddingStation(true);
     });
 
-    // Add previous station landmarks to the map
-    stationLandmarks.forEach((station) => {
-      new mapboxgl.Marker({ color: '#1E86DA' })
+    return () => { map.remove(); };
+  }, []);
+
+  // Draw/refresh non-draggable markers for saved stations
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear existing station markers
+    stationMarkersRef.current.forEach((m) => m.remove());
+    stationMarkersRef.current.clear();
+
+    // Add markers for each station
+    stationLandmarks.forEach((station: any) => {
+      if (!station?.coordinates || station.coordinates.length !== 2) return;
+
+      const id = station.id as string | number;
+      const marker = new mapboxgl.Marker({ color: '#1E86DA' })
         .setLngLat(station.coordinates)
         .addTo(map);
-    });
 
-    return () => { map.remove(); };
-  }, [stationLandmarks]); // Re-run the map init when stationLandmarks change
+      // Click marker to edit
+      marker.getElement().addEventListener('click', (ev) => {
+        ev.stopPropagation(); // prevent map click handler
+
+        // Remove any existing draggable marker and create a new draggable at this station
+        if (markerRef.current) markerRef.current.remove();
+        markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable: true })
+          .setLngLat(station.coordinates)
+          .addTo(map);
+
+        markerRef.current.on('dragend', () => {
+          const coords = markerRef.current!.getLngLat();
+          setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
+        });
+
+        // Populate form from DB row (snake_case → camelCase)
+        setStationData({
+          id: station.id ?? null,
+          name: station.name ?? '',
+          location: station.location ?? '',
+          operationTimeAM: station.operation_time_am ?? '08:00',
+          operationTimePM: station.operation_time_pm ?? '21:00',
+          vehicleTypes: station.vehicle_types ?? [],
+          coordinates: station.coordinates ?? null,
+          destinations: station.destinations ?? [],
+        });
+        setIsAddingStation(true);
+      });
+
+      stationMarkersRef.current.set(id, marker);
+    });
+  }, [stationLandmarks]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setStationData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save station to Supabase and show it on the map
+  // Save (create or update)
   const handleDone = async () => {
     if (!stationData.coordinates) {
       alert("Please select a location on the map.");
       return;
     }
 
-    // Add the new station landmark to the local state
-    const newStation = { ...stationData, id: Date.now().toString() };
-    setStationLandmarks((prev) => [...prev, newStation]);
+    if (stationData.id) {
+      // Update
+      const updated = await updateStation(stationData);
+      if (updated) {
+        // reflect DB field names to state items used by markers list
+        setStationLandmarks((prev) =>
+          prev.map((s) => (s.id === updated.id ? updated : s))
+        );
+        resetStationData();
+      }
+    } else {
+      // Create
+      const created = await insertStation(stationData);
+      if (created) {
+        setStationLandmarks((prev) => [...prev, created]);
+        resetStationData();
+      }
+    }
+  };
 
-    // Save the station to Supabase
-    await insertStation(stationData);  // Call the function to save the station data
+  // Delete (only when editing)
+  const handleDelete = async () => {
+    if (!stationData.id) return;
+    const ok = confirm('Delete this station?');
+    if (!ok) return;
 
-    // Reset the form and map marker
-    resetStationData();
+    const success = await deleteStation(stationData.id);
+    if (success) {
+      setStationLandmarks((prev) => prev.filter((s) => s.id !== stationData.id));
+      // remove draggable if present
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+      resetStationData();
+    }
   };
 
   return (
@@ -261,7 +381,7 @@ const StationsPage = () => {
                 </ToggleGroup>
               </div>
 
-              {/* Destinations & Count Table */}
+              {/* Destinations & Count Table (unchanged) */}
               <div>
                 <label className="text-[#073051] text-sm font-bold">
                   Count of Available Vehicles & Destinations
@@ -388,12 +508,21 @@ const StationsPage = () => {
                 </div>
               </div>
 
-              {/* Done button */}
-              <div className="mt-auto">
+              {/* Actions */}
+              <div className="mt-auto space-y-2">
                 <button onClick={handleDone}
                   className="w-full bg-[#208FCB] hover:bg-[#1478C9] text-white py-2 rounded-[10px]">
                   Done
                 </button>
+
+                {stationData.id && (
+                  <button
+                    onClick={handleDelete}
+                    className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded-[10px]"
+                  >
+                    Delete Station
+                  </button>
+                )}
               </div>
             </div>
           )}
