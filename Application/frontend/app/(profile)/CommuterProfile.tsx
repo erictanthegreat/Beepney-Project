@@ -40,7 +40,7 @@ export default function CommuterProfile() {
 
         {/* Toggle button: switch to Driver interface */}
         <TouchableOpacity
-          onPress={() => router.replace("/(driver)/DriverHome")}
+          onPress={() => router.replace("/(driver)/driverhome")}
           style={profStyles.icon}
         >
           <DriverButton />
@@ -90,7 +90,7 @@ export default function CommuterProfile() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/DriverProfile")}
+          onPress={() => router.push("/(auth)/driverprofile")}
           style={credStyles.driverRow}
         >
           <Text style={credStyles.driverText}>Drive with Beepney</Text>

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
-import * as Location from "expo-location"; // 👈 Location API
+import * as Location from "expo-location";
 import { router } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
@@ -33,7 +33,7 @@ const baseFares: Record<string, number> = {
 
 const discounts: Record<string, number> = {
   Regular: 0,
-  Student: 20,
+  Student: 0,
   "Senior Citizen": 20,
   "Solo Parent": 20,
   PWD: 20,

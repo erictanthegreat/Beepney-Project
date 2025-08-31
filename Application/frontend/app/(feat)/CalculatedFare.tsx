@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from "react-native";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
@@ -18,6 +19,7 @@ import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 import FareIcon from "@/assets/images/fare icon.svg";
 import { useLocalSearchParams } from "expo-router";
+import PaymentModal from "@/components/PaymentModal"; // Add this import
 
 const { width, height } = Dimensions.get("window");
 
@@ -38,6 +40,7 @@ export default function CalculatedFare() {
     baseFare?: string;
     discounts?: string;
   }>();
+
   // Regular fare from params (convert string → number)
   const regularFare = params.baseFare ? parseFloat(params.baseFare) : 0;
 
@@ -95,8 +98,76 @@ export default function CalculatedFare() {
 
   const [fare, setFare] = useState<number>(0);
 
+  // PayMongo integration states
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+
   // Debounce timer
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Constants
+  const PAYMONGO_MIN_AMOUNT = 20;
+
+  const getPaymentAmount = () => {
+    return Math.max(totalFare, PAYMONGO_MIN_AMOUNT);
+  };
+
+  // Helper function to get display amounts
+  const getDisplayAmounts = () => {
+    const isUnderMinimum = totalFare < PAYMONGO_MIN_AMOUNT;
+    return {
+      originalFare: totalFare,
+      paymentAmount: isUnderMinimum ? PAYMONGO_MIN_AMOUNT : totalFare,
+      isUnderMinimum,
+    };
+  };
+
+  // --- PayMongo Payment Handlers ---
+  const handlePaymentSuccess = (result: any) => {
+    Alert.alert(
+      "Payment Successful! 🎉",
+      `Your fare payment of ₱${totalFare.toFixed(2)} has been processed successfully.\n\nPayment ID: ${result.sourceId}`,
+      [
+        {
+          text: "Continue to Ride",
+          onPress: () => {
+            setShowPaymentModal(false);
+            // You can navigate to ride tracking or booking confirmation
+            // router.push("/(feat)/ride-confirmed");
+            console.log("Payment successful, proceeding to ride...");
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePaymentError = (error: string) => {
+    Alert.alert("Payment Failed", error, [
+      {
+        text: "Try Again",
+        onPress: () => setShowPaymentModal(false),
+      },
+    ]);
+  };
+
+  const handlePayCashless = () => {
+    // Check if total fare is calculated
+    if (totalFare <= 0) {
+      Alert.alert("Invalid Amount", "Please calculate a valid fare first.");
+      return;
+    }
+
+    // Check if locations are selected
+    if (!params.origin || !params.destination) {
+      Alert.alert(
+        "Missing Information",
+        "Please select both pickup and destination locations."
+      );
+      return;
+    }
+
+    setShowPaymentModal(true);
+  };
 
   // --- Fetch route from Mapbox Directions API ---
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
@@ -476,13 +547,11 @@ export default function CalculatedFare() {
             </View>
           </View>
 
-          {/* Confirm button */}
+          {/* Updated Pay Cashless button */}
           <CustomButton
             title="Pay Cashless"
             backgroundColor="#1E86DA"
-            onPress={() =>
-              console.log("Pickup:", pickup, "Destination:", destination)
-            }
+            onPress={handlePayCashless}
             style={{
               width: "95%",
               alignItems: "center",
@@ -502,6 +571,16 @@ export default function CalculatedFare() {
           />
         </View>
       </BottomSheetContainer>
+
+      {/* PayMongo Payment Modal */}
+      <PaymentModal
+        visible={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        amount={getPaymentAmount()} // Use the helper function
+        description={`${params.origin || pickupAddress || "Selected location"} - ${params.destination || destinationAddress || "Selected destination"}${totalFare < PAYMONGO_MIN_AMOUNT ? ` (Minimum payment: ₱${PAYMONGO_MIN_AMOUNT.toFixed(2)})` : ""}`}
+        onSuccess={handlePaymentSuccess}
+        onError={handlePaymentError}
+      />
     </View>
   );
 }
