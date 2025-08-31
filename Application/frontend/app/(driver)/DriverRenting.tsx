@@ -61,7 +61,7 @@ export default class DriverRenting extends Component<{}, DriverRentingState> {
           </Text>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/PostRental")}
+            onPress={() => router.push("/(feat)/postrental")}
             style={styles.Button}
           >
             <Text style={styles.postHeader}>Post Rental Info</Text>

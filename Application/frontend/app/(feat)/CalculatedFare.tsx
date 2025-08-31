@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
-import * as Location from "expo-location";
+
 import { router } from "expo-router";
 import BackButton from "@/components/Backbutton";
 import BottomSheetContainer from "@/components/BottomSheetContainer";
@@ -24,7 +24,7 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-export default function Cacl() {
+export default function CalculatedFare() {
   const bottomSheetRef = useRef<any>(null);
   const mapCameraRef = useRef<any>(null);
 
@@ -35,7 +35,20 @@ export default function Cacl() {
     destination?: string;
     destinationCoords?: string;
     vehicleType?: string;
+    baseFare?: string;
+    discounts?: string;
   }>();
+  // Regular fare from params (convert string → number)
+  const regularFare = params.baseFare ? parseFloat(params.baseFare) : 0;
+
+  // Discount percentage (convert string → number safely)
+  const discountPercent = params.discounts ? parseFloat(params.discounts) : 0;
+
+  // Compute discount amount
+  const discountAmount = regularFare * (discountPercent / 100);
+
+  // Compute total fare
+  const totalFare = regularFare - discountAmount;
 
   // Parse coords if available
   const initialPickup = params.originCoords
@@ -79,39 +92,11 @@ export default function Cacl() {
 
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
   const [distance, setDistance] = useState<number>(0);
-  const [eta, setETA] = useState<number>(0);
+
   const [fare, setFare] = useState<number>(0);
 
   // Debounce timer
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // --- Get user location and set as pickup ---
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Location permission denied");
-        return;
-      }
-
-      // Get current GPS location
-      let location = await Location.getCurrentPositionAsync({});
-      const coords: [number, number] = [
-        location.coords.longitude,
-        location.coords.latitude,
-      ];
-
-      setPickup(coords); // Update pickup to current location
-      fetchAddress(coords, "pickup"); // Fetch human-readable pickup address
-
-      // Center map camera on user's location
-      mapCameraRef.current?.setCamera({
-        centerCoordinate: coords,
-        zoomLevel: 16,
-        animationDuration: 500,
-      });
-    })();
-  }, []);
 
   // --- Fetch route from Mapbox Directions API ---
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
@@ -123,7 +108,6 @@ export default function Cacl() {
         const route = data.routes[0];
         setRouteCoords(route.geometry.coordinates); // Set polyline coordinates
         setDistance(route.distance / 1000); // Distance in km
-        setETA(Math.ceil(route.duration / 60)); // ETA in minutes
       }
     } catch (err) {
       console.log("Error fetching route:", err);
@@ -215,6 +199,52 @@ export default function Cacl() {
   useEffect(() => {
     fetchAddress(destination, "destination");
   }, []);
+
+  // --- Auto-update marker when pickup input changes ---
+  useEffect(() => {
+    if (!pickupInput) return;
+
+    const handler = setTimeout(async () => {
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          pickupInput
+        )}.json?limit=1&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.features && data.features[0]) {
+          const coords: [number, number] = data.features[0].center;
+          setPickup(coords);
+        }
+      } catch (err) {
+        console.log("Error auto-updating pickup:", err);
+      }
+    }, 600); // debounce typing
+
+    return () => clearTimeout(handler);
+  }, [pickupInput]);
+
+  // --- Auto-update marker when destination input changes ---
+  useEffect(() => {
+    if (!destinationInput) return;
+
+    const handler = setTimeout(async () => {
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          destinationInput
+        )}.json?limit=1&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.features && data.features[0]) {
+          const coords: [number, number] = data.features[0].center;
+          setDestination(coords);
+        }
+      } catch (err) {
+        console.log("Error auto-updating destination:", err);
+      }
+    }, 600);
+
+    return () => clearTimeout(handler);
+  }, [destinationInput]);
 
   // --- Handle marker drag event ---
   const handleDragEnd = (
@@ -344,6 +374,11 @@ export default function Cacl() {
                   300
                 );
               }}
+              onSubmitEditing={async () => {
+                if (pickupSuggestions.length > 0) {
+                  handleSuggestionSelect(pickupSuggestions[0], "pickup");
+                }
+              }}
               onFocus={() => setActiveSelection("pickup")}
             />
           </View>
@@ -383,6 +418,14 @@ export default function Cacl() {
                   300
                 );
               }}
+              onSubmitEditing={async () => {
+                if (destinationSuggestions.length > 0) {
+                  handleSuggestionSelect(
+                    destinationSuggestions[0],
+                    "destination"
+                  );
+                }
+              }}
               onFocus={() => setActiveSelection("destination")}
             />
           </View>
@@ -413,7 +456,7 @@ export default function Cacl() {
           <View style={calcStyles.rideCont}>
             <View style={calcStyles.row}>
               <Text style={calcStyles.typeFare}>Regular Fare:</Text>
-              <Text style={calcStyles.fee}>₱ 13.00</Text>
+              <Text style={calcStyles.fee}>₱ {regularFare.toFixed(2)}</Text>
             </View>
             <View style={calcStyles.row}>
               <Text style={calcStyles.typeFare}>Distance Fee:</Text>
@@ -421,7 +464,7 @@ export default function Cacl() {
             </View>
             <View style={calcStyles.row}>
               <Text style={calcStyles.typeFare}>Discount:</Text>
-              <Text style={calcStyles.fee}>20%</Text>
+              <Text style={calcStyles.fee}>{discountPercent} %</Text>
             </View>
           </View>
 
@@ -429,7 +472,7 @@ export default function Cacl() {
           <View style={calcStyles.rideCont}>
             <View style={calcStyles.row}>
               <Text style={calcStyles.typeFare}>Total Fare:</Text>
-              <Text style={calcStyles.fee}>₱ 11.00</Text>
+              <Text style={calcStyles.fee}>₱ {totalFare.toFixed(2)}</Text>
             </View>
           </View>
 
