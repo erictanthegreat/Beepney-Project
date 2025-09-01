@@ -91,6 +91,19 @@ const ContactsPage: React.FC = () => {
     setEditingHotline(null);
   };
 
+  const handleDeleteHotline = async (id: string) => {
+    const { error } = await supabase.from('hotlines').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error deleting hotline:', error.message);
+    } else {
+      setHotlines((prev) => prev.filter(h => h.id !== id));
+    }
+
+    setIsOverlayOpen(false);
+    setEditingHotline(null);
+  };
+
   return (
     <>
       <Header />
@@ -151,6 +164,7 @@ const ContactsPage: React.FC = () => {
         }}
         sectionName={selectedSection}
         onSave={handleSaveHotline}
+        onDelete={handleDeleteHotline}   // ✅ Added
         initialData={editingHotline || undefined}
       />
     </>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
 
 /**
  * @typedef {Object} OverlayProps
@@ -6,51 +6,53 @@ import React, { useState, useEffect } from 'react';
  * @property {() => void} onClose
  * @property {string} sectionName
  * @property {(hotline: { name: string; number: string; address?: string }) => void} onSave
- * @property {{ name: string; number: string; address?: string }} [initialData]
+ * @property {{ id?: string; name: string; number: string; address?: string }} [initialData]
+ * @property {(hotlineId: string) => void} [onDelete]
  */
 
 /**
  * @param {OverlayProps} props
  */
+export default function Overlay({ isOpen, onClose, sectionName, onSave, initialData, onDelete }) {
+  const [name, setName] = useState('')
+  const [number, setNumber] = useState('')
+  const [address, setAddress] = useState('')
+  const [countryCode, setCountryCode] = useState('+63')
 
-export default function Overlay({ isOpen, onClose, sectionName, onSave, initialData }) {
-  const [name, setName] = useState('');
-  const [number, setNumber] = useState('');
-  const [address, setAddress] = useState('');
-  const [countryCode, setCountryCode] = useState('+63');
-
-  // Prefill fields when editing
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name || '');
-      const digits = initialData.number.replace(/\D/g, '');
+      setName(initialData.name || '')
+      const digits = initialData.number.replace(/\D/g, '')
       if (digits.startsWith('63')) {
-        setCountryCode('+63');
-        setNumber(digits.slice(2));
+        setCountryCode('+63')
+        setNumber(digits.slice(2))
       } else {
-        setNumber(digits);
+        setNumber(digits)
       }
-      setAddress(initialData.address || '');
+      setAddress(initialData.address || '')
     } else {
-      setName('');
-      setNumber('');
-      setAddress('');
-      setCountryCode('+63');
+      setName('')
+      setNumber('')
+      setAddress('')
+      setCountryCode('+63')
     }
-  }, [initialData, isOpen]);
+  }, [initialData, isOpen])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const handleSave = () => {
-    if (!name || !number) return;
-    const fullNumber = `${countryCode}${number.replace(/\D/g, '')}`;
-    onSave({ name, number: fullNumber, address });
-    // Reset after save
-    setName('');
-    setNumber('');
-    setAddress('');
-    setCountryCode('+63');
-  };
+    if (!name || !number) return
+    const fullNumber = `${countryCode}${number.replace(/\D/g, '')}`
+    onSave({ name, number: fullNumber, address })
+  }
+
+  const handleDelete = () => {
+    if (initialData?.id && onDelete) {
+      if (confirm('Are you sure you want to delete this hotline?')) {
+        onDelete(initialData.id)
+      }
+    }
+  }
 
   return (
     <div className="overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -59,6 +61,7 @@ export default function Overlay({ isOpen, onClose, sectionName, onSave, initialD
           {initialData ? 'Edit Hotline' : 'Add Hotline'} – {sectionName}
         </h2>
 
+        {/* Form */}
         <div className="space-y-4">
           <div>
             <label className="block text-[18px] font-medium text-[#073051] mb-2">Hotline Name</label>
@@ -107,23 +110,36 @@ export default function Overlay({ isOpen, onClose, sectionName, onSave, initialD
           </div>
         </div>
 
-        <div className="flex justify-end space-x-4 mt-6">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-4 py-2 bg-[#1E86DA] text-white rounded-[15px] hover:bg-[#1478C9] transition-colors duration-200"
-          >
-            Save
-          </button>
+        {/* Buttons */}
+        <div className="flex justify-between items-center mt-6">
+          {initialData && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="px-4 py-2 border border-red-400 text-red-500 rounded-[15px] hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+            >
+              Delete
+            </button>
+          )}
+
+          <div className="flex space-x-4 ml-auto">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="px-4 py-2 bg-[#1E86DA] text-white rounded-[15px] hover:bg-[#1478C9] transition-colors duration-200"
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

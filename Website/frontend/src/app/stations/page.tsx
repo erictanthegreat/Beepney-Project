@@ -24,7 +24,7 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
 // Default station data
 const defaultStation = {
-  id: null as string | number | null, // <-- added id so we can edit/delete
+  id: null as string | number | null,
   name: '',
   location: '',
   operationTimeAM: '08:00',
@@ -50,16 +50,28 @@ const insertStation = async (station: any) => {
       operation_time_pm: station.operationTimePM,
       vehicle_types: station.vehicleTypes,
       coordinates: station.coordinates,
-      destinations: station.destinations,
     }])
-    .select(); // return inserted row(s)
+    .select();
 
   if (error) {
     console.error("Error inserting station:", error);
     alert("Error saving station data. Please try again.");
     return null;
   }
-  return data?.[0] ?? null;
+
+  const createdStation = data?.[0] ?? null;
+  if (createdStation && station.destinations.length > 0) {
+    const destinationsPayload = station.destinations.map((d: any) => ({
+      station_id: createdStation.id,
+      vehicle_type: d.vehicleType,
+      destination: d.destination,
+      count: d.count,
+    }));
+    const { error: destErr } = await supabase.from('station_destinations').insert(destinationsPayload);
+    if (destErr) console.error("Error inserting destinations:", destErr);
+  }
+
+  return createdStation;
 };
 
 // Update existing station
@@ -73,7 +85,6 @@ const updateStation = async (station: any) => {
       operation_time_pm: station.operationTimePM,
       vehicle_types: station.vehicleTypes,
       coordinates: station.coordinates,
-      destinations: station.destinations,
     })
     .eq('id', station.id)
     .select();
@@ -83,11 +94,30 @@ const updateStation = async (station: any) => {
     alert("Error updating station data.");
     return null;
   }
+
+  // upsert destinations
+  if (station.destinations) {
+    // delete existing and re-insert (simple way)
+    await supabase.from('station_destinations').delete().eq('station_id', station.id);
+    const destinationsPayload = station.destinations.map((d: any) => ({
+      station_id: station.id,
+      vehicle_type: d.vehicleType,
+      destination: d.destination,
+      count: d.count,
+    }));
+    if (destinationsPayload.length > 0) {
+      const { error: destErr } = await supabase.from('station_destinations').insert(destinationsPayload);
+      if (destErr) console.error("Error upserting destinations:", destErr);
+    }
+  }
+
   return data?.[0] ?? null;
 };
 
 // Delete station
 const deleteStation = async (id: string | number) => {
+  // delete child destinations first
+  await supabase.from('station_destinations').delete().eq('station_id', id);
   const { error } = await supabase.from('stations').delete().eq('id', id);
   if (error) {
     console.error("Error deleting station:", error);
@@ -97,14 +127,35 @@ const deleteStation = async (id: string | number) => {
   return true;
 };
 
-// Fetch all stations from Supabase
+// Fetch all stations with destinations
 const fetchStations = async () => {
-  const { data, error } = await supabase.from('stations').select('*');
+  const { data: stations, error } = await supabase.from('stations').select('*');
   if (error) {
     console.error("Error fetching stations:", error);
     return [];
   }
-  return data ?? [];
+
+  if (!stations || stations.length === 0) return [];
+
+  // fetch destinations for all stations
+  const stationIds = stations.map((s) => s.id);
+  const { data: dests } = await supabase
+    .from('station_destinations')
+    .select('*')
+    .in('station_id', stationIds);
+
+  // merge destinations into stations
+  return stations.map((s) => ({
+    ...s,
+    destinations: (dests || [])
+      .filter((d) => d.station_id === s.id)
+      .map((d) => ({
+        id: d.id,
+        vehicleType: d.vehicle_type,
+        destination: d.destination,
+        count: d.count,
+      })),
+  }));
 };
 
 // Reusable input with label
@@ -274,17 +325,16 @@ const StationsPage = () => {
       // Update
       const updated = await updateStation(stationData);
       if (updated) {
-        // reflect DB field names to state items used by markers list
-        setStationLandmarks((prev) =>
-          prev.map((s) => (s.id === updated.id ? updated : s))
-        );
+        const refreshed = await fetchStations();
+        setStationLandmarks(refreshed);
         resetStationData();
       }
     } else {
       // Create
       const created = await insertStation(stationData);
       if (created) {
-        setStationLandmarks((prev) => [...prev, created]);
+        const refreshed = await fetchStations();
+        setStationLandmarks(refreshed);
         resetStationData();
       }
     }
@@ -520,7 +570,7 @@ const StationsPage = () => {
                     onClick={handleDelete}
                     className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded-[10px]"
                   >
-                    Delete Station
+                    Delete
                   </button>
                 )}
               </div>
