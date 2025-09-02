@@ -379,7 +379,7 @@ const StationsPage = () => {
               <div className="flex items-center gap-3 mb-4">
                 <button onClick={resetStationData}
                   className="flex items-center justify-center rounded-full border-2 border-[#073051] 
-                             text-[#073051] hover:bg-[#073051] hover:text-white w-[50px] h-[50px]">
+                             text-[#073051] hover:bg-[#073051] hover:text-white w-[50px] h-[50px] duration-300">
                   <ArrowLeftIcon className="w-5 h-5" />
                 </button>
                 <span className="text-[#073051] font-semibold text-lg">Go Back</span>
