@@ -561,14 +561,14 @@ const StationsPage = () => {
               {/* Actions */}
               <div className="mt-auto space-y-2">
                 <button onClick={handleDone}
-                  className="w-full bg-[#208FCB] hover:bg-[#1478C9] text-white py-2 rounded-[10px]">
+                  className="w-full bg-[#208FCB] hover:bg-[#1478C9] text-white py-2 rounded-[10px] duration-200">
                   Done
                 </button>
 
                 {stationData.id && (
                   <button
                     onClick={handleDelete}
-                    className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded-[10px]"
+                    className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded-[10px] duration-200"
                   >
                     Delete
                   </button>
