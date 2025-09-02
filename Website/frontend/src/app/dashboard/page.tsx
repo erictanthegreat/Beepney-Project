@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import Header from '../../components/ui/header';
+import { Toaster, toast } from 'sonner';
 import {
   Table,
   TableHeader,
@@ -25,8 +27,17 @@ import {
   PaginationLink
 } from '@/components/ui/pagination';
 
-// Sample data for the table
-const data = [
+interface Submission {
+  id: number;
+  name: string;
+  submittedInfo: string;
+  type: string;
+  submittedAt: string;
+  status: 'Pending' | 'Approved' | 'Declined';
+}
+
+// Sample data
+const initialData: Submission[] = [
   { id: 1, name: 'John Doe', submittedInfo: 'Driver License Info', type: "Driver's Information", submittedAt: '2023-09-15 14:23', status: 'Pending' },
   { id: 2, name: 'Jane Smith', submittedInfo: 'Discount Info', type: 'Discount', submittedAt: '2023-09-16 10:50', status: 'Approved' },
   { id: 3, name: 'Mark Johnson', submittedInfo: 'Driver License Renewal', type: "Driver's Information", submittedAt: '2023-09-17 09:15', status: 'Declined' },
@@ -36,27 +47,55 @@ const data = [
 ];
 
 const DashboardPage = () => {
+  const [data, setData] = useState<Submission[]>(initialData);
   const [approvalStatus, setApprovalStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
+  const itemsPerPage = 3;
   const totalPages = Math.ceil(data.length / itemsPerPage);
   const currentData = data.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  const handleStatusChange = (id: number, status: string) => {
-    setApprovalStatus(`Submission ${id} is now ${status}`);
+  const handleDecision = (id: number, decision: 'Approved' | 'Declined') => {
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, status: decision } : item
+      )
+    );
+    setApprovalStatus(`Submission ${id} is now ${decision}`);
+    setSelectedSubmission(null); // close dropdown
+
+    // ⬇️ Show toast notification
+    if (decision === 'Approved') {
+      toast.success(`Submission ${id} approved`);
+    } else {
+      toast.error(`Submission ${id} declined`);
+    }
   };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.dropdown-menu') &&
+          !(e.target as HTMLElement).closest('.dropdown-trigger')) {
+        setSelectedSubmission(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <>
       <Header />
 
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
+        {/* Search + Sort + Filter */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* Search */}
           <div className="relative w-full max-w-md md:w-[320px] min-w-0">
             <input
               type="text"
@@ -68,7 +107,6 @@ const DashboardPage = () => {
             </button>
           </div>
 
-          {/* Sort & Filter */}
           <div className="flex flex-wrap md:flex-nowrap gap-4">
             <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
               <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
@@ -123,18 +161,19 @@ const DashboardPage = () => {
         </div>
 
         {/* Table */}
-        <Table className="shadow-none border border-[#D1D1D1] rounded-md overflow-hidden">
+        <Table className="shadow-none rounded-md overflow-visible">
           <TableHeader>
             <tr>
-              <TableHead /* className="text-[#1E86DA]" */>ID</TableHead>
-              <TableHead /* className="text-[#1E86DA]" */>Name</TableHead>
-              <TableHead /* className="text-[#1E86DA]" */>Submitted Info</TableHead>
-              <TableHead /* className="text-[#1E86DA]" */>Type</TableHead>
-              <TableHead /* className="text-[#1E86DA]" */>Submitted At</TableHead>
-              <TableHead /* className="text-[#1E86DA]" */>Status</TableHead>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Submitted Info</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Submitted At</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
             </tr>
           </TableHeader>
-          
+
           <TableBody>
             {currentData.map((item) => (
               <TableRow key={item.id}>
@@ -145,26 +184,67 @@ const DashboardPage = () => {
                 </TableCell>
                 <TableCell>{item.type}</TableCell>
                 <TableCell>{item.submittedAt}</TableCell>
-                <TableCell>{item.status}</TableCell>
                 <TableCell>
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm font-medium ${
+                      item.status === 'Approved'
+                        ? 'bg-green-100 text-green-700'
+                        : item.status === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </TableCell>
+                <TableCell className="relative">
                   <button
-                    className="flex items-center justify-center w-6 h-6 text-gray-500"
-                    onClick={() => alert(`Show details for submission ${item.id}`)}
+                    className="dropdown-trigger flex items-center justify-center w-6 h-6 text-gray-500"
+                    onClick={(e) => {
+                      const rect = (e.target as HTMLElement).getBoundingClientRect();
+                      setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
+                      setSelectedSubmission(selectedSubmission?.id === item.id ? null : item);
+                    }}
                   >
                     <EllipsisVerticalIcon className="h-5 w-5" />
                   </button>
+
+                  {/* Dropdown menu rendered in portal */}
+                  {selectedSubmission?.id === item.id &&
+                    dropdownPosition &&
+                    ReactDOM.createPortal(
+                      <div
+                        className="dropdown-menu absolute w-40 bg-white border border-gray-200 rounded-lg shadow-md z-50"
+                        style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+                      >
+                        <button
+                          onClick={() => handleDecision(item.id, "Approved")}
+                          className="flex items-center w-full px-3 py-2 text-green-600 hover:bg-gray-50 font-semibold"
+                        >
+                          {/* ⬇️ border-3 -> border-[3px] */}
+                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-green-600" />
+                          Approve
+                        </button>
+                        <div className="border-t border-gray-200" />
+                        <button
+                          onClick={() => handleDecision(item.id, "Declined")}
+                          className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
+                        >
+                          {/* ⬇️ border-3 -> border-[3px] */}
+                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
+                          Decline
+                        </button>
+                      </div>,
+                      document.body
+                    )}
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
 
-        {/* Approval status */}
-        {approvalStatus && (
-          <div className="mt-4 p-4 bg-green-100 text-green-800 border border-green-300 rounded-md">
-            {approvalStatus}
-          </div>
-        )}
+        {/* Approval status (Optional) */}
+        <Toaster position="bottom-right" richColors closeButton />
       </main>
     </>
   );
