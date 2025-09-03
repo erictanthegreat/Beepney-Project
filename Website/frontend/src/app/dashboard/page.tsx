@@ -242,9 +242,6 @@ const DashboardPage = () => {
             ))}
           </TableBody>
         </Table>
-
-        {/* Approval status (Optional) */}
-        <Toaster position="bottom-right" richColors closeButton />
       </main>
     </>
   );
