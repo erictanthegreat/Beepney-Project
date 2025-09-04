@@ -228,6 +228,7 @@ const DashboardPage = () => {
                           onClick={() => handleDecision(item.id, 'Approved')}
                           className="flex items-center w-full px-3 py-2 text-green-600 hover:bg-gray-50 font-semibold"
                         >
+                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-green-600" />
                           Approve
                         </button>
                         <div className="border-t border-gray-200" />
@@ -235,6 +236,7 @@ const DashboardPage = () => {
                           onClick={() => handleDecision(item.id, 'Declined')}
                           className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
                         >
+                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
                           Decline
                         </button>
                       </div>,
