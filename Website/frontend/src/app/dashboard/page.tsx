@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Header from '../../components/ui/header';
 import { Toaster, toast } from 'sonner';
@@ -26,6 +26,7 @@ import {
   PaginationNext,
   PaginationLink
 } from '@/components/ui/pagination';
+import Overlay2 from '../../components/ui/overlay2';
 
 interface Submission {
   id: number;
@@ -34,24 +35,26 @@ interface Submission {
   type: string;
   submittedAt: string;
   status: 'Pending' | 'Approved' | 'Declined';
+  frontImageUrl?: string;
+  backImageUrl?: string;
 }
 
 // Sample data
 const initialData: Submission[] = [
-  { id: 1, name: 'John Doe', submittedInfo: 'Driver License Info', type: "Driver's Information", submittedAt: '2023-09-15 14:23', status: 'Pending' },
-  { id: 2, name: 'Jane Smith', submittedInfo: 'Discount Info', type: 'Discount', submittedAt: '2023-09-16 10:50', status: 'Approved' },
-  { id: 3, name: 'Mark Johnson', submittedInfo: 'Driver License Renewal', type: "Driver's Information", submittedAt: '2023-09-17 09:15', status: 'Declined' },
-  { id: 4, name: 'Sarah Lee', submittedInfo: 'Senior Discount Proof', type: 'Discount', submittedAt: '2023-09-18 11:30', status: 'Pending' },
-  { id: 5, name: 'Tom Williams', submittedInfo: 'Vehicle Registration', type: "Driver's Information", submittedAt: '2023-09-19 14:45', status: 'Approved' },
-  { id: 6, name: 'Emily Davis', submittedInfo: 'Student Discount Proof', type: 'Discount', submittedAt: '2023-09-20 08:50', status: 'Pending' }
+  { id: 1, name: 'John Doe', submittedInfo: 'Driver License Info', type: "Driver's License", submittedAt: '2023-09-15 14:23', status: 'Pending' },
+  { id: 2, name: 'Jane Smith', submittedInfo: 'Discount Info', type: 'Student', submittedAt: '2023-09-16 10:50', status: 'Approved' },
+  { id: 3, name: 'Mark Johnson', submittedInfo: 'Driver License Renewal', type: "Driver's License", submittedAt: '2023-09-17 09:15', status: 'Declined' },
+  { id: 4, name: 'Sarah Lee', submittedInfo: 'Senior Discount Proof', type: 'Senior Citizen', submittedAt: '2023-09-18 11:30', status: 'Pending' },
+  { id: 5, name: 'Tom Williams', submittedInfo: 'Vehicle Registration', type: "Driver's License", submittedAt: '2023-09-19 14:45', status: 'Approved' },
+  { id: 6, name: 'Emily Davis', submittedInfo: 'Student Discount Proof', type: 'Student', submittedAt: '2023-09-20 08:50', status: 'Pending' }
 ];
 
 const DashboardPage = () => {
   const [data, setData] = useState<Submission[]>(initialData);
-  const [approvalStatus, setApprovalStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [overlayData, setOverlayData] = useState<Submission | null>(null);
 
   const itemsPerPage = 3;
   const totalPages = Math.ceil(data.length / itemsPerPage);
@@ -66,10 +69,9 @@ const DashboardPage = () => {
         item.id === id ? { ...item, status: decision } : item
       )
     );
-    setApprovalStatus(`Submission ${id} is now ${decision}`);
     setSelectedSubmission(null); // close dropdown
 
-    // ⬇️ Show toast notification
+    // Show toast notification
     if (decision === 'Approved') {
       toast.success(`Submission ${id} approved`);
     } else {
@@ -92,6 +94,7 @@ const DashboardPage = () => {
   return (
     <>
       <Header />
+      <Toaster />
 
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
         {/* Search + Sort + Filter */}
@@ -180,7 +183,12 @@ const DashboardPage = () => {
                 <TableCell>{item.id}</TableCell>
                 <TableCell>{item.name}</TableCell>
                 <TableCell>
-                  <a href="#" className="text-blue-600">{item.submittedInfo}</a>
+                  <button
+                    className="text-blue-600 underline"
+                    onClick={() => setOverlayData(item)}
+                  >
+                    {item.submittedInfo}
+                  </button>
                 </TableCell>
                 <TableCell>{item.type}</TableCell>
                 <TableCell>{item.submittedAt}</TableCell>
@@ -209,7 +217,6 @@ const DashboardPage = () => {
                     <EllipsisVerticalIcon className="h-5 w-5" />
                   </button>
 
-                  {/* Dropdown menu rendered in portal */}
                   {selectedSubmission?.id === item.id &&
                     dropdownPosition &&
                     ReactDOM.createPortal(
@@ -218,20 +225,16 @@ const DashboardPage = () => {
                         style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
                       >
                         <button
-                          onClick={() => handleDecision(item.id, "Approved")}
+                          onClick={() => handleDecision(item.id, 'Approved')}
                           className="flex items-center w-full px-3 py-2 text-green-600 hover:bg-gray-50 font-semibold"
                         >
-                          {/* ⬇️ border-3 -> border-[3px] */}
-                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-green-600" />
                           Approve
                         </button>
                         <div className="border-t border-gray-200" />
                         <button
-                          onClick={() => handleDecision(item.id, "Declined")}
+                          onClick={() => handleDecision(item.id, 'Declined')}
                           className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
                         >
-                          {/* ⬇️ border-3 -> border-[3px] */}
-                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
                           Decline
                         </button>
                       </div>,
@@ -243,6 +246,16 @@ const DashboardPage = () => {
           </TableBody>
         </Table>
       </main>
+
+      {/* Overlay */}
+      <Overlay2
+        isOpen={!!overlayData}
+        onClose={() => setOverlayData(null)}
+        name={overlayData?.name || ''}
+        idType={overlayData?.type || ''}
+        frontImageUrl={overlayData?.frontImageUrl || '/placeholder-front.png'}
+        backImageUrl={overlayData?.backImageUrl || '/placeholder-back.png'}
+      />
     </>
   );
 };
