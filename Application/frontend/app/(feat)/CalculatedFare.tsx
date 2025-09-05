@@ -576,7 +576,7 @@ export default function CalculatedFare() {
       <PaymentModal
         visible={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        amount={getPaymentAmount()} // Use the helper function
+        amount={getPaymentAmount()} 
         description={`${params.origin || pickupAddress || "Selected location"} - ${params.destination || destinationAddress || "Selected destination"}${totalFare < PAYMONGO_MIN_AMOUNT ? ` (Minimum payment: ₱${PAYMONGO_MIN_AMOUNT.toFixed(2)})` : ""}`}
         onSuccess={handlePaymentSuccess}
         onError={handlePaymentError}

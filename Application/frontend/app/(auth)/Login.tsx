@@ -79,7 +79,6 @@ const imageStyles = StyleSheet.create({
 const textStyles = StyleSheet.create({
   header: {
     fontSize: 32,
-
     fontWeight: "bold",
     textAlign: "center",
     color: "#073051",

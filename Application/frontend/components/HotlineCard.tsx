@@ -14,6 +14,7 @@ export default function HotlineCard({
   type,
   number,
   address,
+ 
 }: HotlineCardProps) {
   return (
     <TouchableOpacity
