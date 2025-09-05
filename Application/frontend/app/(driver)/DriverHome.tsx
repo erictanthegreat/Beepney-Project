@@ -70,7 +70,7 @@ export default class DriverHome extends Component {
       <View style={{ flex: 1 }}>
         <View style={styles.container}>
           <TouchableOpacity
-            onPress={() => router.push("/(profile)/DriverProfile")}
+            onPress={() => router.push("/(profile)/driverprofile")}
           >
             <ProfileIcon style={iconStyles.prof} />
           </TouchableOpacity>
