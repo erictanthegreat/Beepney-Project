@@ -56,7 +56,7 @@ export default class FareCalculator extends Component {
     await this.getCurrentLocation();
   }
 
-  // 🔹 Get Current Location and reverse geocode it via Mapbox
+  // Get Current Location and reverse geocode it via Mapbox
   getCurrentLocation = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -85,7 +85,7 @@ export default class FareCalculator extends Component {
     }
   };
 
-  // --- Fetch address suggestions (same as before) ---
+  // --- Fetch address suggestions ---
   fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
       this.setState({ [`${type}Suggestions`]: [] });
