@@ -70,7 +70,7 @@ export default class Home extends Component {
       <View style={{ flex: 1 }}>
         <View style={styles.container}>
           <TouchableOpacity
-            onPress={() => router.push("/(profile)/CommuterProfile")}
+            onPress={() => router.push("/(profile)/commuterprofile")}
           >
             <ProfileIcon style={iconStyles.prof} />
           </TouchableOpacity>
@@ -145,7 +145,10 @@ export default class Home extends Component {
           {/* Detailed Fare Matrices*/}
           <View style={styles.container}>
             <Text style={fareStyle.fare}>Detailed Fare Matrices</Text>
-            <TouchableOpacity style={fareStyle.button}>
+            <TouchableOpacity
+              onPress={() => router.push("/(feat)/farematrix")}
+              style={fareStyle.button}
+            >
               <FareIcon style={iconStyles.fare} />
             </TouchableOpacity>
           </View>
