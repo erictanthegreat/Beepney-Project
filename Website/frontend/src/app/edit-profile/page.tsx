@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 const EditProfilePage = () => {
   const [user, setUser] = useState<any>(null);
   const [username, setUsername] = useState<string>('');
+  const [role, setRole] = useState<string>('commuter'); // role state
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
@@ -29,6 +30,7 @@ const EditProfilePage = () => {
           setUser(data);
           setUsername(data.username || '');
           setAvatarUrl(data.avatar_url || '');
+          setRole(data.role || 'commuter'); // load role
         }
       }
     };
@@ -49,7 +51,7 @@ const EditProfilePage = () => {
       return;
     }
 
-    let updatedAvatarUrl = avatarUrl; // Default to the current avatar URL
+    let updatedAvatarUrl = avatarUrl;
 
     if (selectedImage) {
       const filePath = `pics/${user?.id}-${selectedImage.name}`;
@@ -71,13 +73,12 @@ const EditProfilePage = () => {
 
     const { data, error } = await supabase
       .from('profiles')
-      .update({ username, avatar_url: updatedAvatarUrl })
+      .update({ username, avatar_url: updatedAvatarUrl, role }) // update role too
       .eq('id', user?.id);
 
     if (error) {
       alert('Error updating profile: ' + error.message);
     } else {
-
       if (password.trim() !== '') {
         const { error: passwordError } = await supabase.auth.updateUser({ password });
         if (passwordError) {
@@ -138,16 +139,30 @@ const EditProfilePage = () => {
               />
             </div>
 
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Username</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 p-2 w-full border border-gray-300 rounded-md"
-                placeholder="Enter your username"
-              />
+            {/* Username + Role inline (adjusted width) */}
+            <div className="flex gap-4">
+              <div className="w-2/3">
+                <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Username</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                  placeholder="Enter your username"
+                />
+              </div>
+
+              <div className="w-1/3">
+                <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="mt-1 p-2 w-full border border-gray-300 rounded-md"
+                >
+                  <option value="commuter">Commuter</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
             </div>
 
             {/* New Password */}
