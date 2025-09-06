@@ -1,8 +1,16 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, Dimensions } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
+import { router } from "expo-router";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
 import BackButton from "@/components/Backbutton";
+import LocationIcon from "../../assets/images/loc.svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -39,6 +47,11 @@ export default class Stations extends Component {
           <BackButton />
           <Text style={statStyles.title}>Stations</Text>
           <View style={{ width: 50 }} />
+          <TouchableOpacity
+            onPress={() => router.push("/(result)/stationdetails")}
+          >
+            <LocationIcon />
+          </TouchableOpacity>
         </View>
       </View>
     );
