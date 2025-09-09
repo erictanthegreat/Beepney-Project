@@ -159,7 +159,7 @@ const EditProfilePage = () => {
                   onChange={(e) => setRole(e.target.value)}
                   className="mt-1 p-2 w-full border border-gray-300 rounded-md"
                 >
-                  <option value="commuter">Commuter</option>
+                  <option value="commuter">None</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
