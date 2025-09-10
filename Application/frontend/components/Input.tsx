@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: 18,
     marginBottom: 6,
     fontWeight: "bold",
     color: "#073051",
@@ -51,6 +51,6 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     fontSize: 13,
     backgroundColor: "#fff",
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
 });

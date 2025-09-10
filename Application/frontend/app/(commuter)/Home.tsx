@@ -179,7 +179,10 @@ export default class Home extends Component {
               <Text style={featStyles.text}>Ride History</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={featStyles.featureButton}>
+            <TouchableOpacity
+              onPress={() => router.push("/(feat)/complaints")}
+              style={featStyles.featureButton}
+            >
               <ComplaintIcon style={featStyles.icon} />
               <Text style={featStyles.text}>File a Complaint</Text>
             </TouchableOpacity>

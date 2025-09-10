@@ -80,6 +80,10 @@ export default function RootLayout() {
               name="(feat)/calculatedfare"
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="(feat)/complaints"
+              options={{ headerShown: false }}
+            />
 
             <Stack.Screen
               name="(result)/driverqr"
