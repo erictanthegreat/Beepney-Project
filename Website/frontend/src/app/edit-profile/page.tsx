@@ -54,13 +54,14 @@ const EditProfilePage = () => {
     let updatedAvatarUrl = avatarUrl;
 
     if (selectedImage) {
-      const filePath = `pics/${user?.id}-${selectedImage.name}`;
-      const { data, error } = await supabase.storage
+      // ✅ Upload into `pics/{user.id}/` folder
+      const filePath = `pics/${user?.id}/${selectedImage.name}`;
+      const { error: uploadError } = await supabase.storage
         .from('beepney-bucket')
-        .upload(filePath, selectedImage);
+        .upload(filePath, selectedImage, { upsert: true });
 
-      if (error) {
-        alert('Error uploading image: ' + error.message);
+      if (uploadError) {
+        alert('Error uploading image: ' + uploadError.message);
         return;
       }
 
@@ -71,9 +72,9 @@ const EditProfilePage = () => {
       updatedAvatarUrl = publicUrlData.publicUrl || avatarUrl;
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
-      .update({ username, avatar_url: updatedAvatarUrl, role }) // update role too
+      .update({ username, avatar_url: updatedAvatarUrl, role })
       .eq('id', user?.id);
 
     if (error) {
@@ -139,7 +140,7 @@ const EditProfilePage = () => {
               />
             </div>
 
-            {/* Username + Role inline (adjusted width) */}
+            {/* Username + Role inline */}
             <div className="flex gap-4">
               <div className="w-2/3">
                 <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Username</label>
