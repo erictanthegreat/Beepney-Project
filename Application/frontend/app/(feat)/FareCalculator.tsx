@@ -124,7 +124,7 @@ export default class FareCalculator extends Component {
   render() {
     return (
       <View style={{ flex: 1 }}>
-        {/* Fixed Header */}
+        {/* Header */}
         <View style={fareStyles.headerContainer}>
           <BackButton />
           <Text style={fareStyles.header}>Calculate Your Ride</Text>
@@ -138,7 +138,7 @@ export default class FareCalculator extends Component {
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
-                {/* ORIGIN INPUT (auto-filled with GPS) */}
+                {/* ORIGIN INPUT */}
                 <View style={fareStyles.cont}>
                   <OriginIcon style={fareStyles.icon} />
                   <TextInput
@@ -150,7 +150,7 @@ export default class FareCalculator extends Component {
                     }}
                     style={{ flex: 1 }}
                   />
-                  {/* 👇 Button to refresh current location */}
+                  {/*  Button to refresh current location */}
                   <TouchableOpacity onPress={this.getCurrentLocation}>
                     <Text style={{ color: "#1E86DA", marginLeft: 8 }}>📍</Text>
                   </TouchableOpacity>
