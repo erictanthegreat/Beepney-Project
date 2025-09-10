@@ -9,7 +9,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -21,17 +20,38 @@ const navItems = [
   { name: 'Fare Matrix', href: '/fare-matrix' },
 ];
 
+// Extend user type so we can store avatar_url
+interface UserWithAvatar extends User {
+  avatar_url?: string | null;
+}
+
 // Forward the ref to the header element
 const Header = forwardRef<HTMLElement, {}>((_, ref) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserWithAvatar | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // get avatar from profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        setUser({
+          ...user,
+          avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
+        });
+      }
+
       setLoading(false);
     };
 
@@ -52,7 +72,7 @@ const Header = forwardRef<HTMLElement, {}>((_, ref) => {
           onClick={() => router.push('/dashboard')}
           className="flex items-center space-x-3 pr-8 cursor-pointer"
         >
-          <Image
+          <img
             src="/Beepney Logo (Website 2).svg"
             alt="Beepney Logo"
             width={64}
@@ -97,16 +117,14 @@ const Header = forwardRef<HTMLElement, {}>((_, ref) => {
           {/* Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium md:w-9 md:h-9 sm:w-8 sm:h-8">
+              <button className="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium md:w-9 md:h-9 sm:w-8 sm:h-8 overflow-hidden">
                 {loading ? (
                   <div className="w-full h-full bg-gray-400 rounded-full animate-pulse" />
                 ) : (
-                  <Image
-                    src={user?.user_metadata?.avatar_url || "/Default Profile.svg"}
+                  <img
+                    src={user?.avatar_url || "/Default Profile.svg"}
                     alt="User Avatar"
-                    width={60}
-                    height={60}
-                    className="rounded-full"
+                    className="w-full h-full object-cover"
                   />
                 )}
               </button>

@@ -44,9 +44,11 @@ const ContactsPage: React.FC = () => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState('');
   const [editingHotline, setEditingHotline] = useState<Hotline | null>(null);
+  const [role, setRole] = useState<string>('commuter'); // ✅ track user role
 
   useEffect(() => {
     fetchHotlines();
+    fetchUserRole();
   }, []);
 
   const fetchHotlines = async () => {
@@ -55,19 +57,37 @@ const ContactsPage: React.FC = () => {
     else setHotlines(data || []);
   };
 
+  const fetchUserRole = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (!error && data?.role) {
+        setRole(data.role);
+      }
+    }
+  };
+
   const openOverlay = (section: string) => {
+    if (role !== 'admin') return; // ✅ safeguard
     setSelectedSection(section);
     setEditingHotline(null);
     setIsOverlayOpen(true);
   };
 
   const handleEditHotline = (hotline: Hotline) => {
+    if (role !== 'admin') return; // ✅ safeguard
     setEditingHotline(hotline);
     setSelectedSection(hotline.section);
     setIsOverlayOpen(true);
   };
 
   const handleSaveHotline = async (hotlineData: NewHotline) => {
+    if (role !== 'admin') return; // ✅ safeguard
     if (editingHotline) {
       const { data, error } = await supabase
         .from('hotlines')
@@ -92,6 +112,7 @@ const ContactsPage: React.FC = () => {
   };
 
   const handleDeleteHotline = async (id: string) => {
+    if (role !== 'admin') return; // ✅ safeguard
     const { error } = await supabase.from('hotlines').delete().eq('id', id);
 
     if (error) {
@@ -124,8 +145,10 @@ const ContactsPage: React.FC = () => {
                 {sectionHotlines.map((h, idx) => (
                   <div
                     key={h.id}
-                    className="border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 cursor-pointer hover:bg-gray-100 transition w-full h-full min-h-[100px]"
-                    onClick={() => handleEditHotline(h)}
+                    className={`border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 w-full h-full min-h-[100px] ${
+                      role === 'admin' ? 'cursor-pointer hover:bg-gray-100 transition' : ''
+                    }`}
+                    onClick={() => role === 'admin' && handleEditHotline(h)} // ✅ only admin can edit
                   >
                     <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
 
@@ -142,14 +165,16 @@ const ContactsPage: React.FC = () => {
                   </div>
                 ))}
 
-                <div
-                  className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
-                  onClick={() => openOverlay(key)}
-                >
-                  <button className="text-[#CBCBCB] group-hover:text-[#6B6B6B] transition-colors duration-200">
-                    <PlusIcon className="h-7 w-7" />
-                  </button>
-                </div>
+                {role === 'admin' && ( // ✅ add button only for admins
+                  <div
+                    className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
+                    onClick={() => openOverlay(key)}
+                  >
+                    <button className="text-[#CBCBCB] group-hover:text-[#6B6B6B] transition-colors duration-200">
+                      <PlusIcon className="h-7 w-7" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -164,7 +189,7 @@ const ContactsPage: React.FC = () => {
         }}
         sectionName={selectedSection}
         onSave={handleSaveHotline}
-        onDelete={handleDeleteHotline}   // ✅ Added
+        onDelete={handleDeleteHotline}
         initialData={editingHotline || undefined}
       />
     </>
