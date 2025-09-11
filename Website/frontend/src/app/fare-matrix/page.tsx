@@ -10,6 +10,7 @@ interface FareMatrix {
   id: string;
   section: string;
   title: string;
+  description?: string;
   file_url: string;
   file_name: string;
   created_at: string;
@@ -24,9 +25,10 @@ const fareSections = [
 
 const FareMatrixPage = () => {
   const [matrices, setMatrices] = useState<FareMatrix[]>([]);
-  const [role, setRole] = useState('commuter'); 
+  const [role, setRole] = useState<'commuter' | 'admin'>('commuter');
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState('');
+  const [selectedMatrix, setSelectedMatrix] = useState<FareMatrix | null>(null);
 
   useEffect(() => {
     fetchMatrices();
@@ -37,12 +39,14 @@ const FareMatrixPage = () => {
     const { data, error } = await supabase
       .from('fare_matrix')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true }); // oldest first → left
     if (!error && data) setMatrices(data);
   };
 
   const fetchRole = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       const { data, error } = await supabase
         .from('profiles')
@@ -53,66 +57,109 @@ const FareMatrixPage = () => {
     }
   };
 
-  const handleFileUpload = async ({
+  const handleSaveFare = async ({
+    id,
     file,
     title,
+    description,
   }: {
-    file: File;
+    id?: string;
+    file?: File | null;
     title: string;
+    description?: string | null;
   }) => {
-    if (!file || !selectedSection) {
-      alert('Please select a file and section.');
-      return;
-    }
-
     try {
-      // ✅ Save file into beepney-bucket/fare-matrix/{section}/
-      const timestamp = Date.now();
-      const filePath = `fare-matrix/${selectedSection}/${timestamp}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('beepney-bucket')
-        .upload(filePath, file);
+      let fileUrl: string | null = null;
+      let fileName: string | null = null;
 
-      if (uploadError) {
-        alert('Error uploading file: ' + uploadError.message);
-        return;
+      // If new file uploaded → push to storage
+      if (file) {
+        const timestamp = Date.now();
+        const filePath = `fare-matrix/${selectedSection}/${timestamp}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('beepney-bucket')
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+          alert('Error uploading file: ' + uploadError.message);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('beepney-bucket')
+          .getPublicUrl(filePath);
+
+        fileUrl = publicUrlData.publicUrl;
+        fileName = file.name;
       }
 
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('beepney-bucket')
-        .getPublicUrl(filePath);
+      if (id) {
+        // 🔄 update existing
+        const { error: updateError } = await supabase
+          .from('fare_matrix')
+          .update({
+            title,
+            description,
+            ...(fileUrl && { file_url: fileUrl }),
+            ...(fileName && { file_name: fileName }),
+          })
+          .eq('id', id);
 
-      // Get current user (needed for uploaded_by)
-      const { data: { user } } = await supabase.auth.getUser();
-
-      // Insert metadata into table
-      const { error: insertError } = await supabase.from('fare_matrix').insert([
-        {
-          section: selectedSection,
-          title,
-          file_url: publicUrlData.publicUrl,
-          file_name: file.name,
-          uploaded_by: user?.id,
-        },
-      ]);
-
-      if (insertError) {
-        alert('Error saving metadata: ' + insertError.message);
+        if (updateError) throw updateError;
       } else {
-        fetchMatrices(); // refresh list
+        // ➕ insert new
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        const { error: insertError } = await supabase.from('fare_matrix').insert([
+          {
+            section: selectedSection,
+            title,
+            description,
+            file_url: fileUrl,
+            file_name: fileName,
+            uploaded_by: user?.id,
+          },
+        ]);
+
+        if (insertError) throw insertError;
       }
+
+      fetchMatrices();
     } catch (err) {
-      console.error('Unexpected upload error:', err);
-      alert('Something went wrong while uploading.');
+      console.error('Unexpected error:', err);
+      alert('Something went wrong.');
     }
 
     setOverlayOpen(false);
     setSelectedSection('');
+    setSelectedMatrix(null);
+  };
+
+  const handleDeleteFare = async (id: string) => {
+    // 🔥 confirmation removed here (already in Overlay3)
+    const { error } = await supabase.from('fare_matrix').delete().eq('id', id);
+
+    if (error) {
+      alert('Error deleting: ' + error.message);
+    } else {
+      fetchMatrices();
+    }
+
+    setOverlayOpen(false);
+    setSelectedMatrix(null);
   };
 
   const handleAddFare = (key: string) => {
+    setSelectedMatrix(null);
     setSelectedSection(key);
+    setOverlayOpen(true);
+  };
+
+  const handleEditFare = (matrix: FareMatrix) => {
+    setSelectedMatrix(matrix);
+    setSelectedSection(matrix.section);
     setOverlayOpen(true);
   };
 
@@ -129,28 +176,40 @@ const FareMatrixPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {matrices
                 .filter((m) => m.section === key)
-                .map((m) => (
+                .map((m, idx) => (
                   <div
                     key={m.id}
-                    className="border border-[#D1D1D1] rounded-[15px] p-4 flex flex-col justify-between hover:bg-gray-50 transition-colors duration-200"
+                    className="border border-[#D1D1D1] rounded-[15px] p-4 flex items-start gap-3 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                    onClick={() => handleEditFare(m)}
                   >
-                    <p className="font-semibold text-[#073051] text-lg truncate">{m.title}</p>
-                    <p className="text-sm text-gray-500 truncate">{m.file_name}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {new Date(m.created_at).toLocaleDateString()}
-                    </p>
-                    <a
-                      href={m.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 mt-2 text-sm hover:underline"
-                    >
-                      View File
-                    </a>
+                    <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
+
+                    <div className="flex flex-col flex-1">
+                      <p className="font-semibold text-[#073051] text-lg truncate">
+                        {key} Fare {idx + 1}{' '}
+                        <span className="text-[#595959] font-normal">
+                          ({m.title})
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {m.file_name}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {new Date(m.created_at).toLocaleDateString()}
+                      </p>
+                      <a
+                        href={m.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 mt-2 text-sm hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View File
+                      </a>
+                    </div>
                   </div>
                 ))}
 
-              {/* Add new fare (admins only) */}
               {role === 'admin' && (
                 <div
                   className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
@@ -164,12 +223,17 @@ const FareMatrixPage = () => {
         ))}
       </main>
 
-      {/* Upload Overlay */}
       <Overlay3
         isOpen={overlayOpen}
-        onClose={() => setOverlayOpen(false)}
+        onClose={() => {
+          setOverlayOpen(false);
+          setSelectedMatrix(null);
+        }}
         sectionName={selectedSection}
-        onSave={handleFileUpload}
+        onSave={handleSaveFare}
+        initialData={selectedMatrix ?? undefined}
+        onDelete={handleDeleteFare}
+        role={role}
       />
     </>
   );
