@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from "react";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 /**
  * @typedef {Object} Overlay3Props
@@ -152,11 +155,14 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave, initial
                   title="PDF Preview"
                 />
               ) : (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="max-h-full max-w-full rounded object-contain"
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={previewUrl}
+                    alt="Preview"
+                    fill
+                    className="object-contain rounded"
+                  />
+                </div>
               )
             ) : (
               <p className="text-gray-400 text-center">No file selected</p>

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
+import Image from 'next/image';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard' },
@@ -26,7 +27,7 @@ interface UserWithAvatar extends User {
 }
 
 // Forward the ref to the header element
-const Header = forwardRef<HTMLElement, {}>((_, ref) => {
+const Header = forwardRef<HTMLElement, Record<string, never>>((_, ref) => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<UserWithAvatar | null>(null);
@@ -66,17 +67,17 @@ const Header = forwardRef<HTMLElement, {}>((_, ref) => {
   return (
     <header ref={ref} className="w-full border-b border-[#D1D1D1] bg-white">
       <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-4 md:px-8 py-3">
-        
         {/* Logo */}
         <div
           onClick={() => router.push('/dashboard')}
           className="flex items-center space-x-3 pr-8 cursor-pointer"
         >
-          <img
+          <Image
             src="/Beepney Logo (Website 2).svg"
             alt="Beepney Logo"
             width={64}
             height={64}
+            priority
           />
         </div>
 
@@ -98,7 +99,6 @@ const Header = forwardRef<HTMLElement, {}>((_, ref) => {
         </nav>
 
         <div className="flex items-center space-x-8 md:space-x-6 sm:space-x-4 pl-8">
-          
           {/* Notification */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -121,15 +121,20 @@ const Header = forwardRef<HTMLElement, {}>((_, ref) => {
                 {loading ? (
                   <div className="w-full h-full bg-gray-400 rounded-full animate-pulse" />
                 ) : (
-                  <img
-                    src={user?.avatar_url || "/Default Profile.svg"}
+                  <Image
+                    src={user?.avatar_url || '/Default Profile.svg'}
                     alt="User Avatar"
-                    className="w-full h-full object-cover"
+                    width={44}
+                    height={44}
+                    className="rounded-full object-cover"
                   />
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-white shadow-md border rounded-md">
+            <DropdownMenuContent
+              align="end"
+              className="bg-white shadow-md border rounded-md"
+            >
               <DropdownMenuItem onSelect={() => router.push('/edit-profile')}>
                 Edit Profile
               </DropdownMenuItem>

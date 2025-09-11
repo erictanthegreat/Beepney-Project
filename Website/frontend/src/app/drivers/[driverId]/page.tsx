@@ -76,8 +76,9 @@ const DriverProfilePage = () => {
             <ArrowLeftIcon className="w-5 h-5" />
           </div>
 
+          {/* ✅ Fix: escape apostrophe */}
           <h1 className="text-[#073051] font-bold text-[32px] sm:text-[40px]">
-            Driver's Profile Details
+            Driver&apos;s Profile Details
           </h1>
         </div>
 

@@ -5,11 +5,19 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Header from '../../components/ui/header';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+
+interface Profile {
+  id: string;
+  username: string | null;
+  avatar_url: string | null;
+  role: string | null;
+}
 
 const EditProfilePage = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<Profile | null>(null);
   const [username, setUsername] = useState<string>('');
-  const [role, setRole] = useState<string>('commuter'); // role state
+  const [role, setRole] = useState<string>('commuter');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
@@ -18,19 +26,22 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (user) {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
-        
+          .single<Profile>();
+
         if (data) {
           setUser(data);
-          setUsername(data.username || '');
-          setAvatarUrl(data.avatar_url || '');
-          setRole(data.role || 'commuter'); // load role
+          setUsername(data.username ?? '');
+          setAvatarUrl(data.avatar_url ?? '');
+          setRole(data.role ?? 'commuter');
         }
       }
     };
@@ -53,9 +64,8 @@ const EditProfilePage = () => {
 
     let updatedAvatarUrl = avatarUrl;
 
-    if (selectedImage) {
-      // ✅ Upload into `pics/{user.id}/` folder
-      const filePath = `pics/${user?.id}/${selectedImage.name}`;
+    if (selectedImage && user) {
+      const filePath = `pics/${user.id}/${selectedImage.name}`;
       const { error: uploadError } = await supabase.storage
         .from('beepney-bucket')
         .upload(filePath, selectedImage, { upsert: true });
@@ -69,19 +79,21 @@ const EditProfilePage = () => {
         .from('beepney-bucket')
         .getPublicUrl(filePath);
 
-      updatedAvatarUrl = publicUrlData.publicUrl || avatarUrl;
+      updatedAvatarUrl = publicUrlData.publicUrl ?? avatarUrl;
     }
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from('profiles')
       .update({ username, avatar_url: updatedAvatarUrl, role })
       .eq('id', user?.id);
 
-    if (error) {
-      alert('Error updating profile: ' + error.message);
+    if (updateError) {
+      alert('Error updating profile: ' + updateError.message);
     } else {
       if (password.trim() !== '') {
-        const { error: passwordError } = await supabase.auth.updateUser({ password });
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password,
+        });
         if (passwordError) {
           alert('Error updating password: ' + passwordError.message);
           return;
@@ -109,17 +121,19 @@ const EditProfilePage = () => {
       <Header />
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
         <div className="border border-[#D1D1D1] rounded-[30px] p-6">
-          <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051] mb-6">Profile</h1>
-          
+          <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051] mb-6">
+            Profile
+          </h1>
+
           <form onSubmit={handleSave} className="space-y-8">
-            
             {/* Avatar Section */}
             <div className="flex flex-col items-center">
-              <div className="w-24 h-24 mb-4">
-                <img
+              <div className="w-24 h-24 mb-4 relative">
+                <Image
                   src={avatarUrl || '/Default Profile.svg'}
                   alt="Avatar"
-                  className="w-full h-full rounded-full object-cover"
+                  fill
+                  className="rounded-full object-cover"
                 />
               </div>
 
@@ -143,7 +157,12 @@ const EditProfilePage = () => {
             {/* Username + Role inline */}
             <div className="flex gap-4">
               <div className="w-2/3">
-                <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Username</label>
+                <label
+                  className="block text-sm font-medium"
+                  style={{ color: '#737F83' }}
+                >
+                  Username
+                </label>
                 <input
                   type="text"
                   value={username}
@@ -154,7 +173,12 @@ const EditProfilePage = () => {
               </div>
 
               <div className="w-1/3">
-                <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Role</label>
+                <label
+                  className="block text-sm font-medium"
+                  style={{ color: '#737F83' }}
+                >
+                  Role
+                </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
@@ -168,7 +192,12 @@ const EditProfilePage = () => {
 
             {/* New Password */}
             <div>
-              <label className="block text-sm font-medium" style={{ color: '#737F83' }}>New Password</label>
+              <label
+                className="block text-sm font-medium"
+                style={{ color: '#737F83' }}
+              >
+                New Password
+              </label>
               <input
                 type="password"
                 value={password}
@@ -180,7 +209,12 @@ const EditProfilePage = () => {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium" style={{ color: '#737F83' }}>Confirm Password</label>
+              <label
+                className="block text-sm font-medium"
+                style={{ color: '#737F83' }}
+              >
+                Confirm Password
+              </label>
               <input
                 type="password"
                 value={confirmPassword}
