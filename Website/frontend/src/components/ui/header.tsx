@@ -27,7 +27,7 @@ interface UserWithAvatar extends User {
 }
 
 // Forward the ref to the header element
-const Header = forwardRef<HTMLElement, Record<string, never>>((_, ref) => {
+const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>((props, ref) => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<UserWithAvatar | null>(null);

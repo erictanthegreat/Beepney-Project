@@ -186,14 +186,14 @@ const TimeRangeInput = ({ valueAM, valuePM, onChange }: any) => (
 const StationsPage = () => {
   const headerRef = useRef<HTMLElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);     // draggable marker for current edit/add
-  const mapRef = useRef<mapboxgl.Map | null>(null);           // keep map instance
-  const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map()); // markers for listed stations
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map());
 
-  const [headerHeight, setHeaderHeight] = useState(0);
+  const [headerHeight, setHeaderHeight] = useState(90);
   const [isAddingStation, setIsAddingStation] = useState(false);
   const [stationData, setStationData] = useState(defaultStation);
-  const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);  // Store station landmarks
+  const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);
 
   // Reset form & draggable marker
   const resetStationData = () => {
@@ -205,7 +205,7 @@ const StationsPage = () => {
     }
   };
 
-  // Get header height
+  // Measure actual header height after first render
   useEffect(() => {
     if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
   }, []);
@@ -360,7 +360,7 @@ const StationsPage = () => {
 
   return (
     <>
-      <Header />
+      <Header ref={headerRef} />
       
       <main className="flex h-screen overflow-hidden">
         {/* Sidebar */}
