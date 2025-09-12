@@ -17,6 +17,7 @@ export default function DriverLayout() {
         tabBarActiveTintColor: "#1E86DA", //
         tabBarInactiveTintColor: "#A0A0A0", //
         headerShown: false,
+        animation: "fade",
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           android: {
@@ -41,7 +42,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="driverrideHailing"
+        name="driverridehailing"
         options={{
           title: "TricyCall",
           tabBarIcon: ({ color }) => (

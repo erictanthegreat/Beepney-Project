@@ -10,7 +10,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useColorScheme } from "../hooks/useColorScheme";
 import "react-native-reanimated";
 import React from "react";
+import { TransitionPresets } from "@react-navigation/stack";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
@@ -27,78 +29,35 @@ export default function RootLayout() {
         <ThemeProvider
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="splash" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="(auth)/createprofile"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(auth)/login"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(auth)/driverprofile"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/farecalculator"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/farematrix"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/ridehistory"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/scandriverdets"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(profile)/commuterprofile"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(profile)/driverprofile"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="(feat)/sos" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="(feat)/generateqr"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/postrental"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/calculatedfare"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(feat)/complaints"
-              options={{ headerShown: false }}
-            />
-
-            <Stack.Screen
-              name="(result)/driverqr"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(result)/driverdetails"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="(result)/stationdetails"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="(commuter)" options={{ headerShown: false }} />
-            <Stack.Screen name="(driver)" options={{ headerShown: false }} />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              gestureEnabled: true,
+              animation: "slide_from_right",
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="splash" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="(auth)/createprofile" />
+            <Stack.Screen name="(auth)/login" />
+            <Stack.Screen name="(auth)/driverprofile" />
+            <Stack.Screen name="(feat)/farecalculator" />
+            <Stack.Screen name="(feat)/farematrix" />
+            <Stack.Screen name="(feat)/ridehistory" />
+            <Stack.Screen name="(feat)/scandriverdets" />
+            <Stack.Screen name="(profile)/commuterprofile" />
+            <Stack.Screen name="(profile)/driverprofile" />
+            <Stack.Screen name="(feat)/sos" />
+            <Stack.Screen name="(feat)/generateqr" />
+            <Stack.Screen name="(feat)/postrental" />
+            <Stack.Screen name="(feat)/calculatedfare" />
+            <Stack.Screen name="(feat)/complaints" />
+            <Stack.Screen name="(result)/driverqr" />
+            <Stack.Screen name="(result)/driverdetails" />
+            <Stack.Screen name="(result)/stationdetails" />
+            <Stack.Screen name="(commuter)" />
+            <Stack.Screen name="(driver)" />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />

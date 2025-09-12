@@ -1,9 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform, Pressable } from "react-native";
-import type { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { Platform } from "react-native";
 
-import TabBarBackground from "../../components/ui/TabBarBackground";
 import { useColorScheme } from "../../hooks/useColorScheme";
 import HomeIcon from "../../assets/images/home.svg";
 import RideHailingIcon from "../../assets/images/ride-hailing.svg";
@@ -17,9 +15,10 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#1E86DA", //
-        tabBarInactiveTintColor: "#A0A0A0", //
+        tabBarActiveTintColor: "#1E86DA",
+        tabBarInactiveTintColor: "#A0A0A0",
         headerShown: false,
+        animation: "fade",
 
         tabBarStyle: Platform.select({
           android: {

@@ -1,5 +1,13 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, ScrollView, Pressable } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import "@fontsource/poppins";
@@ -68,88 +76,95 @@ export default class Renting extends Component<{}, RentingState> {
 
   render() {
     return (
-      <View style={rentStyles.container}>
-        <BackButton />
-        <Text style={rentStyles.header}>Jeepney/Van Rental</Text>
-        <Text style={{ marginLeft: 25, color: "#595959" }}>
-          Post your rental info.
-        </Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // adjust if you have a header
+      >
+        <View style={rentStyles.container}>
+          <BackButton />
+          <Text style={rentStyles.header}>Jeepney/Van Rental</Text>
+          <Text style={{ marginLeft: 25, color: "#595959" }}>
+            Post your rental info.
+          </Text>
 
-        <ScrollView
-          contentContainerStyle={{
-            marginLeft: 25,
-            marginTop: 20,
-            paddingBottom: 70,
-          }}
-        >
-          <Text style={rentStyles.subHeader}>Post Rental Info</Text>
+          <ScrollView
+            contentContainerStyle={{
+              marginLeft: 25,
+              marginTop: 20,
+              paddingBottom: 70,
+            }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={rentStyles.subHeader}>Post Rental Info</Text>
 
-          <Input
-            label="Name"
-            placeholder="E.g Kevin's Rental"
-            keyboardType="default"
-            containerStyle={{ width: "90%" }}
-            value={this.state.name}
-            onChangeText={(text) => this.setState({ name: text })}
-          />
+            <Input
+              label="Name"
+              placeholder="E.g Kevin's Rental"
+              keyboardType="default"
+              containerStyle={{ width: "90%" }}
+              value={this.state.name}
+              onChangeText={(text) => this.setState({ name: text })}
+            />
 
-          <Text style={rentStyles.label}>Types of Vehicles</Text>
-          <SegmentedButton
-            value={this.state.vehicleType}
-            onChange={(val) => this.setState({ vehicleType: val })}
-          />
+            <Text style={rentStyles.label}>Types of Vehicles</Text>
+            <SegmentedButton
+              value={this.state.vehicleType}
+              onChange={(val) => this.setState({ vehicleType: val })}
+            />
 
-          <Input
-            label="Contact Number"
-            placeholder="E.g 09XX-XXX-XXXX"
-            keyboardType="numeric"
-            containerStyle={{ width: "90%" }}
-            value={this.state.contact}
-            onChangeText={(text) => this.setState({ contact: text })}
-          />
+            <Input
+              label="Contact Number"
+              placeholder="E.g 09XX-XXX-XXXX"
+              keyboardType="numeric"
+              containerStyle={{ width: "90%" }}
+              value={this.state.contact}
+              onChangeText={(text) => this.setState({ contact: text })}
+            />
 
-          <Input
-            label="Location"
-            placeholder="E.g To Vigan"
-            keyboardType="default"
-            containerStyle={{ width: "90%" }}
-            value={this.state.location}
-            onChangeText={(text) => this.setState({ location: text })}
-          />
+            <Input
+              label="Location"
+              placeholder="E.g To Vigan"
+              keyboardType="default"
+              containerStyle={{ width: "90%" }}
+              value={this.state.location}
+              onChangeText={(text) => this.setState({ location: text })}
+            />
 
-          {this.state.services.map((service, index) => (
-            <View style={rentStyles.inputWrapper} key={index}>
-              <Input
-                label="Services Offered"
-                placeholder="E.g Private Transport"
-                keyboardType="default"
-                containerStyle={{ width: "100%" }}
-                value={service}
-                onChangeText={(text) => this.updateService(text, index)}
-              />
+            {this.state.services.map((service, index) => (
+              <View style={rentStyles.inputWrapper} key={index}>
+                <Input
+                  label="Services Offered"
+                  placeholder="E.g Private Transport"
+                  keyboardType="default"
+                  containerStyle={{ width: "100%" }}
+                  value={service}
+                  onChangeText={(text) => this.updateService(text, index)}
+                />
 
-              {index > 0 && (
-                <Pressable
-                  style={rentStyles.deleteInside}
-                  onPress={() => this.removeService(index)}
-                >
-                  <Ionicons name="close-circle" size={22} color="#FF4D4F" />
-                </Pressable>
-              )}
-            </View>
-          ))}
+                {index > 0 && (
+                  <Pressable
+                    style={rentStyles.deleteInside}
+                    onPress={() => this.removeService(index)}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#FF4D4F" />
+                  </Pressable>
+                )}
+              </View>
+            ))}
 
-          <Pressable style={rentStyles.addButton} onPress={this.addService}>
-            <Ionicons name="add-circle" size={32} color="#0D99FF" />
-          </Pressable>
+            <Pressable style={rentStyles.addButton} onPress={this.addService}>
+              <Ionicons name="add-circle" size={32} color="#0D99FF" />
+            </Pressable>
 
-          <CustomButton
-            title="Done"
-            onPress={this.saveRental}
-            style={rentStyles.custButton}
-          />
-        </ScrollView>
-      </View>
+            <CustomButton
+              title="Done"
+              onPress={this.saveRental}
+              style={rentStyles.custButton}
+            />
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 }

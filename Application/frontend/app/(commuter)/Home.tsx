@@ -74,18 +74,7 @@ export default class Home extends Component {
           >
             <ProfileIcon style={iconStyles.prof} />
           </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 15,
-              color: "#073051",
-              marginTop: 60,
-              marginLeft: 5,
-              fontFamily: "Poppins",
-            }}
-          >
-            {" "}
-            Hello, Ayath!{" "}
-          </Text>
+          <Text style={styles.name}>Hello, Ayath!</Text>
 
           <TouchableOpacity>
             <NotifIcon style={iconStyles.notif} />
@@ -239,6 +228,13 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: "#fff",
+  },
+  name: {
+    fontSize: 15,
+    color: "#073051",
+    marginTop: 60,
+    marginLeft: 5,
+    fontFamily: "Poppins",
   },
 });
 

@@ -13,26 +13,33 @@ type Props = {
 };
 
 export default function VehicleSegmentedButton({ value, onChange }: Props) {
-  const options: { value: VehicleType; icon: React.ReactNode }[] = [
-    { value: "Jeep", icon: <JeepIcon width={28} height={28} /> },
-    { value: "Van", icon: <VanIcon width={28} height={28} /> },
-    { value: "Jeep & Van", icon: <BothIcon width={50} height={40} /> },
+  const options: { value: VehicleType; Icon: any }[] = [
+    { value: "Jeep", Icon: JeepIcon },
+    { value: "Van", Icon: VanIcon },
+    { value: "Jeep & Van", Icon: BothIcon },
   ];
 
   return (
     <View style={styles.container}>
-      {options.map((option) => (
-        <TouchableOpacity
-          key={option.value}
-          style={[
-            styles.button,
-            value === option.value && styles.selectedButton,
-          ]}
-          onPress={() => onChange(option.value)}
-        >
-          {option.icon}
-        </TouchableOpacity>
-      ))}
+      {options.map((option) => {
+        const isSelected = value === option.value;
+        const iconColor = isSelected ? "#fff" : "#CBCBCB";
+        const OptionIcon = option.Icon;
+
+        return (
+          <TouchableOpacity
+            key={option.value}
+            style={[styles.button, isSelected && styles.selectedButton]}
+            onPress={() => onChange(option.value)}
+          >
+            <OptionIcon
+              width={option.value === "Jeep & Van" ? 50 : 28}
+              height={option.value === "Jeep & Van" ? 40 : 28}
+              color={iconColor}
+            />
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
