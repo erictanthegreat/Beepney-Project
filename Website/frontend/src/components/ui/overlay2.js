@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react'
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 /**
  * @typedef {Object} Overlay2Props
@@ -14,13 +17,13 @@ import React, { useEffect, useState } from 'react'
  * @param {Overlay2Props} props
  */
 export default function Overlay2({ isOpen, onClose, name, idType, frontImageUrl, backImageUrl }) {
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setLoaded(isOpen)
-  }, [isOpen])
+    setLoaded(isOpen);
+  }, [isOpen]);
 
-  if (!loaded) return null
+  if (!loaded) return null;
 
   return (
     <div className="overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
@@ -43,23 +46,28 @@ export default function Overlay2({ isOpen, onClose, name, idType, frontImageUrl,
         <div className="flex flex-col sm:flex-row gap-6">
           <div className="flex-1">
             <p className="text-sm text-gray-500 mb-2">Front</p>
-            <img
-              src={frontImageUrl}
-              alt="Front"
-              className="w-full h-[500px] object-cover rounded-lg border border-gray-200"
-            />
+            <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+              <Image
+                src={frontImageUrl}
+                alt="Front"
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
           <div className="flex-1">
             <p className="text-sm text-gray-500 mb-2">Back</p>
-            <img
-              src={backImageUrl}
-              alt="Back"
-              className="w-full h-[500px] object-cover rounded-lg border border-gray-200"
-            />
+            <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
+              <Image
+                src={backImageUrl}
+                alt="Back"
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Note for confirmation */}
         <div className="mt-6 text-sm text-gray-500">
           For confirmation, you may verify the ID here:{' '}
           <a
@@ -73,5 +81,5 @@ export default function Overlay2({ isOpen, onClose, name, idType, frontImageUrl,
         </div>
       </div>
     </div>
-  )
+  );
 }

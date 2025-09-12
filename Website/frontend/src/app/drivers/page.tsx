@@ -6,6 +6,7 @@ import Header from '../../components/ui/header';
 import { FunnelIcon, BarsArrowDownIcon, MagnifyingGlassIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext, PaginationLink } from '@/components/ui/pagination';
+import Image from 'next/image'; // ✅ use Next.js Image
 
 const drivers = [
   { id: 1, name: 'John Doe', status: 'Active', createdAt: '2023-06-10 09:00', plateNumber: 'ABC-1234' },
@@ -43,8 +44,9 @@ const DriversPage = () => {
     <>
       <Header />
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
+        {/* Search + Filter */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* Search Engine */}
+          {/* Search */}
           <div className="relative w-full max-w-md md:w-[320px] min-w-0">
             <input
               type="text"
@@ -58,24 +60,20 @@ const DriversPage = () => {
 
           {/* Sort & Filter */}
           <div className="flex flex-wrap md:flex-nowrap gap-4">
-            <button
-              className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
-                hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
-            >
+            <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
+                hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
               <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
               <span>Sort</span>
             </button>
-            <button
-              className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
-                hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
-            >
+            <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
+                hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
               <FunnelIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
               <span>Filter</span>
             </button>
           </div>
         </div>
 
-        {/* Title and Pagination */}
+        {/* Title + Pagination */}
         <div className="flex items-center justify-between">
           <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">Drivers</h1>
 
@@ -110,6 +108,7 @@ const DriversPage = () => {
           </Pagination>
         </div>
 
+        {/* Table */}
         <Table className="shadow-none border border-[#D1D1D1] rounded-md overflow-hidden">
           <TableHeader>
             <tr>
@@ -141,17 +140,20 @@ const DriversPage = () => {
                     type="checkbox"
                     checked={selectedDrivers.includes(driver.id)}
                     onChange={(e) => {
-                      e.stopPropagation(); // prevent row click
+                      e.stopPropagation();
                       toggleDriverSelection(driver.id);
                     }}
                   />
                 </TableCell>
 
                 <TableCell>
-                  <img
+                  {/* ✅ Fix: use Next.js Image */}
+                  <Image
                     src="/Default Profile.svg"
                     alt={driver.name}
-                    className="h-8 w-8 rounded-full object-cover"
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover"
                   />
                 </TableCell>
 
@@ -160,9 +162,7 @@ const DriversPage = () => {
                 <TableCell>{driver.status}</TableCell>
                 <TableCell>{driver.createdAt}</TableCell>
 
-                <TableCell
-                  onClick={(e) => e.stopPropagation()} // prevent row click
-                >
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <button className="flex items-center justify-center w-6 h-6 text-gray-500">
                     <EllipsisVerticalIcon className="h-5 w-5" />
                   </button>

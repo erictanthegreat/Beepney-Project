@@ -1,30 +1,41 @@
-import React, { useState, useEffect } from "react";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 /**
  * @typedef {Object} Overlay3Props
  * @property {boolean} isOpen
  * @property {() => void} onClose
  * @property {string} sectionName
- * @property {(data: { file: File; title: string; description?: string }) => void} onSave
+ * @property {(data: { id?: string; file?: File | null; title: string; description?: string | null }) => void} onSave
+ * @property {{ id: string; title: string; description?: string; file_url: string; file_name: string }} [initialData]
+ * @property {(id: string) => void} [onDelete]
+ * @property {"admin" | "commuter"} role
  */
 
 /**
  * @param {Overlay3Props} props
  */
-export default function Overlay3({ isOpen, onClose, sectionName, onSave }) {
+export default function Overlay3({ isOpen, onClose, sectionName, onSave, initialData, onDelete, role }) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState(""); // optional description
+  const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen && initialData) {
+      setTitle(initialData.title || "");
+      setDescription(initialData.description || "");
+      setFile(null);
+      setPreviewUrl(initialData.file_url || "");
+    } else if (!isOpen) {
       setTitle("");
       setDescription("");
       setFile(null);
       setPreviewUrl("");
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0] || null;
@@ -34,21 +45,33 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave }) {
       const url = URL.createObjectURL(selectedFile);
       setPreviewUrl(url);
     } else {
-      setPreviewUrl("");
+      setPreviewUrl(initialData?.file_url || "");
     }
   };
 
   const handleSave = () => {
-    if (!file || !title.trim()) {
-      alert("Please provide both a title and a file.");
+    if (!title.trim()) {
+      alert("Please provide a title.");
       return;
     }
 
-    onSave({ 
-      file, 
-      title: title.trim(), 
-      description: description.trim() || null 
+    if (!file && !initialData?.file_url) {
+      alert("Please select a file.");
+      return;
+    }
+
+    onSave({
+      id: initialData?.id,
+      file,
+      title: title.trim(),
+      description: description.trim() || null,
     });
+  };
+
+  const handleDelete = () => {
+    if (initialData?.id && onDelete) {
+      onDelete(initialData.id);
+    }
   };
 
   if (!isOpen) return null;
@@ -57,14 +80,16 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave }) {
     <div className="overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-[30px] shadow-lg w-[90%] max-w-[1500px] max-h-[95vh] overflow-y-auto">
         <h2 className="text-[#073051] text-[28px] sm:text-[32px] font-bold mb-6">
-          Upload Fare Matrix – {sectionName}
+          {initialData
+            ? role === "admin"
+              ? "Edit Fare Matrix"
+              : "Preview Fare Matrix"
+            : "Upload Fare Matrix"}{" "}
+          – {sectionName}
         </h2>
 
-        {/* Two-column layout */}
         <div className="flex gap-6">
-          {/* Left column - Form */}
           <div className="w-[40%] space-y-4">
-            {/* Title input */}
             <div>
               <label className="block text-[18px] font-medium text-[#073051] mb-2">
                 Title
@@ -74,11 +99,13 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave }) {
                 placeholder="Enter matrix title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
+                readOnly={role !== "admin"}
+                className={`w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px] ${
+                  role !== "admin" ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
               />
             </div>
 
-            {/* Description input (optional, larger by default) */}
             <div>
               <label className="block text-[18px] font-medium text-[#073051] mb-2">
                 Description (optional)
@@ -87,55 +114,55 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave }) {
                 placeholder="Enter description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px] h-[120px] resize-none"
+                readOnly={role !== "admin"}
+                className={`w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px] h-[120px] resize-none ${
+                  role !== "admin" ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
               />
             </div>
 
-            {/* File input */}
-            <div>
-              <label className="block text-[18px] font-medium text-[#073051] mb-2">
-                File
-              </label>
-              <input
-                id="file-upload"
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <label
-                htmlFor="file-upload"
-                className="inline-block px-4 py-2 bg-[#1E86DA] text-white rounded-[15px] cursor-pointer hover:bg-[#1478C9] transition-colors duration-200"
-              >
-                {file ? "Choose Another File" : "Choose File"}
-              </label>
-              {/* Optional: remove uploaded file name display */}
-              {/* {file && (
-                <p className="text-sm text-gray-600 mt-2 truncate">
-                  {file.name}
+            {role === "admin" && (
+              <div>
+                <label className="block text-[18px] font-medium text-[#073051] mb-2">
+                  File
+                </label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="inline-block px-4 py-2 bg-[#1E86DA] text-white rounded-[15px] cursor-pointer hover:bg-[#1478C9] transition-colors duration-200"
+                >
+                  {file ? "Choose Another File" : "Choose File"}
+                </label>
+                <p className="text-sm text-gray-400 mt-1">
+                  Supported: PDF, JPG, PNG
                 </p>
-              )} */}
-              <p className="text-sm text-gray-400 mt-1">
-                Supported: PDF, JPG, PNG
-              </p>
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Right column - Preview */}
           <div className="w-[60%] border rounded-lg p-2 h-[600px] flex items-center justify-center bg-gray-50">
             {previewUrl ? (
-              file?.type === "application/pdf" ? (
+              previewUrl.endsWith(".pdf") || file?.type === "application/pdf" ? (
                 <iframe
                   src={previewUrl}
                   className="w-full h-full rounded"
                   title="PDF Preview"
                 />
               ) : (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="max-h-full max-w-full rounded object-contain"
-                />
+                <div className="relative w-full h-full">
+                  <Image
+                    src={previewUrl}
+                    alt="Preview"
+                    fill
+                    className="object-contain rounded"
+                  />
+                </div>
               )
             ) : (
               <p className="text-gray-400 text-center">No file selected</p>
@@ -143,23 +170,46 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave }) {
           </div>
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end items-center mt-6 space-x-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="px-4 py-2 bg-[#1E86DA] text-white rounded-[15px] hover:bg-[#1478C9] transition-colors duration-200"
-          >
-            Save
-          </button>
-        </div>
+        {role === "admin" ? (
+          <div className="flex justify-between items-center mt-6">
+            {initialData && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 border border-red-400 text-red-500 rounded-[15px] hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+              >
+                Delete
+              </button>
+            )}
+
+            <div className="flex space-x-4 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className="px-4 py-2 bg-[#1E86DA] text-white rounded-[15px] hover:bg-[#1478C9] transition-colors duration-200"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-end mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
+            >
+              Close
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

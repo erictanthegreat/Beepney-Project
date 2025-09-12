@@ -39,7 +39,7 @@ const defaultStation = {
   }[],
 };
 
-// Insert station into Supabase
+// Insert, update, delete, fetch functions (unchanged)
 const insertStation = async (station: any) => {
   const { data, error } = await supabase
     .from('stations')
@@ -74,7 +74,6 @@ const insertStation = async (station: any) => {
   return createdStation;
 };
 
-// Update existing station
 const updateStation = async (station: any) => {
   const { data, error } = await supabase
     .from('stations')
@@ -95,9 +94,7 @@ const updateStation = async (station: any) => {
     return null;
   }
 
-  // upsert destinations
   if (station.destinations) {
-    // delete existing and re-insert (simple way)
     await supabase.from('station_destinations').delete().eq('station_id', station.id);
     const destinationsPayload = station.destinations.map((d: any) => ({
       station_id: station.id,
@@ -114,9 +111,7 @@ const updateStation = async (station: any) => {
   return data?.[0] ?? null;
 };
 
-// Delete station
 const deleteStation = async (id: string | number) => {
-  // delete child destinations first
   await supabase.from('station_destinations').delete().eq('station_id', id);
   const { error } = await supabase.from('stations').delete().eq('id', id);
   if (error) {
@@ -127,7 +122,6 @@ const deleteStation = async (id: string | number) => {
   return true;
 };
 
-// Fetch all stations with destinations
 const fetchStations = async () => {
   const { data: stations, error } = await supabase.from('stations').select('*');
   if (error) {
@@ -137,14 +131,12 @@ const fetchStations = async () => {
 
   if (!stations || stations.length === 0) return [];
 
-  // fetch destinations for all stations
   const stationIds = stations.map((s) => s.id);
   const { data: dests } = await supabase
     .from('station_destinations')
     .select('*')
     .in('station_id', stationIds);
 
-  // merge destinations into stations
   return stations.map((s) => ({
     ...s,
     destinations: (dests || [])
@@ -158,7 +150,7 @@ const fetchStations = async () => {
   }));
 };
 
-// Reusable input with label
+// Reusable inputs
 const LabeledInput = ({ label, ...props }: any) => (
   <div>
     <label className="text-[#073051] text-sm font-bold">{label}</label>
@@ -170,14 +162,15 @@ const LabeledInput = ({ label, ...props }: any) => (
   </div>
 );
 
-// Time input pair
-const TimeRangeInput = ({ valueAM, valuePM, onChange }: any) => (
+const TimeRangeInput = ({ valueAM, valuePM, onChange, disabled }: any) => (
   <div>
     <label className="text-[#073051] text-sm font-bold">Operation Time</label>
     <div className="flex gap-2 mt-1">
       <input name="operationTimeAM" type="time" value={valueAM} onChange={onChange}
+        disabled={disabled}
         className="w-1/2 p-2 border rounded-[15px]" style={{ borderColor: '#D1D1D1', color: '#000' }} />
       <input name="operationTimePM" type="time" value={valuePM} onChange={onChange}
+        disabled={disabled}
         className="w-1/2 p-2 border rounded-[15px]" style={{ borderColor: '#D1D1D1', color: '#000' }} />
     </div>
   </div>
@@ -186,16 +179,18 @@ const TimeRangeInput = ({ valueAM, valuePM, onChange }: any) => (
 const StationsPage = () => {
   const headerRef = useRef<HTMLElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);     // draggable marker for current edit/add
-  const mapRef = useRef<mapboxgl.Map | null>(null);           // keep map instance
-  const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map()); // markers for listed stations
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map());
 
-  const [headerHeight, setHeaderHeight] = useState(0);
+  const [headerHeight, setHeaderHeight] = useState(90);
   const [isAddingStation, setIsAddingStation] = useState(false);
   const [stationData, setStationData] = useState(defaultStation);
-  const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);  // Store station landmarks
+  const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);
 
-  // Reset form & draggable marker
+  // NEW: user role
+  const [role, setRole] = useState<'commuter' | 'admin'>('commuter');
+
   const resetStationData = () => {
     setIsAddingStation(false);
     setStationData(defaultStation);
@@ -205,12 +200,11 @@ const StationsPage = () => {
     }
   };
 
-  // Get header height
   useEffect(() => {
     if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
   }, []);
 
-  // Fetch stations on mount
+  // Fetch stations
   useEffect(() => {
     const loadStations = async () => {
       const stations = await fetchStations();
@@ -219,7 +213,23 @@ const StationsPage = () => {
     loadStations();
   }, []);
 
-  // Init map (only once)
+  // Fetch user role
+  useEffect(() => {
+    const fetchRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        if (!error && data?.role) setRole(data.role);
+      }
+    };
+    fetchRole();
+  }, []);
+
+  // Init map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -233,18 +243,18 @@ const StationsPage = () => {
     map.addControl(new mapboxgl.NavigationControl());
     mapRef.current = map;
 
-    // Clicking the map creates or relocates the working (draggable) marker
+    // Map click handler
     map.on('click', (e) => {
-      const { lng, lat } = e.lngLat;
+      if (role === 'commuter') return; // commuters cannot add
 
+      const { lng, lat } = e.lngLat;
       if (markerRef.current) {
-        // move existing draggable marker
         markerRef.current.setLngLat([lng, lat]);
       } else {
-        // create new draggable marker for adding/editing
         markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable: true })
           .setLngLat([lng, lat])
           .addTo(map);
+
         markerRef.current.on('dragend', () => {
           const coords = markerRef.current!.getLngLat();
           setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
@@ -256,18 +266,16 @@ const StationsPage = () => {
     });
 
     return () => { map.remove(); };
-  }, []);
+  }, [role]);
 
-  // Draw/refresh non-draggable markers for saved stations
+  // Draw saved stations
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear existing station markers
     stationMarkersRef.current.forEach((m) => m.remove());
     stationMarkersRef.current.clear();
 
-    // Add markers for each station
     stationLandmarks.forEach((station: any) => {
       if (!station?.coordinates || station.coordinates.length !== 2) return;
 
@@ -276,22 +284,23 @@ const StationsPage = () => {
         .setLngLat(station.coordinates)
         .addTo(map);
 
-      // Click marker to edit
       marker.getElement().addEventListener('click', (ev) => {
-        ev.stopPropagation(); // prevent map click handler
+        ev.stopPropagation();
 
-        // Remove any existing draggable marker and create a new draggable at this station
         if (markerRef.current) markerRef.current.remove();
-        markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable: true })
+
+        const draggable = role !== 'commuter'; // only admin draggable
+        markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable })
           .setLngLat(station.coordinates)
           .addTo(map);
 
-        markerRef.current.on('dragend', () => {
-          const coords = markerRef.current!.getLngLat();
-          setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
-        });
+        if (draggable) {
+          markerRef.current.on('dragend', () => {
+            const coords = markerRef.current!.getLngLat();
+            setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
+          });
+        }
 
-        // Populate form from DB row (snake_case → camelCase)
         setStationData({
           id: station.id ?? null,
           name: station.name ?? '',
@@ -302,27 +311,27 @@ const StationsPage = () => {
           coordinates: station.coordinates ?? null,
           destinations: station.destinations ?? [],
         });
+
         setIsAddingStation(true);
       });
 
       stationMarkersRef.current.set(id, marker);
     });
-  }, [stationLandmarks]);
+  }, [stationLandmarks, role]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setStationData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Save (create or update)
   const handleDone = async () => {
     if (!stationData.coordinates) {
       alert("Please select a location on the map.");
       return;
     }
+    if (role === 'commuter') return; // commuters cannot save
 
     if (stationData.id) {
-      // Update
       const updated = await updateStation(stationData);
       if (updated) {
         const refreshed = await fetchStations();
@@ -330,7 +339,6 @@ const StationsPage = () => {
         resetStationData();
       }
     } else {
-      // Create
       const created = await insertStation(stationData);
       if (created) {
         const refreshed = await fetchStations();
@@ -340,16 +348,14 @@ const StationsPage = () => {
     }
   };
 
-  // Delete (only when editing)
   const handleDelete = async () => {
-    if (!stationData.id) return;
+    if (!stationData.id || role === 'commuter') return;
     const ok = confirm('Delete this station?');
     if (!ok) return;
 
     const success = await deleteStation(stationData.id);
     if (success) {
       setStationLandmarks((prev) => prev.filter((s) => s.id !== stationData.id));
-      // remove draggable if present
       if (markerRef.current) {
         markerRef.current.remove();
         markerRef.current = null;
@@ -363,93 +369,118 @@ const StationsPage = () => {
       <Header ref={headerRef} />
       
       <main className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <aside className="fixed left-0 w-[425px] border-r border-[#D1D1D1] p-6 z-10 bg-white flex flex-col overflow-y-auto"
-          style={{ top: `${headerHeight}px`, bottom: 0 }}>
-          {!isAddingStation ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <MapPinIcon className="h-[150px] w-[150px] text-[#1E86DA] mb-4" />
-              <p className="text-center text-lg text-[#737F83]">
-                Click anywhere to put a station location or click a station to edit.
-              </p>
+      {/* Sidebar */}
+      <aside
+        className="fixed left-0 w-[425px] border-r border-[#D1D1D1] p-6 z-10 bg-white flex flex-col overflow-y-auto"
+        style={{ top: `${headerHeight}px`, bottom: 0 }}
+      >
+        {!isAddingStation ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <MapPinIcon className="h-[150px] w-[150px] text-[#1E86DA] mb-4" />
+            <p className="text-center text-lg text-[#737F83]">
+              Click anywhere to put a station location or click a station to edit.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col flex-grow gap-4">
+            {/* Back button */}
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={resetStationData}
+                className="flex items-center justify-center rounded-full border-2 border-[#073051] 
+                          text-[#073051] hover:bg-[#073051] hover:text-white w-[50px] h-[50px] duration-300"
+              >
+                <ArrowLeftIcon className="w-5 h-5" />
+              </button>
+              <span className="text-[#073051] font-semibold text-lg">Go Back</span>
             </div>
-          ) : (
-            <div className="flex flex-col flex-grow gap-4">
-              {/* Back button */}
-              <div className="flex items-center gap-3 mb-4">
-                <button onClick={resetStationData}
-                  className="flex items-center justify-center rounded-full border-2 border-[#073051] 
-                             text-[#073051] hover:bg-[#073051] hover:text-white w-[50px] h-[50px] duration-300">
-                  <ArrowLeftIcon className="w-5 h-5" />
-                </button>
-                <span className="text-[#073051] font-semibold text-lg">Go Back</span>
-              </div>
 
-              {/* Inputs */}
-              <LabeledInput label="Station Name" name="name" value={stationData.name}
-                onChange={handleChange} placeholder="Type station name here" />
-              <LabeledInput label="Location Name" name="location" value={stationData.location}
-                onChange={handleChange} placeholder="Type location name here" />
-              <TimeRangeInput valueAM={stationData.operationTimeAM} valuePM={stationData.operationTimePM}
-                onChange={handleChange} />
+            {/* Inputs */}
+            <LabeledInput
+              label="Station Name"
+              name="name"
+              value={stationData.name}
+              onChange={handleChange}
+              placeholder="Type station name here"
+              disabled={role !== 'admin'} // disabled for non-admin
+            />
+            <LabeledInput
+              label="Location Name"
+              name="location"
+              value={stationData.location}
+              onChange={handleChange}
+              placeholder="Type location name here"
+              disabled={role !== 'admin'}
+            />
+            <TimeRangeInput
+              valueAM={stationData.operationTimeAM}
+              valuePM={stationData.operationTimePM}
+              onChange={handleChange}
+              disabled={role !== 'admin'}
+            />
 
-              {/* Vehicle Type Toggle */}
-              <div>
-                <label className="text-[#073051] text-sm font-bold">Types of PUVs</label>
-                <ToggleGroup
-                  type="multiple"
-                  value={stationData.vehicleTypes}
-                  onValueChange={(values: string[]) =>
-                    setStationData((prev) => ({ ...prev, vehicleTypes: values })) }
-                  variant="outline"
-                  className="mt-2 flex w-full h-11"
-                >
-                  {["JEEPNEY", "TRICYCLE", "VAN"].map((type) => (
-                    <ToggleGroupItem
-                      key={type}
-                      value={type}
-                      className="flex-1 flex justify-center items-center h-full
-                                border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
-                                data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
-                                cursor-pointer transition-colors duration-200"
-                    >
-                      {stationData.vehicleTypes.includes(type) ? (
-                        <img
-                          src={`/${type.toLowerCase().replace("-", "")}_w.svg`}
-                          alt={type}
-                          className={type === "TRICYCLE" ? "h-12 w-12" : "h-10 w-10"}
-                        />
-                      ) : (
-                        <img
-                          src={`/${type.toLowerCase().replace("-", "")}.svg`}
-                          alt={type}
-                          className={type === "TRICYCLE" ? "h-12 w-12" : "h-10 w-10"}
-                        />
-                      )}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </div>
+            {/* Vehicle Type Toggle */}
+            <div>
+              <label className="text-[#073051] text-sm font-bold">Types of PUVs</label>
+              <ToggleGroup
+                type="multiple"
+                value={stationData.vehicleTypes}
+                onValueChange={(values: string[]) =>
+                  setStationData((prev) => ({ ...prev, vehicleTypes: values }))
+                }
+                variant="outline"
+                className="mt-2 flex w-full h-11"
+                disabled={role !== 'admin'}
+              >
+                {["JEEPNEY", "TRICYCLE", "VAN"].map((type) => (
+                  <ToggleGroupItem
+                    key={type}
+                    value={type}
+                    className="flex-1 flex justify-center items-center h-full
+                              border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
+                              data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
+                              cursor-pointer transition-colors duration-200"
+                  >
+                    {stationData.vehicleTypes.includes(type) ? (
+                      <img
+                        src={`/${type.toLowerCase().replace("-", "")}_w.svg`}
+                        alt={type}
+                        className={type === "TRICYCLE" ? "h-12 w-12" : "h-10 w-10"}
+                      />
+                    ) : (
+                      <img
+                        src={`/${type.toLowerCase().replace("-", "")}.svg`}
+                        alt={type}
+                        className={type === "TRICYCLE" ? "h-12 w-12" : "h-10 w-10"}
+                      />
+                    )}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
 
-              {/* Destinations & Count Table (unchanged) */}
-              <div>
-                <label className="text-[#073051] text-sm font-bold">
-                  Count of Available Vehicles & Destinations
-                </label>
-                <div className="mt-2 border rounded-lg overflow-hidden">
-                  <table className="w-full text-center border-collapse">
-                    <thead className="bg-[#F5F5F5] text-[#073051] text-sm">
-                      <tr>
-                        <th className="p-2 text-center font-medium">Type of<br /> Vehicles</th>
-                        <th className="p-2 text-center font-medium">Destinations</th>
-                        <th className="p-2 text-center font-medium">Count</th>
+            {/* Destinations & Count Table */}
+            <div>
+              <label className="text-[#073051] text-sm font-bold">
+                Count of Available Vehicles & Destinations
+              </label>
+              <div className="mt-2 border rounded-lg overflow-hidden">
+                <table className="w-full text-center border-collapse">
+                  <thead className="bg-[#F5F5F5] text-[#073051] text-sm">
+                    <tr>
+                      <th className="p-2 text-center font-medium">Type of<br /> Vehicles</th>
+                      <th className="p-2 text-center font-medium">Destinations</th>
+                      <th className="p-2 text-center font-medium">Count</th>
+                      {role === 'admin' && (
                         <th className="p-2 text-center font-medium">Delete</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stationData.destinations.map((d, index) => (
-                        <tr key={d.id} className="border-t text-center">
-                          <td className="p-2">
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stationData.destinations.map((d, index) => (
+                      <tr key={d.id} className="border-t text-center">
+                        <td className="p-2">
+                          {role === 'admin' ? (
                             <Select
                               value={d.vehicleType}
                               onValueChange={(value: string) => {
@@ -457,6 +488,7 @@ const StationsPage = () => {
                                 newDest[index].vehicleType = value;
                                 setStationData((prev) => ({ ...prev, destinations: newDest }));
                               }}
+                              disabled={role !== 'admin'} // non-admin cannot edit
                             >
                               <SelectTrigger className="w-[70px] justify-center">
                                 <SelectValue placeholder="">
@@ -483,45 +515,58 @@ const StationsPage = () => {
                                 </SelectItem>
                               </SelectContent>
                             </Select>
-                          </td>
-                          <td className="p-2">
-                            <input
-                              type="text"
-                              value={d.destination}
-                              placeholder="ex. Iriga"
-                              onChange={(e) => {
-                                const newDest = [...stationData.destinations];
-                                newDest[index].destination = e.target.value;
-                                setStationData((prev) => ({ ...prev, destinations: newDest }));
-                              }}
-                              className="border rounded px-2 py-1 w-[100px] text-center"
-                            />
-                          </td>
-                          <td className="p-2">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => {
-                                  const newDest = [...stationData.destinations];
-                                  newDest[index].count = Math.max(0, newDest[index].count - 1);
-                                  setStationData((prev) => ({ ...prev, destinations: newDest }));
-                                }}
-                                className="bg-[#1E86DA] text-white px-2 rounded"
-                              >
-                                -
-                              </button>
-                              <span>{d.count}</span>
-                              <button
-                                onClick={() => {
-                                  const newDest = [...stationData.destinations];
-                                  newDest[index].count += 1;
-                                  setStationData((prev) => ({ ...prev, destinations: newDest }));
-                                }}
-                                className="bg-[#1E86DA] text-white px-2 rounded"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
+                          ) : (
+                            <>
+                              {d.vehicleType === "JEEPNEY" && <img src="/jeepney.svg" alt="Jeepney" className="h-9 w-9 mx-auto" />}
+                              {d.vehicleType === "EXPRESS-VAN" && <img src="/van.svg" alt="Van" className="h-9 w-9 mx-auto" />}
+                              {d.vehicleType === "TRICYCLE" && <img src="/tricycle.svg" alt="Tricycle" className="h-11 w-11 mx-auto" />}
+                            </>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            value={d.destination}
+                            placeholder="ex. Iriga"
+                            onChange={(e) => {
+                              const newDest = [...stationData.destinations];
+                              newDest[index].destination = e.target.value;
+                              setStationData((prev) => ({ ...prev, destinations: newDest }));
+                            }}
+                            className="border rounded px-2 py-1 w-[100px] text-center"
+                            disabled={role !== 'admin'}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center justify-center gap-2">
+                            {role === 'admin' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    const newDest = [...stationData.destinations];
+                                    newDest[index].count = Math.max(0, newDest[index].count - 1);
+                                    setStationData((prev) => ({ ...prev, destinations: newDest }));
+                                  }}
+                                  className="bg-[#1E86DA] text-white px-2 rounded"
+                                >
+                                  -
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const newDest = [...stationData.destinations];
+                                    newDest[index].count += 1;
+                                    setStationData((prev) => ({ ...prev, destinations: newDest }));
+                                  }}
+                                  className="bg-[#1E86DA] text-white px-2 rounded"
+                                >
+                                  +
+                                </button>
+                              </>
+                            )}
+                            <span>{d.count}</span>
+                          </div>
+                        </td>
+                        {role === 'admin' && (
                           <td className="p-2">
                             <button
                               onClick={() => {
@@ -533,8 +578,10 @@ const StationsPage = () => {
                               ✕
                             </button>
                           </td>
-                        </tr>
-                      ))}
+                        )}
+                      </tr>
+                    ))}
+                    {role === 'admin' && (
                       <tr>
                         <td colSpan={4} className="text-center p-2">
                           <button
@@ -553,30 +600,37 @@ const StationsPage = () => {
                           </button>
                         </td>
                       </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-auto space-y-2">
-                <button onClick={handleDone}
-                  className="w-full bg-[#208FCB] hover:bg-[#1478C9] text-white py-2 rounded-[10px] duration-200">
-                  Done
-                </button>
-
-                {stationData.id && (
-                  <button
-                    onClick={handleDelete}
-                    className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded-[10px] duration-200"
-                  >
-                    Delete
-                  </button>
-                )}
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
-        </aside>
+
+            {/* Actions */}
+            <div className="mt-auto space-y-2">
+              {role === 'admin' && (
+                <>
+                  <button
+                    onClick={handleDone}
+                    className="w-full bg-[#208FCB] hover:bg-[#1478C9] text-white py-2 rounded-[10px] duration-200"
+                  >
+                    Done
+                  </button>
+
+                  {stationData.id && (
+                    <button
+                      onClick={handleDelete}
+                      className="w-full border border-red-500 text-red-600 hover:bg-red-50 py-2 rounded-[10px] duration-200"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </aside>
 
         {/* Map */}
         <div className="ml-[425px] flex-1 h-full" ref={mapContainerRef}
