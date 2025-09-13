@@ -2,45 +2,45 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import Header from '../../components/ui/header';
-import { MapPinIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { supabase } from "@/lib/supabase";
 
-// ArrowLeftIcon component for back button
-function ArrowLeftIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-      viewBox="0 0 24 24" strokeWidth={2.5}
-      stroke="currentColor" className={className}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-    </svg>
-  );
-}
-
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
-// Default station data
-const defaultStation = {
-  id: null as string | number | null,
+export interface Destination {
+  id: string;
+  vehicleType: string;
+  destination: string;
+  count: number;
+}
+
+export interface Station {
+  id: string | number | null;
+  name: string;
+  location: string;
+  operationTimeAM: string;
+  operationTimePM: string;
+  vehicleTypes: string[];
+  coordinates: [number, number] | null;
+  destinations: Destination[];
+}
+
+const defaultStation: Station = {
+  id: null,
   name: '',
   location: '',
   operationTimeAM: '08:00',
   operationTimePM: '21:00',
-  vehicleTypes: [] as string[],
-  coordinates: null as null | [number, number],
-  destinations: [] as {
-    id: string;
-    vehicleType: string;
-    destination: string;
-    count: number;
-  }[],
+  vehicleTypes: [],
+  coordinates: null,
+  destinations: [],
 };
 
-// Insert, update, delete, fetch functions (unchanged)
-const insertStation = async (station: any) => {
+const insertStation = async (station: Station): Promise<Station | null> => {
   const { data, error } = await supabase
     .from('stations')
     .insert([{
@@ -61,7 +61,7 @@ const insertStation = async (station: any) => {
 
   const createdStation = data?.[0] ?? null;
   if (createdStation && station.destinations.length > 0) {
-    const destinationsPayload = station.destinations.map((d: any) => ({
+    const destinationsPayload = station.destinations.map((d) => ({
       station_id: createdStation.id,
       vehicle_type: d.vehicleType,
       destination: d.destination,
@@ -71,10 +71,10 @@ const insertStation = async (station: any) => {
     if (destErr) console.error("Error inserting destinations:", destErr);
   }
 
-  return createdStation;
+  return createdStation as Station;
 };
 
-const updateStation = async (station: any) => {
+const updateStation = async (station: Station): Promise<Station | null> => {
   const { data, error } = await supabase
     .from('stations')
     .update({
@@ -96,8 +96,8 @@ const updateStation = async (station: any) => {
 
   if (station.destinations) {
     await supabase.from('station_destinations').delete().eq('station_id', station.id);
-    const destinationsPayload = station.destinations.map((d: any) => ({
-      station_id: station.id,
+    const destinationsPayload = station.destinations.map((d) => ({
+      station_id: station.id!,
       vehicle_type: d.vehicleType,
       destination: d.destination,
       count: d.count,
@@ -108,10 +108,10 @@ const updateStation = async (station: any) => {
     }
   }
 
-  return data?.[0] ?? null;
+  return data?.[0] as Station ?? null;
 };
 
-const deleteStation = async (id: string | number) => {
+const deleteStation = async (id: string | number): Promise<boolean> => {
   await supabase.from('station_destinations').delete().eq('station_id', id);
   const { error } = await supabase.from('stations').delete().eq('id', id);
   if (error) {
@@ -122,7 +122,7 @@ const deleteStation = async (id: string | number) => {
   return true;
 };
 
-const fetchStations = async () => {
+const fetchStations = async (): Promise<Station[]> => {
   const { data: stations, error } = await supabase.from('stations').select('*');
   if (error) {
     console.error("Error fetching stations:", error);
@@ -147,11 +147,14 @@ const fetchStations = async () => {
         destination: d.destination,
         count: d.count,
       })),
-  }));
+  })) as Station[];
 };
 
-// Reusable inputs
-const LabeledInput = ({ label, ...props }: any) => (
+interface LabeledInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+}
+
+const LabeledInput = ({ label, ...props }: LabeledInputProps) => (
   <div>
     <label className="text-[#073051] text-sm font-bold">{label}</label>
     <input
@@ -162,7 +165,14 @@ const LabeledInput = ({ label, ...props }: any) => (
   </div>
 );
 
-const TimeRangeInput = ({ valueAM, valuePM, onChange, disabled }: any) => (
+interface TimeRangeInputProps {
+  valueAM: string;
+  valuePM: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
+}
+
+const TimeRangeInput = ({ valueAM, valuePM, onChange, disabled }: TimeRangeInputProps) => (
   <div>
     <label className="text-[#073051] text-sm font-bold">Operation Time</label>
     <div className="flex gap-2 mt-1">
@@ -185,8 +195,8 @@ const StationsPage = () => {
 
   const [headerHeight, setHeaderHeight] = useState(90);
   const [isAddingStation, setIsAddingStation] = useState(false);
-  const [stationData, setStationData] = useState(defaultStation);
-  const [stationLandmarks, setStationLandmarks] = useState<any[]>([]);
+  const [stationData, setStationData] = useState<Station>(defaultStation);
+  const [stationLandmarks, setStationLandmarks] = useState<Station[]>([]);
 
   // NEW: user role
   const [role, setRole] = useState<'commuter' | 'admin'>('commuter');
