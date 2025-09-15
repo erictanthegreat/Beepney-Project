@@ -70,7 +70,9 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave, initial
 
   const handleDelete = () => {
     if (initialData?.id && onDelete) {
-      onDelete(initialData.id);
+      if (confirm("Are you sure you want to delete this fare matrix?")) {
+        onDelete(initialData.id);
+      }
     }
   };
 

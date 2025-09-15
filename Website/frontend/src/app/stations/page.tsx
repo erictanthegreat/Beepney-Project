@@ -287,7 +287,7 @@ const StationsPage = () => {
     stationMarkersRef.current.forEach((m) => m.remove());
     stationMarkersRef.current.clear();
 
-    stationLandmarks.forEach((station: any) => {
+    stationLandmarks.forEach((station: Station) => {
       if (!station?.coordinates || station.coordinates.length !== 2) return;
 
       const id = station.id as string | number;
@@ -301,24 +301,28 @@ const StationsPage = () => {
         if (markerRef.current) markerRef.current.remove();
 
         const draggable = role !== 'commuter'; // only admin draggable
-        markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable })
-          .setLngLat(station.coordinates)
-          .addTo(map);
 
-        if (draggable) {
-          markerRef.current.on('dragend', () => {
-            const coords = markerRef.current!.getLngLat();
-            setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
-          });
+        // only create marker if coordinates exist
+        if (station.coordinates) {
+          markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable })
+            .setLngLat(station.coordinates)
+            .addTo(map);
+
+          if (draggable) {
+            markerRef.current.on('dragend', () => {
+              const coords = markerRef.current!.getLngLat();
+              setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
+            });
+          }
         }
 
         setStationData({
           id: station.id ?? null,
           name: station.name ?? '',
           location: station.location ?? '',
-          operationTimeAM: station.operation_time_am ?? '08:00',
-          operationTimePM: station.operation_time_pm ?? '21:00',
-          vehicleTypes: station.vehicle_types ?? [],
+          operationTimeAM: station.operationTimeAM ?? '08:00',
+          operationTimePM: station.operationTimePM ?? '21:00',
+          vehicleTypes: station.vehicleTypes ?? [],
           coordinates: station.coordinates ?? null,
           destinations: station.destinations ?? [],
         });
