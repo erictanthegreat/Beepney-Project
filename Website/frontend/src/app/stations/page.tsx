@@ -12,372 +12,373 @@ import Image from "next/image";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
-export interface Destination {
-  id: string;
-  vehicleType: string;
-  destination: string;
-  count: number;
-}
-
-export interface Station {
-  id: string | number | null;
-  name: string;
-  location: string;
-  operationTimeAM: string;
-  operationTimePM: string;
-  vehicleTypes: string[];
-  coordinates: [number, number] | null;
-  destinations: Destination[];
-}
-
-const defaultStation: Station = {
-  id: null,
-  name: '',
-  location: '',
-  operationTimeAM: '08:00',
-  operationTimePM: '21:00',
-  vehicleTypes: [],
-  coordinates: null,
-  destinations: [],
-};
-
-const insertStation = async (station: Station): Promise<Station | null> => {
-  const { data, error } = await supabase
-    .from('stations')
-    .insert([{
-      name: station.name,
-      location: station.location,
-      operation_time_am: station.operationTimeAM,
-      operation_time_pm: station.operationTimePM,
-      vehicle_types: station.vehicleTypes,
-      coordinates: station.coordinates,
-    }])
-    .select();
-
-  if (error) {
-    console.error("Error inserting station:", error);
-    alert("Error saving station data. Please try again.");
-    return null;
+  export interface Destination {
+    id: string;
+    vehicleType: string;
+    destination: string;
+    count: number;
   }
 
-  const createdStation = data?.[0] ?? null;
-  if (createdStation && station.destinations.length > 0) {
-    const destinationsPayload = station.destinations.map((d) => ({
-      station_id: createdStation.id,
-      vehicle_type: d.vehicleType,
-      destination: d.destination,
-      count: d.count,
-    }));
-    const { error: destErr } = await supabase.from('station_destinations').insert(destinationsPayload);
-    if (destErr) console.error("Error inserting destinations:", destErr);
+  export interface Station {
+    id: string | number | null;
+    name: string;
+    location: string;
+    operationTimeAM: string;
+    operationTimePM: string;
+    vehicleTypes: string[];
+    coordinates: [number, number] | null;
+    destinations: Destination[];
   }
 
-  return createdStation as Station;
-};
+  const defaultStation: Station = {
+    id: null,
+    name: '',
+    location: '',
+    operationTimeAM: '08:00',
+    operationTimePM: '21:00',
+    vehicleTypes: [],
+    coordinates: null,
+    destinations: [],
+  };
 
-const updateStation = async (station: Station): Promise<Station | null> => {
-  const { data, error } = await supabase
-    .from('stations')
-    .update({
-      name: station.name,
-      location: station.location,
-      operation_time_am: station.operationTimeAM,
-      operation_time_pm: station.operationTimePM,
-      vehicle_types: station.vehicleTypes,
-      coordinates: station.coordinates,
-    })
-    .eq('id', station.id)
-    .select();
+  const insertStation = async (station: Station): Promise<Station | null> => {
+    const { data, error } = await supabase
+      .from('stations')
+      .insert([{
+        name: station.name,
+        location: station.location,
+        operation_time_am: station.operationTimeAM,
+        operation_time_pm: station.operationTimePM,
+        vehicle_types: station.vehicleTypes, // save directly as text[]
+        coordinates: station.coordinates,
+      }])
+      .select();
 
-  if (error) {
-    console.error("Error updating station:", error);
-    alert("Error updating station data.");
-    return null;
-  }
-
-  if (station.destinations) {
-    await supabase.from('station_destinations').delete().eq('station_id', station.id);
-    const destinationsPayload = station.destinations.map((d) => ({
-      station_id: station.id!,
-      vehicle_type: d.vehicleType,
-      destination: d.destination,
-      count: d.count,
-    }));
-    if (destinationsPayload.length > 0) {
-      const { error: destErr } = await supabase.from('station_destinations').insert(destinationsPayload);
-      if (destErr) console.error("Error upserting destinations:", destErr);
+    if (error) {
+      console.error("Error inserting station:", error);
+      alert("Error saving station data. Please try again.");
+      return null;
     }
-  }
 
-  return data?.[0] as Station ?? null;
-};
-
-const deleteStation = async (id: string | number): Promise<boolean> => {
-  await supabase.from('station_destinations').delete().eq('station_id', id);
-  const { error } = await supabase.from('stations').delete().eq('id', id);
-  if (error) {
-    console.error("Error deleting station:", error);
-    alert("Error deleting station.");
-    return false;
-  }
-  return true;
-};
-
-const fetchStations = async (): Promise<Station[]> => {
-  const { data: stations, error } = await supabase.from('stations').select('*');
-  if (error) {
-    console.error("Error fetching stations:", error);
-    return [];
-  }
-
-  if (!stations || stations.length === 0) return [];
-
-  const stationIds = stations.map((s) => s.id);
-  const { data: dests } = await supabase
-    .from('station_destinations')
-    .select('*')
-    .in('station_id', stationIds);
-
-  return stations.map((s) => ({
-    ...s,
-    destinations: (dests || [])
-      .filter((d) => d.station_id === s.id)
-      .map((d) => ({
-        id: d.id,
-        vehicleType: d.vehicle_type,
+    const createdStation = data?.[0] ?? null;
+    if (createdStation && station.destinations.length > 0) {
+      const destinationsPayload = station.destinations.map((d) => ({
+        station_id: createdStation.id,
+        vehicle_type: d.vehicleType,
         destination: d.destination,
         count: d.count,
-      })),
-  })) as Station[];
-};
+      }));
+      const { error: destErr } = await supabase.from('station_destinations').insert(destinationsPayload);
+      if (destErr) console.error("Error inserting destinations:", destErr);
+    }
 
-interface LabeledInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label: string;
-}
+    return createdStation as Station;
+  };
 
-const LabeledInput = ({ label, ...props }: LabeledInputProps) => (
-  <div>
-    <label className="text-[#073051] text-sm font-bold">{label}</label>
-    <input
-      {...props}
-      className="w-full mt-1 p-2 border rounded-[15px] placeholder-[#D1D1D1]"
-      style={{ borderColor: '#D1D1D1', color: '#000' }}
-    />
-  </div>
-);
+  const updateStation = async (station: Station): Promise<Station | null> => {
+    const { data, error } = await supabase
+      .from('stations')
+      .update({
+        name: station.name,
+        location: station.location,
+        operation_time_am: station.operationTimeAM,
+        operation_time_pm: station.operationTimePM,
+        vehicle_types: station.vehicleTypes, // save directly as text[]
+        coordinates: station.coordinates,
+      })
+      .eq('id', station.id)
+      .select();
 
-interface TimeRangeInputProps {
-  valueAM: string;
-  valuePM: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  disabled?: boolean;
-}
+    if (error) {
+      console.error("Error updating station:", error);
+      alert("Error updating station data.");
+      return null;
+    }
 
-const TimeRangeInput = ({ valueAM, valuePM, onChange, disabled }: TimeRangeInputProps) => (
-  <div>
-    <label className="text-[#073051] text-sm font-bold">Operation Time</label>
-    <div className="flex gap-2 mt-1">
-      <input name="operationTimeAM" type="time" value={valueAM} onChange={onChange}
-        disabled={disabled}
-        className="w-1/2 p-2 border rounded-[15px]" style={{ borderColor: '#D1D1D1', color: '#000' }} />
-      <input name="operationTimePM" type="time" value={valuePM} onChange={onChange}
-        disabled={disabled}
-        className="w-1/2 p-2 border rounded-[15px]" style={{ borderColor: '#D1D1D1', color: '#000' }} />
+    if (station.destinations) {
+      await supabase.from('station_destinations').delete().eq('station_id', station.id);
+      const destinationsPayload = station.destinations.map((d) => ({
+        station_id: station.id!,
+        vehicle_type: d.vehicleType,
+        destination: d.destination,
+        count: d.count,
+      }));
+      if (destinationsPayload.length > 0) {
+        const { error: destErr } = await supabase.from('station_destinations').insert(destinationsPayload);
+        if (destErr) console.error("Error upserting destinations:", destErr);
+      }
+    }
+
+    return data?.[0] as Station ?? null;
+  };
+
+  const deleteStation = async (id: string | number): Promise<boolean> => {
+    await supabase.from('station_destinations').delete().eq('station_id', id);
+    const { error } = await supabase.from('stations').delete().eq('id', id);
+    if (error) {
+      console.error("Error deleting station:", error);
+      alert("Error deleting station.");
+      return false;
+    }
+    return true;
+  };
+
+  const fetchStations = async (): Promise<Station[]> => {
+    const { data: stations, error } = await supabase.from('stations').select('*');
+    if (error) {
+      console.error("Error fetching stations:", error);
+      return [];
+    }
+
+    if (!stations || stations.length === 0) return [];
+
+    const stationIds = stations.map((s) => s.id);
+    const { data: dests } = await supabase
+      .from('station_destinations')
+      .select('*')
+      .in('station_id', stationIds);
+
+    return stations.map((s) => ({
+      ...s,
+      vehicleTypes: s.vehicle_types ?? [], // map to frontend field
+      destinations: (dests || [])
+        .filter((d) => d.station_id === s.id)
+        .map((d) => ({
+          id: d.id,
+          vehicleType: d.vehicle_type,
+          destination: d.destination,
+          count: d.count,
+        })),
+    })) as Station[];
+  };
+
+  interface LabeledInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label: string;
+  }
+
+  const LabeledInput = ({ label, ...props }: LabeledInputProps) => (
+    <div>
+      <label className="text-[#073051] text-sm font-bold">{label}</label>
+      <input
+        {...props}
+        className="w-full mt-1 p-2 border rounded-[15px] placeholder-[#D1D1D1]"
+        style={{ borderColor: '#D1D1D1', color: '#000' }}
+      />
     </div>
-  </div>
-);
+  );
 
-const StationsPage = () => {
-  const headerRef = useRef<HTMLElement | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const markerRef = useRef<mapboxgl.Marker | null>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map());
+  interface TimeRangeInputProps {
+    valueAM: string;
+    valuePM: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean;
+  }
 
-  const [headerHeight, setHeaderHeight] = useState(90);
-  const [isAddingStation, setIsAddingStation] = useState(false);
-  const [stationData, setStationData] = useState<Station>(defaultStation);
-  const [stationLandmarks, setStationLandmarks] = useState<Station[]>([]);
+  const TimeRangeInput = ({ valueAM, valuePM, onChange, disabled }: TimeRangeInputProps) => (
+    <div>
+      <label className="text-[#073051] text-sm font-bold">Operation Time</label>
+      <div className="flex gap-2 mt-1">
+        <input name="operationTimeAM" type="time" value={valueAM} onChange={onChange}
+          disabled={disabled}
+          className="w-1/2 p-2 border rounded-[15px]" style={{ borderColor: '#D1D1D1', color: '#000' }} />
+        <input name="operationTimePM" type="time" value={valuePM} onChange={onChange}
+          disabled={disabled}
+          className="w-1/2 p-2 border rounded-[15px]" style={{ borderColor: '#D1D1D1', color: '#000' }} />
+      </div>
+    </div>
+  );
 
-  // NEW: user role
-  const [role, setRole] = useState<'commuter' | 'admin'>('commuter');
+  const StationsPage = () => {
+    const headerRef = useRef<HTMLElement | null>(null);
+    const mapContainerRef = useRef<HTMLDivElement | null>(null);
+    const markerRef = useRef<mapboxgl.Marker | null>(null);
+    const mapRef = useRef<mapboxgl.Map | null>(null);
+    const stationMarkersRef = useRef<Map<string | number, mapboxgl.Marker>>(new Map());
 
-  const resetStationData = () => {
-    setIsAddingStation(false);
-    setStationData(defaultStation);
-    if (markerRef.current) {
-      markerRef.current.remove();
-      markerRef.current = null;
-    }
-  };
+    const [headerHeight, setHeaderHeight] = useState(90);
+    const [isAddingStation, setIsAddingStation] = useState(false);
+    const [stationData, setStationData] = useState<Station>(defaultStation);
+    const [stationLandmarks, setStationLandmarks] = useState<Station[]>([]);
 
-  useEffect(() => {
-    if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
-  }, []);
+    // NEW: user role
+    const [role, setRole] = useState<'commuter' | 'admin'>('commuter');
 
-  // Fetch stations
-  useEffect(() => {
-    const loadStations = async () => {
-      const stations = await fetchStations();
-      setStationLandmarks(stations);
-    };
-    loadStations();
-  }, []);
-
-  // Fetch user role
-  useEffect(() => {
-    const fetchRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        if (!error && data?.role) setRole(data.role);
-      }
-    };
-    fetchRole();
-  }, []);
-
-  // Init map
-  useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: [123.19, 13.62],
-      zoom: 15,
-    });
-
-    map.addControl(new mapboxgl.NavigationControl());
-    mapRef.current = map;
-
-    // Map click handler
-    map.on('click', (e) => {
-      if (role === 'commuter') return; // commuters cannot add
-
-      const { lng, lat } = e.lngLat;
-      if (markerRef.current) {
-        markerRef.current.setLngLat([lng, lat]);
-      } else {
-        markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable: true })
-          .setLngLat([lng, lat])
-          .addTo(map);
-
-        markerRef.current.on('dragend', () => {
-          const coords = markerRef.current!.getLngLat();
-          setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
-        });
-      }
-
-      setStationData((prev) => ({ ...prev, coordinates: [lng, lat] }));
-      setIsAddingStation(true);
-    });
-
-    return () => { map.remove(); };
-  }, [role]);
-
-  // Draw saved stations
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-
-    stationMarkersRef.current.forEach((m) => m.remove());
-    stationMarkersRef.current.clear();
-
-    stationLandmarks.forEach((station: Station) => {
-      if (!station?.coordinates || station.coordinates.length !== 2) return;
-
-      const id = station.id as string | number;
-      const marker = new mapboxgl.Marker({ color: '#1E86DA' })
-        .setLngLat(station.coordinates)
-        .addTo(map);
-
-      marker.getElement().addEventListener('click', (ev) => {
-        ev.stopPropagation();
-
-        if (markerRef.current) markerRef.current.remove();
-
-        const draggable = role !== 'commuter'; // only admin draggable
-
-        // only create marker if coordinates exist
-        if (station.coordinates) {
-          markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable })
-            .setLngLat(station.coordinates)
-            .addTo(map);
-
-          if (draggable) {
-            markerRef.current.on('dragend', () => {
-              const coords = markerRef.current!.getLngLat();
-              setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
-            });
-          }
-        }
-
-        setStationData({
-          id: station.id ?? null,
-          name: station.name ?? '',
-          location: station.location ?? '',
-          operationTimeAM: station.operationTimeAM ?? '08:00',
-          operationTimePM: station.operationTimePM ?? '21:00',
-          vehicleTypes: station.vehicleTypes ?? [],
-          coordinates: station.coordinates ?? null,
-          destinations: station.destinations ?? [],
-        });
-
-        setIsAddingStation(true);
-      });
-
-      stationMarkersRef.current.set(id, marker);
-    });
-  }, [stationLandmarks, role]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setStationData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleDone = async () => {
-    if (!stationData.coordinates) {
-      alert("Please select a location on the map.");
-      return;
-    }
-    if (role === 'commuter') return; // commuters cannot save
-
-    if (stationData.id) {
-      const updated = await updateStation(stationData);
-      if (updated) {
-        const refreshed = await fetchStations();
-        setStationLandmarks(refreshed);
-        resetStationData();
-      }
-    } else {
-      const created = await insertStation(stationData);
-      if (created) {
-        const refreshed = await fetchStations();
-        setStationLandmarks(refreshed);
-        resetStationData();
-      }
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!stationData.id || role === 'commuter') return;
-    const ok = confirm('Delete this station?');
-    if (!ok) return;
-
-    const success = await deleteStation(stationData.id);
-    if (success) {
-      setStationLandmarks((prev) => prev.filter((s) => s.id !== stationData.id));
+    const resetStationData = () => {
+      setIsAddingStation(false);
+      setStationData(defaultStation);
       if (markerRef.current) {
         markerRef.current.remove();
         markerRef.current = null;
       }
-      resetStationData();
-    }
-  };
+    };
+
+    useEffect(() => {
+      if (headerRef.current) setHeaderHeight(headerRef.current.offsetHeight);
+    }, []);
+
+    // Fetch stations
+    useEffect(() => {
+      const loadStations = async () => {
+        const stations = await fetchStations();
+        setStationLandmarks(stations);
+      };
+      loadStations();
+    }, []);
+
+    // Fetch user role
+    useEffect(() => {
+      const fetchRole = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          if (!error && data?.role) setRole(data.role);
+        }
+      };
+      fetchRole();
+    }, []);
+
+    // Init map
+    useEffect(() => {
+      if (!mapContainerRef.current) return;
+
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: [123.19, 13.62],
+        zoom: 15,
+      });
+
+      map.addControl(new mapboxgl.NavigationControl());
+      mapRef.current = map;
+
+      // Map click handler
+      map.on('click', (e) => {
+        if (role === 'commuter') return; // commuters cannot add
+
+        const { lng, lat } = e.lngLat;
+        if (markerRef.current) {
+          markerRef.current.setLngLat([lng, lat]);
+        } else {
+          markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable: true })
+            .setLngLat([lng, lat])
+            .addTo(map);
+
+          markerRef.current.on('dragend', () => {
+            const coords = markerRef.current!.getLngLat();
+            setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
+          });
+        }
+
+        setStationData((prev) => ({ ...prev, coordinates: [lng, lat] }));
+        setIsAddingStation(true);
+      });
+
+      return () => { map.remove(); };
+    }, [role]);
+
+    // Draw saved stations
+    useEffect(() => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      stationMarkersRef.current.forEach((m) => m.remove());
+      stationMarkersRef.current.clear();
+
+      stationLandmarks.forEach((station: Station) => {
+        if (!station?.coordinates || station.coordinates.length !== 2) return;
+
+        const id = station.id as string | number;
+        const marker = new mapboxgl.Marker({ color: '#1E86DA' })
+          .setLngLat(station.coordinates)
+          .addTo(map);
+
+        marker.getElement().addEventListener('click', (ev) => {
+          ev.stopPropagation();
+
+          if (markerRef.current) markerRef.current.remove();
+
+          const draggable = role !== 'commuter'; // only admin draggable
+
+          // only create marker if coordinates exist
+          if (station.coordinates) {
+            markerRef.current = new mapboxgl.Marker({ color: '#1E86DA', draggable })
+              .setLngLat(station.coordinates)
+              .addTo(map);
+
+            if (draggable) {
+              markerRef.current.on('dragend', () => {
+                const coords = markerRef.current!.getLngLat();
+                setStationData((prev) => ({ ...prev, coordinates: [coords.lng, coords.lat] }));
+              });
+            }
+          }
+
+          setStationData({
+            id: station.id ?? null,
+            name: station.name ?? '',
+            location: station.location ?? '',
+            operationTimeAM: station.operationTimeAM ?? '08:00',
+            operationTimePM: station.operationTimePM ?? '21:00',
+            vehicleTypes: station.vehicleTypes ?? [],
+            coordinates: station.coordinates ?? null,
+            destinations: station.destinations ?? [],
+          });
+
+          setIsAddingStation(true);
+        });
+
+        stationMarkersRef.current.set(id, marker);
+      });
+    }, [stationLandmarks, role]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setStationData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleDone = async () => {
+      if (!stationData.coordinates) {
+        alert("Please select a location on the map.");
+        return;
+      }
+      if (role === 'commuter') return; // commuters cannot save
+
+      if (stationData.id) {
+        const updated = await updateStation(stationData);
+        if (updated) {
+          const refreshed = await fetchStations();
+          setStationLandmarks(refreshed);
+          resetStationData();
+        }
+      } else {
+        const created = await insertStation(stationData);
+        if (created) {
+          const refreshed = await fetchStations();
+          setStationLandmarks(refreshed);
+          resetStationData();
+        }
+      }
+    };
+
+    const handleDelete = async () => {
+      if (!stationData.id || role === 'commuter') return;
+      const ok = confirm('Delete this station?');
+      if (!ok) return;
+
+      const success = await deleteStation(stationData.id);
+      if (success) {
+        setStationLandmarks((prev) => prev.filter((s) => s.id !== stationData.id));
+        if (markerRef.current) {
+          markerRef.current.remove();
+          markerRef.current = null;
+        }
+        resetStationData();
+      }
+    };
 
   return (
     <>
