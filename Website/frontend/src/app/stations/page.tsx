@@ -8,6 +8,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
@@ -442,30 +443,31 @@ const StationsPage = () => {
                 className="mt-2 flex w-full h-11"
                 disabled={role !== 'admin'}
               >
-                {["JEEPNEY", "TRICYCLE", "VAN"].map((type) => (
-                  <ToggleGroupItem
-                    key={type}
-                    value={type}
-                    className="flex-1 flex justify-center items-center h-full
-                              border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
-                              data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
-                              cursor-pointer transition-colors duration-200"
-                  >
-                    {stationData.vehicleTypes.includes(type) ? (
-                      <img
-                        src={`/${type.toLowerCase().replace("-", "")}_w.svg`}
+                {["JEEPNEY", "TRICYCLE", "VAN"].map((type) => {
+                  const isActive = stationData.vehicleTypes.includes(type);
+                  const fileName = isActive
+                    ? `/${type.toLowerCase().replace("-", "")}_w.svg` // white icons
+                    : `/${type.toLowerCase().replace("-", "")}.svg`; // grey icons
+
+                  return (
+                    <ToggleGroupItem
+                      key={type}
+                      value={type}
+                      className="flex-1 flex justify-center items-center h-full
+                                border border-[#D1D1D1] rounded-none first:rounded-l-[15px] last:rounded-r-[15px]
+                                data-[state=on]:bg-[#1E86DA] data-[state=on]:border-[#1E86DA] data-[state=on]:text-white
+                                cursor-pointer transition-colors duration-200"
+                    >
+                      <Image
+                        src={fileName}
                         alt={type}
-                        className={type === "TRICYCLE" ? "h-12 w-12" : "h-10 w-10"}
+                        width={type === "TRICYCLE" ? 48 : 40}
+                        height={type === "TRICYCLE" ? 48 : 40}
+                        priority
                       />
-                    ) : (
-                      <img
-                        src={`/${type.toLowerCase().replace("-", "")}.svg`}
-                        alt={type}
-                        className={type === "TRICYCLE" ? "h-12 w-12" : "h-10 w-10"}
-                      />
-                    )}
-                  </ToggleGroupItem>
-                ))}
+                    </ToggleGroupItem>
+                  );
+                })}
               </ToggleGroup>
             </div>
 
@@ -501,35 +503,42 @@ const StationsPage = () => {
                               disabled={role !== 'admin'} // non-admin cannot edit
                             >
                               <SelectTrigger className="w-[70px] justify-center">
-                                <SelectValue placeholder="">
+                                <SelectValue>
                                   {d.vehicleType === "JEEPNEY" && (
-                                    <img src="/jeepney.svg" alt="Jeepney" className="h-9 w-9" />
+                                    <Image src="/jeepney.svg" alt="Jeepney" width={36} height={36} />
                                   )}
                                   {d.vehicleType === "EXPRESS-VAN" && (
-                                    <img src="/van.svg" alt="Van" className="h-9 w-9" />
+                                    <Image src="/van.svg" alt="Van" width={36} height={36} />
                                   )}
                                   {d.vehicleType === "TRICYCLE" && (
-                                    <img src="/tricycle.svg" alt="Tricycle" className="h-11 w-11" />
+                                    <Image src="/tricycle.svg" alt="Tricycle" width={44} height={44} />
                                   )}
                                 </SelectValue>
                               </SelectTrigger>
+
                               <SelectContent>
                                 <SelectItem value="JEEPNEY">
-                                  <img src="/jeepney.svg" alt="Jeepney" className="h-9 w-9 mx-auto" />
+                                  <Image src="/jeepney.svg" alt="Jeepney" width={36} height={36} className="mx-auto" />
                                 </SelectItem>
                                 <SelectItem value="EXPRESS-VAN">
-                                  <img src="/van.svg" alt="Van" className="h-9 w-9 mx-auto" />
+                                  <Image src="/van.svg" alt="Van" width={36} height={36} className="mx-auto" />
                                 </SelectItem>
                                 <SelectItem value="TRICYCLE">
-                                  <img src="/tricycle.svg" alt="Tricycle" className="h-11 w-11 mx-auto" />
+                                  <Image src="/tricycle.svg" alt="Tricycle" width={44} height={44} className="mx-auto" />
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           ) : (
                             <>
-                              {d.vehicleType === "JEEPNEY" && <img src="/jeepney.svg" alt="Jeepney" className="h-9 w-9 mx-auto" />}
-                              {d.vehicleType === "EXPRESS-VAN" && <img src="/van.svg" alt="Van" className="h-9 w-9 mx-auto" />}
-                              {d.vehicleType === "TRICYCLE" && <img src="/tricycle.svg" alt="Tricycle" className="h-11 w-11 mx-auto" />}
+                              {d.vehicleType === "JEEPNEY" && (
+                                <Image src="/jeepney.svg" alt="Jeepney" width={36} height={36} className="mx-auto" />
+                              )}
+                              {d.vehicleType === "EXPRESS-VAN" && (
+                                <Image src="/van.svg" alt="Van" width={36} height={36} className="mx-auto" />
+                              )}
+                              {d.vehicleType === "TRICYCLE" && (
+                                <Image src="/tricycle.svg" alt="Tricycle" width={44} height={44} className="mx-auto" />
+                              )}
                             </>
                           )}
                         </td>
