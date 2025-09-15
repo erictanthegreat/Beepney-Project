@@ -506,7 +506,7 @@ export default function RideHailing() {
             onPress={() =>
               console.log("Pickup:", pickup, "Destination:", destination)
             }
-            style={{ alignItems: "center", marginLeft: 20, marginTop: 40 }}
+            style={{ alignItems: "center", marginLeft: 20, marginTop: 20 }}
           />
         </View>
       </BottomSheetContainer>

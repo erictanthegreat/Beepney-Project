@@ -1,5 +1,11 @@
 import React, { useRef, useState } from "react";
-import { Dimensions, StyleSheet, Text, View, Image } from "react-native";
+import {
+  useWindowDimensions,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+} from "react-native";
 import PagerView from "react-native-pager-view";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { router } from "expo-router";
@@ -12,11 +18,12 @@ import FareMockup1 from "../assets/mockups/fare 1.svg";
 import FareMockup2 from "../assets/mockups/fare 2.svg";
 import CustomButton from "@/components/ui/CustomButton";
 
-const { width, height } = Dimensions.get("window");
-
 export default function Onboarding() {
   const pagerRef = useRef<PagerView>(null);
   const [currentPage, setCurrentPage] = useState(0);
+
+  // Responsive screen dimensions
+  const { width, height } = useWindowDimensions();
 
   const handleNext = () => {
     if (currentPage < 3) {
@@ -54,15 +61,17 @@ export default function Onboarding() {
 
           <Image
             source={require("../assets/images/Beepney LOGO.png")}
-            style={onboardStyles.logo}
+            style={[onboardStyles.logo, { width: width * 0.7 }]}
           />
 
-          <Text style={onboardStyles.header}>Welcome to Beepney!</Text>
-          <Text style={onboardStyles.subheader}>
+          <Text style={[onboardStyles.header, { fontSize: width * 0.08 }]}>
+            Welcome to Beepney!
+          </Text>
+          <Text style={[onboardStyles.subheader, { fontSize: width * 0.04 }]}>
             Enhancing every commuter's experience {"\n"}with smarter, safer, and
             more{"\n"} convenient features.
           </Text>
-          <View style={onboardStyles.mockup1}>
+          <View style={[onboardStyles.mockup1, { top: height * 0.1 }]}>
             <IntroMockup width={350} height={height * 0.9} />
           </View>
         </View>
@@ -70,19 +79,24 @@ export default function Onboarding() {
         {/* Screen 2 */}
         <View style={onboardStyles.page} key="2">
           <View style={onboardStyles.container}>
-            <Text style={onboardStyles.header2}>
+            <Text style={[onboardStyles.header2, { fontSize: width * 0.065 }]}>
               Tricycle at Your Fingertips
             </Text>
-            <Text style={onboardStyles.subheader2}>
+            <Text
+              style={[onboardStyles.subheader2, { fontSize: width * 0.04 }]}
+            >
               Book tricycles instantly and enjoy a {"\n"} hassle-free ride
               anytime.
             </Text>
-            <View style={onboardStyles.fareMockup}>
+            <View
+              style={[onboardStyles.fareMockup, { marginTop: height * 0.06 }]}
+            >
               <TricyCallMockup width={120} height={height * 0.29} />
-              <View style={{ marginTop: 80 }}>
+
+              <View style={{ marginTop: height * 0.08 }}>
                 <TricyCallMockup1 width={120} height={height * 0.29} />
               </View>
-              <View style={{ marginTop: 130 }}>
+              <View style={{ marginTop: height * 0.1 }}>
                 <TricyCallMockup2 width={120} height={height * 0.29} />
               </View>
             </View>
@@ -92,12 +106,16 @@ export default function Onboarding() {
         {/* Screen 3 */}
         <View style={onboardStyles.page} key="3">
           <View style={onboardStyles.container}>
-            <Text style={onboardStyles.header2}>Your Safety, Our Priority</Text>
-            <Text style={onboardStyles.subheader2}>
+            <Text style={[onboardStyles.header2, { fontSize: width * 0.065 }]}>
+              Your Safety, Our Priority
+            </Text>
+            <Text
+              style={[onboardStyles.subheader2, { fontSize: width * 0.04 }]}
+            >
               Enhancing every commuter's experience {"\n"} with smarter, safer,
               and more{"\n"} convenient features.
             </Text>
-            <View style={{ marginTop: 10 }}>
+            <View style={{ marginTop: height * 0.02 }}>
               <SOSMockup width={260} height={height * 0.62} />
             </View>
           </View>
@@ -106,16 +124,20 @@ export default function Onboarding() {
         {/* Screen 4 */}
         <View style={onboardStyles.page} key="4">
           <View style={onboardStyles.container}>
-            <Text style={onboardStyles.header2}>
+            <Text style={[onboardStyles.header2, { fontSize: width * 0.065 }]}>
               Fair Fares, Pay with Ease!
             </Text>
-            <Text style={onboardStyles.subheader2}>
+            <Text
+              style={[onboardStyles.subheader2, { fontSize: width * 0.04 }]}
+            >
               Calculate fares accurately, get updated fare {"\n"} matrix and pay
               with ease—no more fare disputes.
             </Text>
-            <View style={onboardStyles.fareMockup}>
+            <View
+              style={[onboardStyles.fareMockup, { marginTop: height * 0.06 }]}
+            >
               <FareMockup1 width={170} height={height * 0.4} />
-              <View style={{ marginTop: 80 }}>
+              <View style={{ marginTop: height * 0.08 }}>
                 <FareMockup2 width={170} height={height * 0.4} />
               </View>
             </View>
@@ -127,7 +149,10 @@ export default function Onboarding() {
       <CustomButton
         title={getButtonLabel()}
         onPress={handleNext}
-        style={onboardStyles.button}
+        style={[
+          onboardStyles.button,
+          { width: width * 0.85, bottom: height * 0.08 },
+        ]}
       />
     </View>
   );
@@ -136,67 +161,61 @@ export default function Onboarding() {
 const onboardStyles = StyleSheet.create({
   button: {
     position: "absolute",
-    bottom: 70,
     alignSelf: "center",
-    width: "85%",
     elevation: 10,
     backgroundColor: "#0D99FF",
   },
   container: {
     flex: 1,
     alignItems: "center",
-    marginTop: 80,
+    marginTop: "10%",
   },
   pager: {
     flex: 1,
   },
   page: {
-    width,
-    height,
+    flex: 1,
     alignItems: "center",
     backgroundColor: "#ffffff",
   },
   header: {
-    fontSize: 32,
     fontWeight: "bold",
     textAlign: "center",
     color: "#073051",
+    marginTop: "2%",
   },
   header2: {
-    fontSize: 25,
     fontWeight: "bold",
     textAlign: "center",
     color: "#073051",
+    marginBottom: "2%",
   },
   subheader: {
-    fontSize: 15,
     fontFamily: "Poppins",
     textAlign: "center",
-    marginTop: 10,
+    marginTop: "3%",
     color: "#073051",
   },
   subheader2: {
-    fontSize: 15,
     fontFamily: "Poppins",
     textAlign: "center",
-    marginTop: 5,
+    marginTop: "2%",
     color: "#073051",
   },
   fareMockup: {
     flexDirection: "row",
-    marginTop: 50,
+    justifyContent: "center",
   },
   logo: {
-    width: 300,
-    height: 150,
+    height: undefined,
+    aspectRatio: 2, // maintains proportions
     resizeMode: "contain",
     alignSelf: "center",
-    marginTop: 40,
+    marginTop: "8%",
   },
   mockup1: {
     alignItems: "center",
     justifyContent: "center",
-    top: 100,
     flex: 1,
   },
 });

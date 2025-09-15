@@ -1,10 +1,16 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from "react-native";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ViewStyle,
+  StyleProp,
+} from "react-native";
 
 type CustomButtonProps = {
   title: string;
   onPress: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   backgroundColor?: string;
 };
 

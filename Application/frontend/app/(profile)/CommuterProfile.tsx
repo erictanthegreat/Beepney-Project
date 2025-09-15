@@ -183,7 +183,7 @@ const credStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 5,
   },
   driverText: {
     color: "#073051",
@@ -194,7 +194,7 @@ const credStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 10,
   },
   logoutText: {
     color: "red",
