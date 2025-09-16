@@ -79,7 +79,7 @@ export default class PostRental extends Component<{}, RentingState> {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // adjust if you have a header
+        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
       >
         <View style={rentStyles.container}>
           <BackButton />
@@ -96,8 +96,6 @@ export default class PostRental extends Component<{}, RentingState> {
             }}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={rentStyles.subHeader}>Post Rental Info</Text>
-
             <Input
               label="Name"
               placeholder="E.g Kevin's Rental"
@@ -181,11 +179,7 @@ const rentStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  subHeader: {
-    color: "#073051",
-    fontWeight: "bold",
-    fontSize: 20,
-  },
+
   addButton: {
     alignItems: "center",
     marginTop: 8,

@@ -42,7 +42,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="Ridehailing"
+        name="RideHailing"
         options={{
           title: "TricyCall",
           tabBarIcon: ({ color }) => (

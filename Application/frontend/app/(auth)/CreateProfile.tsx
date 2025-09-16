@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import AttachComp from "../../components/Attachfile";
@@ -54,197 +56,209 @@ export default function CreateProfile() {
   }, [step]);
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={viewStyles.container}>
-        {/* STATIC HEADER */}
-        <View>
-          <Image
-            source={require("@/assets/images/Beepney LOGO.png")}
-            style={[
-              imageStyles.logo,
-              { width: width * 0.7, height: height * 0.18 },
-            ]}
-          />
-          <Text style={[textStyles.header, { fontSize: width * 0.08 }]}>
-            Welcome to Beepney!
-          </Text>
-          <Text style={[textStyles.subheader, { fontSize: width * 0.045 }]}>
-            Sign In to Continue
-          </Text>
-        </View>
-
-        {/* STEP 1: BASIC INFO */}
-        {step === 1 && (
-          <>
-            <View style={styleName.rowContainer}>
-              <View style={[inputName.inputGroup, { width: "45%" }]}>
-                <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
-                  First Name
-                </Text>
-                <TextInput
-                  style={[inputName.input, { fontSize: width * 0.035 }]}
-                  placeholder="E.g Juan"
-                  placeholderTextColor="#B6B6B6"
-                />
-              </View>
-
-              <View style={[inputName.inputGroup, { width: "45%" }]}>
-                <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
-                  Last Name
-                </Text>
-                <TextInput
-                  style={[inputName.input, { fontSize: width * 0.035 }]}
-                  placeholder="E.g Dela Cruz"
-                  placeholderTextColor="#B6B6B6"
-                />
-              </View>
-            </View>
-
-            <View style={inputStyles.inputGroup}>
-              <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-                Email
-              </Text>
-              <TextInput
-                style={[inputStyles.input, { fontSize: width * 0.035 }]}
-                placeholder="Enter your email"
-                placeholderTextColor="#B6B6B6"
-              />
-            </View>
-
-            <View style={inputStyles.inputGroup}>
-              <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-                Password
-              </Text>
-              <TextInput
-                style={[inputStyles.input, { fontSize: width * 0.035 }]}
-                placeholder="Enter your password"
-                placeholderTextColor="#B6B6B6"
-                secureTextEntry
-              />
-            </View>
-
-            <View style={inputStyles.inputGroup}>
-              <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-                Confirm Password
-              </Text>
-              <TextInput
-                style={[inputStyles.input, { fontSize: width * 0.035 }]}
-                placeholder="Enter your password"
-                placeholderTextColor="#B6B6B6"
-                secureTextEntry
-              />
-            </View>
-          </>
-        )}
-
-        {/* STEP 2: ID & ATTACHMENTS */}
-        {step === 2 && (
-          <>
-            <View style={inputId.inputGroup}>
-              <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-                ID Discount
-              </Text>
-              <DropDown
-                data={["Student", "PWD", "Senior Citizen", "Solo Parent"]}
-                onSelect={(value) => setIdType(value)}
-                isOpen={openDropdown === 1}
-                onToggle={(open) => handleToggle(1, open)}
-              />
-              <AttachComp
-                label={["Tap here to take the front", "picture of the ID"].join(
-                  "\n"
-                )}
-                onImageSelected={handleImage}
-              />
-            </View>
-
-            <View style={inputId.inputGroup}>
-              <AttachComp
-                label={["Tap here to take the back", "picture of the ID"].join(
-                  "\n"
-                )}
-                onImageSelected={handleImage}
-              />
-            </View>
-
-            <Text style={{ marginTop: height * 0.02, textAlign: "center" }}>
-              <Text style={[inputId.idText, { fontSize: width * 0.04 }]}>
-                (e.g PWD ID, Senior Citizen ID, Solo Parent ID
-              </Text>
-              <Text style={[inputId.idText, { fontSize: width * 0.04 }]}>
-                {"\n"} and Student ID
-              </Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+    >
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1 }}
+        style={{ flex: 1, backgroundColor: "#fff" }} // ✅ keeps background white
+      >
+        <View style={viewStyles.container}>
+          {/* HEADER */}
+          <View>
+            <Image
+              source={require("@/assets/images/Beepney LOGO.png")}
+              style={[
+                imageStyles.logo,
+                { width: width * 0.7, height: height * 0.18 },
+              ]}
+            />
+            <Text style={[textStyles.header, { fontSize: width * 0.08 }]}>
+              Welcome to Beepney!
             </Text>
-          </>
-        )}
-
-        {/* STEP 3: FOR APPROVAL */}
-        {step === 3 && (
-          <View style={{ alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: width * 0.09,
-                marginTop: height * 0.05,
-                fontFamily: "Poppins",
-                fontWeight: "bold",
-                color: "#073051",
-              }}
-            >
-              For Approval
+            <Text style={[textStyles.subheader, { fontSize: width * 0.045 }]}>
+              Create an account
             </Text>
-            <Text
-              style={{
-                textAlign: "center",
-                marginTop: height * 0.02,
-                color: "#073051",
-                fontSize: width * 0.04,
-              }}
-            >
-              {"\t"}Your documents are being reviewed {"\n"} by the Admin.
-              Please wait 1-2 Business Days. Will {"\n"} message you through
-              email once your account {"\n"} {"\t"} gets verified. Thank you!
-            </Text>
-            <View>
-              <ApprovalIcon style={{ marginTop: height * 0.03 }} />
-            </View>
           </View>
-        )}
 
-        {/* BUTTON */}
-        <TouchableOpacity
-          style={[
-            styles.button,
-            { width: width * 0.8, marginTop: height * 0.05 },
-          ]}
-          onPress={() => {
-            if (step === 1) {
-              setStep(2);
-            } else if (step === 2) {
-              setStep(3);
-            } else {
-              router.push("/");
-            }
-          }}
-        >
-          <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
-            {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
-          </Text>
-        </TouchableOpacity>
+          {/* STEP 1: BASIC INFO */}
+          {step === 1 && (
+            <>
+              <View style={styleName.rowContainer}>
+                <View style={[inputName.inputGroup, { width: "45%" }]}>
+                  <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
+                    First Name
+                  </Text>
+                  <TextInput
+                    style={[inputName.input, { fontSize: width * 0.035 }]}
+                    placeholder="E.g Juan"
+                    placeholderTextColor="#B6B6B6"
+                  />
+                </View>
 
-        {/* SIGN-IN LINK */}
-        {step === 1 && (
-          <Text style={{ marginTop: height * 0.02 }}>
-            Already have an account?{" "}
-            <Text
-              style={{ color: "#073051", fontWeight: "bold" }}
-              onPress={() => router.push("/")}
-            >
-              Sign-In
+                <View style={[inputName.inputGroup, { width: "45%" }]}>
+                  <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
+                    Last Name
+                  </Text>
+                  <TextInput
+                    style={[inputName.input, { fontSize: width * 0.035 }]}
+                    placeholder="E.g Dela Cruz"
+                    placeholderTextColor="#B6B6B6"
+                  />
+                </View>
+              </View>
+
+              <View style={inputStyles.inputGroup}>
+                <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+                  Email
+                </Text>
+                <TextInput
+                  style={[inputStyles.input, { fontSize: width * 0.035 }]}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#B6B6B6"
+                />
+              </View>
+
+              <View style={inputStyles.inputGroup}>
+                <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+                  Password
+                </Text>
+                <TextInput
+                  style={[inputStyles.input, { fontSize: width * 0.035 }]}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#B6B6B6"
+                  secureTextEntry
+                />
+              </View>
+
+              <View style={inputStyles.inputGroup}>
+                <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+                  Confirm Password
+                </Text>
+                <TextInput
+                  style={[inputStyles.input, { fontSize: width * 0.035 }]}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#B6B6B6"
+                  secureTextEntry
+                />
+              </View>
+            </>
+          )}
+
+          {/* STEP 2: ID & ATTACHMENTS */}
+          {step === 2 && (
+            <>
+              <View style={inputId.inputGroup}>
+                <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+                  ID Discount
+                </Text>
+                <DropDown
+                  data={["Student", "PWD", "Senior Citizen", "Solo Parent"]}
+                  onSelect={(value) => setIdType(value)}
+                  isOpen={openDropdown === 1}
+                  onToggle={(open) => handleToggle(1, open)}
+                />
+                <AttachComp
+                  label={[
+                    "Tap here to take the front",
+                    "picture of the ID",
+                  ].join("\n")}
+                  onImageSelected={handleImage}
+                />
+              </View>
+
+              <View style={inputId.inputGroup}>
+                <AttachComp
+                  label={[
+                    "Tap here to take the back",
+                    "picture of the ID",
+                  ].join("\n")}
+                  onImageSelected={handleImage}
+                />
+              </View>
+
+              <Text style={{ marginTop: height * 0.02, textAlign: "center" }}>
+                <Text style={[inputId.idText, { fontSize: width * 0.04 }]}>
+                  (e.g PWD ID, Senior Citizen ID, Solo Parent ID
+                </Text>
+                <Text style={[inputId.idText, { fontSize: width * 0.04 }]}>
+                  {"\n"} and Student ID
+                </Text>
+              </Text>
+            </>
+          )}
+
+          {/* STEP 3: FOR APPROVAL */}
+          {step === 3 && (
+            <View style={{ alignItems: "center" }}>
+              <Text
+                style={{
+                  fontSize: width * 0.09,
+                  marginTop: height * 0.05,
+                  fontFamily: "Poppins",
+                  fontWeight: "bold",
+                  color: "#073051",
+                }}
+              >
+                For Approval
+              </Text>
+              <Text
+                style={{
+                  textAlign: "center",
+                  marginTop: height * 0.02,
+                  color: "#073051",
+                  fontSize: width * 0.04,
+                }}
+              >
+                {"\t"}Your documents are being reviewed {"\n"} by the Admin.
+                Please wait 1-2 Business Days. Will {"\n"} message you through
+                email once your account {"\n"} {"\t"} gets verified. Thank you!
+              </Text>
+              <View>
+                <ApprovalIcon style={{ marginTop: height * 0.03 }} />
+              </View>
+            </View>
+          )}
+
+          {/* BUTTON */}
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { width: width * 0.8, marginTop: height * 0.05 },
+            ]}
+            onPress={() => {
+              if (step === 1) {
+                setStep(2);
+              } else if (step === 2) {
+                setStep(3);
+              } else {
+                router.push("/");
+              }
+            }}
+          >
+            <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
+              {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
             </Text>
-          </Text>
-        )}
-      </View>
-    </ScrollView>
+          </TouchableOpacity>
+
+          {/* SIGN-IN LINK */}
+          {step === 1 && (
+            <Text style={{ marginTop: height * 0.02 }}>
+              Already have an account?{" "}
+              <Text
+                style={{ color: "#073051", fontWeight: "bold" }}
+                onPress={() => router.push("/(auth)/Login")}
+              >
+                Sign-In
+              </Text>
+            </Text>
+          )}
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -252,8 +266,8 @@ const viewStyles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingTop: 40,
-    flex: 1,
     backgroundColor: "#fff",
+    flex: 1,
   },
 });
 
@@ -298,7 +312,7 @@ const inputName = StyleSheet.create({
     marginBottom: 6,
     fontWeight: "bold",
     color: "#073051",
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
   input: {
     height: 45,
@@ -307,7 +321,7 @@ const inputName = StyleSheet.create({
     borderRadius: 8,
     paddingLeft: 10,
     backgroundColor: "#fff",
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
 });
 
@@ -321,7 +335,7 @@ const inputId = StyleSheet.create({
     color: "#073051",
     textAlign: "center",
     marginTop: 20,
-    fontFamily: "Poppins-Regular",
+    fontFamily: "Poppins",
   },
 });
 
@@ -343,6 +357,7 @@ const inputStyles = StyleSheet.create({
     borderRadius: 8,
     paddingLeft: 10,
     backgroundColor: "#fff",
+    fontFamily: "Poppins",
   },
 });
 
