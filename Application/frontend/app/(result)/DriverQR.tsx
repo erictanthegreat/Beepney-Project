@@ -3,7 +3,7 @@ import { Text, View, StyleSheet } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 
-export default class Renting extends Component {
+export default class DriverQr extends Component {
   render() {
     return (
       <View style={rentStyles.container}>

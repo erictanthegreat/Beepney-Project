@@ -19,7 +19,7 @@ import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 import FareIcon from "@/assets/images/fare icon.svg";
 import { useLocalSearchParams } from "expo-router";
-import PaymentModal from "@/components/PaymentModal"; // Add this import
+import PaymentModal from "@/components/PaymentModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -547,7 +547,6 @@ export default function CalculatedFare() {
             </View>
           </View>
 
-          {/* Updated Pay Cashless button */}
           <CustomButton
             title="Pay Cashless"
             backgroundColor="#1E86DA"
@@ -562,7 +561,7 @@ export default function CalculatedFare() {
           <CustomButton
             title="Done"
             backgroundColor="#073051"
-            onPress={() => router.push("/(feat)/farecalculator")}
+            onPress={() => router.push("/(feat)/FareCalculator")}
             style={{
               width: "95%",
               alignItems: "center",
@@ -576,7 +575,7 @@ export default function CalculatedFare() {
       <PaymentModal
         visible={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        amount={getPaymentAmount()} 
+        amount={getPaymentAmount()}
         description={`${params.origin || pickupAddress || "Selected location"} - ${params.destination || destinationAddress || "Selected destination"}${totalFare < PAYMONGO_MIN_AMOUNT ? ` (Minimum payment: ₱${PAYMONGO_MIN_AMOUNT.toFixed(2)})` : ""}`}
         onSuccess={handlePaymentSuccess}
         onError={handlePaymentError}

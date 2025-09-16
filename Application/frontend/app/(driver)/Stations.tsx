@@ -10,7 +10,7 @@ Mapbox.setAccessToken(
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"
 );
 
-export default class DriverStations extends Component {
+export default class Stations extends Component {
   state = {
     mapReady: false,
   };

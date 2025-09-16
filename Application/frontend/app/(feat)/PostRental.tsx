@@ -26,7 +26,7 @@ type RentingState = {
   vehicleType: "Jeep" | "Van" | "Jeep & Van";
 };
 
-export default class Renting extends Component<{}, RentingState> {
+export default class PostRental extends Component<{}, RentingState> {
   constructor(props: {}) {
     super(props);
     this.state = {
@@ -68,7 +68,7 @@ export default class Renting extends Component<{}, RentingState> {
 
       await AsyncStorage.setItem("rentals", JSON.stringify(rentals));
 
-      router.push("/(driver)/driverrenting");
+      router.push("/(driver)/Renting");
     } catch (e) {
       console.error("Error saving rental:", e);
     }

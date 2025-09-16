@@ -4,7 +4,7 @@ import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import HotlineCard from "@/components/HotlineCard";
 
-export default class DriverSOS extends Component {
+export default class SOS extends Component {
   render() {
     return (
       <View style={{ flex: 1 }}>

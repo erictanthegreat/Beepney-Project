@@ -10,7 +10,7 @@ import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import EmptyStateIcon from "../../assets/images/empty.svg";
 
-export default class DriverRenting extends Component {
+export default class Renting extends Component {
   state = {
     rentals: [],
   };

@@ -12,7 +12,7 @@ import BackButton from "@/components/Backbutton";
 import { CameraView } from "expo-camera";
 import QR from "../../assets/images/qr grid.svg";
 
-export default class Renting extends Component {
+export default class ScanDriverdets extends Component {
   render() {
     return (
       <View style={scanStyles.container}>

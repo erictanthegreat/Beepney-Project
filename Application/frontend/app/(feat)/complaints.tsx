@@ -25,7 +25,7 @@ interface State {
   nextId: number;
 }
 
-export default class Renting extends Component<{}, State> {
+export default class Complaints extends Component<{}, State> {
   state: State = {
     attachments: [{ id: 0 }],
     nextId: 1,

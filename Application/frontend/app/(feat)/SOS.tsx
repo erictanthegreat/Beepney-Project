@@ -7,13 +7,11 @@ import {
   Platform,
   Linking,
 } from "react-native";
-import { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import CallIcon from "../../assets/images/Call.svg";
 import ReportIcon from "../../assets/images/Report.svg";
-import SMS from "expo-sms";
 
 export default function SOS() {
   const { name, type, number } = useLocalSearchParams<{

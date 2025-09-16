@@ -4,7 +4,7 @@ import "@fontsource/poppins";
 import QRCode from "react-native-qrcode-svg";
 import BackButton from "@/components/Backbutton";
 
-export default function DriverQR() {
+export default function DriverDetails() {
   return (
     <View style={statStyles.container}>
       <View style={statStyles.topBar}>

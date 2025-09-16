@@ -14,8 +14,8 @@ export default function DriverLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#1E86DA", //
-        tabBarInactiveTintColor: "#A0A0A0", //
+        tabBarActiveTintColor: "#1E86DA",
+        tabBarInactiveTintColor: "#A0A0A0",
         headerShown: false,
         animation: "fade",
         tabBarBackground: TabBarBackground,
@@ -33,7 +33,7 @@ export default function DriverLayout() {
       }}
     >
       <Tabs.Screen
-        name="driverhome"
+        name="Home"
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
@@ -42,7 +42,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="driverridehailing"
+        name="Ridehailing"
         options={{
           title: "TricyCall",
           tabBarIcon: ({ color }) => (
@@ -51,7 +51,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="driversos"
+        name="SOS"
         options={{
           title: " ",
 
@@ -61,7 +61,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="driverstations"
+        name="Stations"
         options={{
           title: "stations",
           tabBarIcon: ({ color }) => (
@@ -70,7 +70,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="driverrenting"
+        name="Renting"
         options={{
           title: "Renting",
           tabBarIcon: ({ color }) => (

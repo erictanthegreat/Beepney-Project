@@ -30,7 +30,7 @@ type DriverRentingState = {
   openDropdownIndex: number | null;
 };
 
-export default class DriverRenting extends Component<{}, DriverRentingState> {
+export default class Renting extends Component<{}, DriverRentingState> {
   state: DriverRentingState = {
     rentals: [],
     openDropdownIndex: null,
@@ -58,7 +58,7 @@ export default class DriverRenting extends Component<{}, DriverRentingState> {
   editRental = (index: number) => {
     const rentalToEdit = this.state.rentals[index];
     router.push({
-      pathname: "/(feat)/postrental",
+      pathname: "/(feat)/PostRental",
       params: {
         rentalIndex: index.toString(),
         rentalData: JSON.stringify(rentalToEdit),
@@ -78,7 +78,6 @@ export default class DriverRenting extends Component<{}, DriverRentingState> {
       console.error("Error deleting rental:", e);
     }
   };
-
   updateRental = async (index: number, updatedRental: Rental) => {
     try {
       const newRentals = [...this.state.rentals];
@@ -106,7 +105,7 @@ export default class DriverRenting extends Component<{}, DriverRentingState> {
             Book Your Barkada Trip with Beepney
           </Text>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/postrental")}
+            onPress={() => router.push("/(feat)/PostRental")}
             style={rentStyles.Button}
           >
             <Text style={rentStyles.postHeader}>Post Rental Info</Text>

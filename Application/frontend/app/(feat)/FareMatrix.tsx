@@ -4,7 +4,7 @@ import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import ViewMatrix from "@/components/ViewMatrix";
 
-export default class Renting extends Component {
+export default class FareMatrix extends Component {
   render() {
     return (
       <View style={rentStyles.container}>

@@ -176,7 +176,7 @@ export default function DriverProfile() {
           } else if (step === 3) {
             setStep(4);
           } else if (step === 4) {
-            router.push("/(commuter)/home");
+            router.push("/(commuter)/Home");
           }
         }}
       >

@@ -28,7 +28,7 @@ const scale = width / 375; // iPhone X base
 // font scaler
 const scaleFont = (size: number) => size * PixelRatio.getFontScale();
 
-export default class DriverHome extends Component {
+export default class Home extends Component {
   state = {
     activeTab: 1,
   };
@@ -84,7 +84,7 @@ export default class DriverHome extends Component {
         {/* Top bar */}
         <View style={styles.topBar}>
           <TouchableOpacity
-            onPress={() => router.push("/(profile)/commuterprofile")}
+            onPress={() => router.push("/(profile)/CommuterProfile")}
           >
             <ProfileIcon width={32} height={32} />
           </TouchableOpacity>
@@ -146,7 +146,7 @@ export default class DriverHome extends Component {
           <View style={styles.rowBetween}>
             <Text style={fareStyle.fare}>Detailed Fare Matrices</Text>
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/farematrix")}
+              onPress={() => router.push("/(feat)/FareMatrix")}
               style={fareStyle.button}
             >
               <FareIcon width={26} height={26} />
@@ -156,7 +156,7 @@ export default class DriverHome extends Component {
           {/* Other Features */}
           <View style={featStyles.container}>
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/farecalculator")}
+              onPress={() => router.push("/(feat)/FareCalculator")}
               style={featStyles.featureButton}
             >
               <FCIcon style={featStyles.icon} />
@@ -164,7 +164,7 @@ export default class DriverHome extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/generateqr")}
+              onPress={() => router.push("/(feat)/GenerateQr")}
               style={featStyles.featureButton}
             >
               <DDIcon style={featStyles.icon} />
@@ -172,7 +172,7 @@ export default class DriverHome extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/ridehistory")}
+              onPress={() => router.push("/(feat)/RideHistory")}
               style={featStyles.featureButton}
             >
               <RHIcon style={featStyles.icon} />
@@ -180,7 +180,7 @@ export default class DriverHome extends Component {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(feat)/complaints")}
+              onPress={() => router.push("/(feat)/Complaints")}
               style={featStyles.featureButton}
             >
               <ComplaintIcon style={featStyles.icon} />

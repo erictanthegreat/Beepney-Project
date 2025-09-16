@@ -39,7 +39,7 @@ export default function CommuterProfile() {
 
         {/* Toggle button: switch to Driver interface */}
         <TouchableOpacity
-          onPress={() => router.replace("/(profile)/commuterprofile")}
+          onPress={() => router.replace("/(profile)/CommuterProfile")}
           style={profStyles.icon}
         >
           <CommuterIcon />

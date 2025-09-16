@@ -48,7 +48,7 @@ export default class Stations extends Component {
           <Text style={statStyles.title}>Stations</Text>
           <View style={{ width: 50 }} />
           <TouchableOpacity
-            onPress={() => router.push("/(result)/stationdetails")}
+            onPress={() => router.push("/(result)/StationDetails")}
           >
             <LocationIcon />
           </TouchableOpacity>
