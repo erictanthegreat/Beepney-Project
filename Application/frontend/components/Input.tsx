@@ -34,7 +34,6 @@ export default function LabeledInput({
 const styles = StyleSheet.create({
   inputGroup: {
     width: "43.3%",
-    marginTop: 20,
   },
   label: {
     fontSize: 18,

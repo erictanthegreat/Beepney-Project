@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import "@fontsource/poppins";
@@ -13,6 +15,7 @@ import BackButton from "@/components/Backbutton";
 import Attach from "@/components/AttachProof";
 import CustomButton from "@/components/ui/CustomButton";
 import Input from "@/components/Input";
+import IssueDropdown from "@/components/DropdownComplaints";
 
 interface Attachment {
   id: number;
@@ -23,12 +26,16 @@ interface Attachment {
 interface State {
   attachments: Attachment[];
   nextId: number;
+  incidentDate: string;
+  incidentTime: string;
 }
 
 export default class Complaints extends Component<{}, State> {
   state: State = {
     attachments: [{ id: 0 }],
     nextId: 1,
+    incidentDate: "",
+    incidentTime: "",
   };
 
   addAttachment = () => {
@@ -56,6 +63,18 @@ export default class Complaints extends Component<{}, State> {
     }));
   };
 
+  handleIssueSelect = (issue: string) => {
+    console.log("Selected Issue:", issue);
+  };
+
+  handleDateChange = (date: string) => {
+    this.setState({ incidentDate: date });
+  };
+
+  handleTimeChange = (time: string) => {
+    this.setState({ incidentTime: time });
+  };
+
   render() {
     return (
       <View style={rentStyles.container}>
@@ -67,56 +86,90 @@ export default class Complaints extends Component<{}, State> {
             Report issues to help improve public transportation.
           </Text>
         </View>
-
-        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          <Input
-            label={"Location"}
-            containerStyle={rentStyles.location}
-            placeholder="Enter location"
-          />
-
-          <Text style={rentStyles.label}>Description</Text>
-          <View style={rentStyles.cont}>
-            <TextInput
-              style={rentStyles.input}
-              placeholder="Enter your complaint here"
-              placeholderTextColor="#B6B6B6"
-              multiline
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+        >
+          <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+            <Input
+              label={"Name"}
+              containerStyle={rentStyles.location}
+              placeholder="Enter Name"
             />
-          </View>
+            <Input
+              label={"Contact Information"}
+              containerStyle={rentStyles.location}
+              placeholder="Enter Phone Number"
+            />
 
-          <Text style={rentStyles.label}>Attach Videos or Images</Text>
-          {this.state.attachments.map((att) => (
-            <View key={att.id}>
-              <View style={rentStyles.proof}>
-                <Attach
-                  label="Tap here to attach proofs"
-                  onFileSelected={(uri, type) =>
-                    this.handleFileSelected(att.id, uri, type)
-                  }
-                />
-              </View>
-              <TouchableOpacity
-                onPress={() => this.removeAttachment(att.id)}
-                style={rentStyles.removeButton}
-              >
-                <Text style={rentStyles.removeButtonText}>Remove</Text>
-              </TouchableOpacity>
+            <Input
+              label={"Location"}
+              containerStyle={rentStyles.location}
+              placeholder="Enter location"
+            />
+
+            <Input
+              label={"Date of Incident"}
+              containerStyle={rentStyles.location}
+              placeholder="MM/DD/YYYY"
+              value={this.state.incidentDate}
+              onChangeText={this.handleDateChange}
+            />
+
+            <Input
+              label={"Time of Incident"}
+              containerStyle={rentStyles.location}
+              placeholder="HH:MM AM/PM"
+              value={this.state.incidentTime}
+              onChangeText={this.handleTimeChange}
+            />
+
+            <IssueDropdown onSelectIssue={this.handleIssueSelect} />
+
+            <Text style={rentStyles.label}>Description</Text>
+            <View style={rentStyles.cont}>
+              <TextInput
+                style={rentStyles.input}
+                placeholder="Enter your complaint here"
+                placeholderTextColor="#B6B6B6"
+                multiline
+              />
             </View>
-          ))}
 
-          <CustomButton
-            title=" + Add Another Photo/Video"
-            style={rentStyles.addButton}
-            onPress={this.addAttachment}
-          />
+            <Text style={rentStyles.label}>Attach Videos or Images</Text>
+            {this.state.attachments.map((att) => (
+              <View key={att.id}>
+                <View style={rentStyles.proof}>
+                  <Attach
+                    label="Tap here to attach proofs"
+                    onFileSelected={(uri, type) =>
+                      this.handleFileSelected(att.id, uri, type)
+                    }
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={() => this.removeAttachment(att.id)}
+                  style={rentStyles.removeButton}
+                >
+                  <Text style={rentStyles.removeButtonText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
 
-          <CustomButton
-            title="Submit Complaint"
-            style={rentStyles.submit}
-            onPress={() => router.push("/")}
-          />
-        </ScrollView>
+            <CustomButton
+              title=" + Add Another Photo/Video"
+              style={rentStyles.addButton}
+              onPress={this.addAttachment}
+            />
+
+            <CustomButton
+              title="Submit Complaint"
+              style={rentStyles.submit}
+              onPress={() => router.push("/")}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     );
   }

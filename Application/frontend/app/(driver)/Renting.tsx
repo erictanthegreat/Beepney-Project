@@ -177,7 +177,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
                   </Text>
                 )}
 
-                {/* CRUD Dropdown */}
                 <View style={rentStyles.crud}>
                   <TouchableOpacity onPress={() => this.toggleDropdown(index)}>
                     <CRUD />

@@ -14,13 +14,12 @@ export default function HotlineCard({
   type,
   number,
   address,
- 
 }: HotlineCardProps) {
   return (
     <TouchableOpacity
       onPress={() =>
         router.push({
-          pathname: "/(feat)/sos",
+          pathname: "/(feat)/SOS",
           params: { name, type, number, address },
         })
       }
