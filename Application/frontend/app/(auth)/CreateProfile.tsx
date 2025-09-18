@@ -1,3 +1,4 @@
+// Application/frontend/(auth)/CreateProfile.tsx
 import React, { useState, useEffect } from "react";
 import {
   BackHandler,
@@ -11,11 +12,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import AttachComp from "../../components/Attachfile";
 import ApprovalIcon from "../../assets/images/approval.svg";
 import DropDown from "@/components/ui/DropDown";
+import { supabase } from "@/scripts/supabase";
 
 export default function CreateProfile() {
   const [step, setStep] = useState(1);
@@ -31,10 +35,24 @@ export default function CreateProfile() {
     setOpenDropdown(open ? index : null);
   };
 
-  // CAMERA FUNCTION
-  const handleImage = (uri: string) => {
-    console.log("Selected Image:", uri);
-    // -> SEND TO BACKEND <-
+  // FORM FIELDS (added)
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // ID Images (URIs from AttachComp)
+  const [frontIdUri, setFrontIdUri] = useState<string | null>(null);
+  const [backIdUri, setBackIdUri] = useState<string | null>(null);
+
+  // Loading state
+  const [loading, setLoading] = useState(false);
+
+  // CAMERA FUNCTION (modified to accept which side)
+  const handleImage = (uri: string, side: "front" | "back") => {
+    console.log("Selected Image:", uri, side);
+    if (side === "front") setFrontIdUri(uri);
+    else setBackIdUri(uri);
   };
 
   // BACK BUTTON HANDLING
@@ -55,6 +73,147 @@ export default function CreateProfile() {
     return () => backHandler.remove();
   }, [step]);
 
+  // Helper: upload a local file URI to Supabase Storage and return public URL
+  const uploadFileToStorage = async (uri: string, userId: string, filenamePrefix: string) => {
+    try {
+      // fetch the file as blob
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      const ext = uri.split(".").pop() || "jpg";
+      const fileName = `${filenamePrefix}_${Date.now()}.${ext}`;
+      const path = `${userId}/${fileName}`; // organized by user id
+
+      // upload to "submissions" bucket
+      const { error: uploadError } = await supabase.storage
+        .from("submissions")
+        .upload(path, blob, { upsert: true });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      // get public URL
+      const { data } = supabase.storage.from("submissions").getPublicUrl(path);
+      return data.publicUrl;
+    } catch (err) {
+      console.error("uploadFileToStorage error:", err);
+      throw err;
+    }
+  };
+
+  // Step 1: sign up (email confirmation required)
+  const handleSignUpStep = async () => {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
+      Alert.alert("Please fill all fields");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 1. create auth user
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("SignUp error:", error);
+        Alert.alert("Sign Up Failed", error.message);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Ask user to confirm email
+      Alert.alert(
+        "Verify Your Email",
+        "We sent a confirmation link to your inbox. Please verify your email before continuing."
+      );
+
+      // ✅ Stop here — do NOT go to Step 2 automatically
+      // Profiles insert will happen after login
+    } catch (err: any) {
+      console.error("handleSignUpStep error:", err);
+      Alert.alert("Error", err?.message ?? "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 2: upload IDs and create submission row
+  const handleSubmitIDs = async () => {
+    setLoading(true);
+
+    try {
+      // ensure user is signed in and we can get their id
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const userId = session?.user?.id;
+      if (!userId) {
+        Alert.alert("Not logged in", "Please sign in first.");
+        setLoading(false);
+        return;
+      }
+
+      // upload front/back if provided
+      let frontUrl: string | null = null;
+      let backUrl: string | null = null;
+
+      if (frontIdUri) {
+        frontUrl = await uploadFileToStorage(frontIdUri, userId, "front_id");
+      }
+      if (backIdUri) {
+        backUrl = await uploadFileToStorage(backIdUri, userId, "back_id");
+      }
+
+      // insert into submissions table
+      const { error: submissionError } = await supabase.from("submissions").insert([
+        {
+          user_id: userId,
+          first_name: firstName,
+          last_name: lastName,
+          submitted_info: `ID Submission (${idType || "N/A"})`,
+          front_id_url: frontUrl,
+          back_id_url: backUrl,
+          type: "Commuter",
+          status: "pending",
+        },
+      ]);
+
+      if (submissionError) {
+        console.error("Submission insert error:", submissionError);
+        Alert.alert("Submission Error", submissionError.message);
+        setLoading(false);
+        return;
+      }
+
+      // success: go to step 3 (For Approval)
+      setStep(3);
+    } catch (err: any) {
+      console.error("handleSubmitIDs error:", err);
+      Alert.alert("Error", err?.message ?? "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle main button press (keeps your original flow)
+  const onPrimaryButtonPress = async () => {
+    if (step === 1) {
+      // signup step
+      await handleSignUpStep();
+    } else if (step === 2) {
+      // upload IDs
+      await handleSubmitIDs();
+    } else {
+      router.push("/");
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -64,7 +223,7 @@ export default function CreateProfile() {
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1 }}
-        style={{ flex: 1, backgroundColor: "#fff" }} // ✅ keeps background white
+        style={{ flex: 1, backgroundColor: "#fff" }}
       >
         <View style={viewStyles.container}>
           {/* HEADER */}
@@ -96,6 +255,8 @@ export default function CreateProfile() {
                     style={[inputName.input, { fontSize: width * 0.035 }]}
                     placeholder="E.g Juan"
                     placeholderTextColor="#B6B6B6"
+                    value={firstName}
+                    onChangeText={setFirstName}
                   />
                 </View>
 
@@ -107,6 +268,8 @@ export default function CreateProfile() {
                     style={[inputName.input, { fontSize: width * 0.035 }]}
                     placeholder="E.g Dela Cruz"
                     placeholderTextColor="#B6B6B6"
+                    value={lastName}
+                    onChangeText={setLastName}
                   />
                 </View>
               </View>
@@ -119,6 +282,10 @@ export default function CreateProfile() {
                   style={[inputStyles.input, { fontSize: width * 0.035 }]}
                   placeholder="Enter your email"
                   placeholderTextColor="#B6B6B6"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
               </View>
 
@@ -131,6 +298,8 @@ export default function CreateProfile() {
                   placeholder="Enter your password"
                   placeholderTextColor="#B6B6B6"
                   secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
                 />
               </View>
 
@@ -166,7 +335,7 @@ export default function CreateProfile() {
                     "Tap here to take the front",
                     "picture of the ID",
                   ].join("\n")}
-                  onImageSelected={handleImage}
+                  onImageSelected={(uri: string) => handleImage(uri, "front")}
                 />
               </View>
 
@@ -176,7 +345,7 @@ export default function CreateProfile() {
                     "Tap here to take the back",
                     "picture of the ID",
                   ].join("\n")}
-                  onImageSelected={handleImage}
+                  onImageSelected={(uri: string) => handleImage(uri, "back")}
                 />
               </View>
 
@@ -229,19 +398,16 @@ export default function CreateProfile() {
               styles.button,
               { width: width * 0.8, marginTop: height * 0.05 },
             ]}
-            onPress={() => {
-              if (step === 1) {
-                setStep(2);
-              } else if (step === 2) {
-                setStep(3);
-              } else {
-                router.push("/");
-              }
-            }}
+            onPress={onPrimaryButtonPress}
+            disabled={loading}
           >
-            <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
-              {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
+                {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* SIGN-IN LINK */}

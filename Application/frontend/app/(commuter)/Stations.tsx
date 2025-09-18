@@ -11,6 +11,7 @@ import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
 import BackButton from "@/components/Backbutton";
 import LocationIcon from "../../assets/images/loc.svg";
+import { supabase } from "@/scripts/supabase";
 
 const { width, height } = Dimensions.get("window");
 
@@ -18,9 +19,41 @@ Mapbox.setAccessToken(
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"
 );
 
+export interface Station {
+  id: string;
+  name: string;
+  location: string;
+  coordinates: [number, number];
+  vehicleTypes: string[];
+}
+
 export default class Stations extends Component {
   state = {
+    stations: [] as Station[],
     mapReady: false,
+  };
+
+  async componentDidMount() {
+    const stations = await this.fetchStationsMobile();
+    this.setState({ stations });
+  }
+
+  fetchStationsMobile = async (): Promise<Station[]> => {
+    const { data, error } = await supabase.from("stations").select("*");
+    if (error) {
+      console.error("Error fetching stations:", error);
+      return [];
+    }
+
+    return (data || [])
+      .filter((s: any) => s.coordinates && s.coordinates.length === 2)
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        location: s.location,
+        coordinates: s.coordinates as [number, number],
+        vehicleTypes: s.vehicle_types || [],
+      }));
   };
 
   handleMapReady = () => {
@@ -28,6 +61,8 @@ export default class Stations extends Component {
   };
 
   render() {
+    const { stations } = this.state;
+
     return (
       <View style={statStyles.container}>
         <Mapbox.MapView
@@ -41,14 +76,24 @@ export default class Stations extends Component {
               centerCoordinate={[123.186389, 13.624444]}
             />
           )}
+
+          {stations.map((station) => (
+            <Mapbox.PointAnnotation
+              key={station.id}
+              id={station.id}
+              coordinate={station.coordinates}
+            >
+              <View style={statStyles.marker} />
+              <Mapbox.Callout title={station.name} />
+            </Mapbox.PointAnnotation>
+          ))}
         </Mapbox.MapView>
 
         <View style={statStyles.topBar}>
           <BackButton />
           <Text style={statStyles.title}>Stations</Text>
-          <View style={{ width: 50 }} />
           <TouchableOpacity
-            onPress={() => router.push("/(result)/StationDetails")}
+            onPress={() => router.push("/(result)/stationdetails")}
           >
             <LocationIcon />
           </TouchableOpacity>
@@ -83,5 +128,13 @@ const statStyles = StyleSheet.create({
     marginLeft: 1,
     color: "#073051",
     paddingTop: 50,
+  },
+  marker: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#1E86DA",
+    borderColor: "#fff",
+    borderWidth: 2,
   },
 });

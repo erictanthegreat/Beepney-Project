@@ -1,10 +1,69 @@
-import React, { Component } from "react";
-import { Text, View, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
-import HotlineCard from "@/components/HotlineCard";
+import { supabase } from "@/scripts/supabase";
+import { router } from "expo-router";
+
+interface Hotline {
+  id: string;
+  section: string;
+  name: string;
+  number: string;
+  address?: string;
+  created_at: string;
+}
+
+const contactSections = [
+  { key: "Ambulance", label: "Ambulance" },
+  { key: "Police", label: "Police Station" },
+  { key: "LTFRB", label: "LTFRB" },
+];
+
+// Format Philippine numbers to +63XXX-XXX-YYYY
+const formatPHNumber = (num: string): string => {
+  const digits = num.replace(/\D/g, "");
+  if (digits.startsWith("63") && digits.length === 12) {
+    return `+63${digits.slice(2, 5)}-${digits.slice(5, 8)}-${digits.slice(8)}`;
+  }
+  if (digits.length === 10 && digits.startsWith("9")) {
+    return `+63${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return num;
+};
 
 export default function SOS() {
+  const [hotlines, setHotlines] = useState<Hotline[]>([]);
+
+  useEffect(() => {
+    fetchHotlines();
+  }, []);
+
+  const fetchHotlines = async () => {
+    const { data, error } = await supabase
+      .from<"hotlines", Hotline>("hotlines")
+      .select("*");
+
+    if (error) {
+      console.error("Error fetching hotlines:", error.message);
+    } else {
+      setHotlines(data || []);
+    }
+  };
+
+  const handlePressHotline = (hotline: Hotline) => {
+    // Navigate to (feat)/SOS with hotline details
+    router.push({
+      pathname: "/(feat)/SOS",
+      params: {
+        name: hotline.name,
+        type: hotline.section,
+        number: hotline.number,
+        address: hotline.address || "",
+      },
+    });
+  };
+  
   return (
     <View style={{ flex: 1 }}>
       {/* Static Header */}
@@ -18,46 +77,28 @@ export default function SOS() {
 
       {/* Scrollable Content */}
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <Text style={soStyles.label}>Ambulance</Text>
-        <HotlineCard
-          name="Ambulance Hotline 1"
-          type="BFP Naga City"
-          number="0908-626-2396"
-          address="J. Miranda Ave., Zone 5, Brgy. Concepcion Pequeña, Naga City, Camarines Sur"
-        />
-        <HotlineCard
-          name="Ambulance Hotline 2"
-          address="Carnation St., Zone 4, Brgy. Triangulo, Naga City, Camarines Sur"
-          type="Chin Po Tong Volunteer Fire Brigade"
-          number="09XX-XXX-XXX"
-        />
-
-        <Text style={soStyles.label}>Police Station</Text>
-        <HotlineCard
-          name="Police Hotline 1"
-          type="Station 1"
-          number="09XX-XXX-XXX"
-          address="General Luna St., Zone 1, Brgy. Sta. Cruz, Naga City, Camarines Sur"
-        />
-        <HotlineCard
-          name="Polic Hotline 2"
-          type="Station 2"
-          number="09XX-XXX-XXX"
-          address="Panganiban Drive cor. Roxas Ave., Zone 6, Concepcion Pequena, Naga City, Camarines Sur"
-        />
-        <Text style={soStyles.label}>LTFRB</Text>
-        <HotlineCard
-          name="LTFRB Hotline 1"
-          type="Naga City"
-          number="09XX-XXX-XXX"
-          address={""}
-        />
-        <HotlineCard
-          name="Ambulance Hotline 1"
-          type="NICC"
-          number="09XX-XXX-XXX"
-          address={""}
-        />
+        {contactSections.map((section) => {
+          const sectionHotlines = hotlines.filter((h) => h.section === section.key);
+          return (
+            <View key={section.key}>
+              <Text style={soStyles.label}>{section.label}</Text>
+              {sectionHotlines.map((h) => (
+                <TouchableOpacity
+                  key={h.id}
+                  style={soStyles.cardContainer}
+                  onPress={() => handlePressHotline(h)}
+                >
+                  <View style={soStyles.dot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={soStyles.cardTitle}>{h.name}</Text>
+                    <Text style={soStyles.cardNumber}>{formatPHNumber(h.number)}</Text>
+                    {h.address ? <Text style={soStyles.cardAddress}>{h.address}</Text> : null}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -85,5 +126,39 @@ const soStyles = StyleSheet.create({
     color: "#595959",
     fontFamily: "Poppins",
     marginBottom: 15,
+  },
+  cardContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginHorizontal: 25,
+    marginVertical: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#D1D1D1",
+    borderRadius: 12,
+    backgroundColor: "#fff",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#1E86DA",
+    marginTop: 6,
+    marginRight: 8,
+  },
+  cardTitle: {
+    fontWeight: "600",
+    fontSize: 16,
+    color: "#000",
+  },
+  cardNumber: {
+    fontSize: 14,
+    color: "#0F76C2",
+    marginTop: 2,
+  },
+  cardAddress: {
+    fontSize: 12,
+    color: "#9A9A9A",
+    marginTop: 2,
   },
 });

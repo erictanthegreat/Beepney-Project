@@ -1,7 +1,15 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { supabase } from "../../scripts/supabase";
 import DriverButton from "../../assets/images/driver.svg";
 import BackButton from "../../components/Backbutton";
 import ProfileIcon from "../../assets/images/prof.svg";
@@ -31,8 +39,13 @@ export default function CommuterProfile() {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut(); // ✅ logout user from Supabase
+    router.replace("/"); // ✅ redirect to login/root
+  };
+
   return (
-    <View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       {/* Back Button */}
       <BackButton />
       <View style={profStyles.container}>
@@ -97,15 +110,12 @@ export default function CommuterProfile() {
           <DriverIcon />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push("/")}
-          style={credStyles.logoutRow}
-        >
+        <TouchableOpacity onPress={handleLogout} style={credStyles.logoutRow}>
           <Text style={credStyles.logoutText}>Logout</Text>
           <LogoutIcon />
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 

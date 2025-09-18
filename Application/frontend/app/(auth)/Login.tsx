@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Image,
   Text,
@@ -6,11 +6,42 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
-import "@fontsource/poppins";
+import { supabase } from "@/scripts/supabase";
 
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  // ✅ Auto check if already logged in (session persists with AsyncStorage)
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
+        router.replace("/(commuter)/Home");
+      }
+    };
+    checkSession();
+  }, []);
+
+  const handleLogin = async () => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      Alert.alert("Login failed", error.message);
+    } else {
+      console.log("User logged in:", data);
+      router.replace("/(commuter)/Home");
+    }
+  };
+
   return (
     <View style={viewStyles.container}>
       <View>
@@ -27,22 +58,25 @@ export default function Login() {
         <TextInput
           style={inputStyles.input}
           placeholder="Enter your email"
-          keyboardType="default"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
         />
       </View>
+
       <View style={inputStyles.inputGroup}>
         <Text style={inputStyles.label}>Password</Text>
         <TextInput
           style={inputStyles.input}
           placeholder="Enter your password"
           secureTextEntry
+          value={password}
+          onChangeText={setPassword}
         />
       </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push("/(commuter)/Home")}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
 
