@@ -1,8 +1,11 @@
 import React, { Component } from "react";
 import { Text, View, StyleSheet, Dimensions } from "react-native";
+import { router } from "expo-router";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
 import BackButton from "@/components/Backbutton";
+import LocationIcon from "../../assets/images/loc.svg";
+import { supabase } from "@/scripts/supabase";
 
 const { width, height } = Dimensions.get("window");
 
@@ -10,42 +13,94 @@ Mapbox.setAccessToken(
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"
 );
 
+export interface Station {
+  id: string;
+  name: string;
+  location: string;
+  coordinates: [number, number];
+  vehicleTypes: string[];
+}
+
 export default class Stations extends Component {
   state = {
+    stations: [] as Station[],
     mapReady: false,
+  };
+
+  async componentDidMount() {
+    const stations = await this.fetchStationsMobile();
+    this.setState({ stations });
+  }
+
+  fetchStationsMobile = async (): Promise<Station[]> => {
+    const { data, error } = await supabase.from("stations").select("*");
+    if (error) {
+      console.error("Error fetching stations:", error);
+      return [];
+    }
+
+    return (data || [])
+      .filter((s: any) => s.coordinates && s.coordinates.length === 2)
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        location: s.location,
+        coordinates: s.coordinates as [number, number],
+        vehicleTypes: s.vehicle_types || [],
+      }));
   };
 
   handleMapReady = () => {
     this.setState({ mapReady: true });
   };
 
+  handleMarkerPress = (station: Station) => {
+    router.push({
+      pathname: "/(result)/StationDetails",
+      params: { id: station.id },
+    });
+  };
+
   render() {
+    const { stations } = this.state;
+
     return (
-      <View style={styles.container}>
+      <View style={statStyles.container}>
         <Mapbox.MapView
-          style={styles.map}
+          style={statStyles.map}
           styleURL={Mapbox.StyleURL.Street}
           onDidFinishLoadingMap={this.handleMapReady}
         >
           {this.state.mapReady && (
             <Mapbox.Camera
-              zoomLevel={14}
+              zoomLevel={13}
               centerCoordinate={[123.186389, 13.624444]}
             />
           )}
+
+          {stations.map((station) => (
+            <Mapbox.PointAnnotation
+              key={station.id}
+              id={station.id}
+              coordinate={station.coordinates}
+              onSelected={() => this.handleMarkerPress(station)}
+            >
+              <LocationIcon width={30} height={30} />
+              <Mapbox.Callout title={station.name} />
+            </Mapbox.PointAnnotation>
+          ))}
         </Mapbox.MapView>
 
-        <View style={styles.topBar}>
+        <View style={statStyles.topBar}>
           <BackButton />
-          <Text style={styles.title}>Stations</Text>
-          <View style={{ width: 50 }} />
+          <Text style={statStyles.title}>Stations</Text>
         </View>
       </View>
     );
   }
 }
 
-const styles = StyleSheet.create({
+const statStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -67,8 +122,9 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: "bold",
     fontSize: 25,
-    marginLeft: 1,
     color: "#073051",
     paddingTop: 50,
+    textAlign: "center",
+    flex: 1,
   },
 });

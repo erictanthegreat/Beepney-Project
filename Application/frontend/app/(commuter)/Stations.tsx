@@ -1,11 +1,5 @@
 import React, { Component } from "react";
-import {
-  Text,
-  View,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-} from "react-native";
+import { Text, View, StyleSheet, Dimensions } from "react-native";
 import { router } from "expo-router";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
@@ -60,6 +54,13 @@ export default class Stations extends Component {
     this.setState({ mapReady: true });
   };
 
+  handleMarkerPress = (station: Station) => {
+    router.push({
+      pathname: "/(result)/StationDetails",
+      params: { id: station.id },
+    });
+  };
+
   render() {
     const { stations } = this.state;
 
@@ -82,8 +83,9 @@ export default class Stations extends Component {
               key={station.id}
               id={station.id}
               coordinate={station.coordinates}
+              onSelected={() => this.handleMarkerPress(station)}
             >
-              <View style={statStyles.marker} />
+              <LocationIcon width={30} height={30} />
               <Mapbox.Callout title={station.name} />
             </Mapbox.PointAnnotation>
           ))}
@@ -92,11 +94,6 @@ export default class Stations extends Component {
         <View style={statStyles.topBar}>
           <BackButton />
           <Text style={statStyles.title}>Stations</Text>
-          <TouchableOpacity
-            onPress={() => router.push("/(result)/stationdetails")}
-          >
-            <LocationIcon />
-          </TouchableOpacity>
         </View>
       </View>
     );
@@ -125,16 +122,9 @@ const statStyles = StyleSheet.create({
   title: {
     fontWeight: "bold",
     fontSize: 25,
-    marginLeft: 1,
     color: "#073051",
     paddingTop: 50,
-  },
-  marker: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#1E86DA",
-    borderColor: "#fff",
-    borderWidth: 2,
+    textAlign: "center",
+    flex: 1,
   },
 });

@@ -1,8 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, Image } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 type Vehicle = {
-  image: any;
+  type: string;
   destination: string;
   count: number;
 };
@@ -11,7 +11,7 @@ type TableProps = {
   data: Vehicle[];
 };
 
-export default function Table({ data }: TableProps) {
+export default function ViewStationTable({ data }: TableProps) {
   return (
     <View style={styles.table}>
       {/* Header row */}
@@ -23,35 +23,35 @@ export default function Table({ data }: TableProps) {
           <Text style={styles.headerText}>Destinations</Text>
         </View>
         <View style={[styles.cell, styles.headerCell, styles.lastHeaderCell]}>
-          <Text style={styles.headerText}>
-            Count of Available{"\n"}Vehicles
-          </Text>
+          <Text style={styles.headerText}>Available</Text>
         </View>
       </View>
 
       {/* Data rows */}
-      {data.map((item, index) => (
-        <View key={index} style={styles.row}>
-          {/* Vehicle image */}
-          <View style={[styles.cell, styles.dataCell]}>
-            <Image
-              source={item.image}
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </View>
+      {data.length > 0 ? (
+        data.map((item, index) => (
+          <View key={index} style={styles.row}>
+            {/* Vehicle type */}
+            <View style={[styles.cell, styles.dataCell]}>
+              <Text style={styles.text}>{item.type}</Text>
+            </View>
 
-          {/* Destination */}
-          <View style={[styles.cell, styles.dataCell]}>
-            <Text style={styles.text}>{item.destination}</Text>
-          </View>
+            {/* Destination */}
+            <View style={[styles.cell, styles.dataCell]}>
+              <Text style={styles.text}>{item.destination}</Text>
+            </View>
 
-          {/* Count */}
-          <View style={[styles.cell, styles.dataCell, styles.lastCell]}>
-            <Text style={styles.text}>{item.count}</Text>
+            {/* Count */}
+            <View style={[styles.cell, styles.dataCell, styles.lastCell]}>
+              <Text style={styles.text}>{item.count}</Text>
+            </View>
           </View>
+        ))
+      ) : (
+        <View style={styles.emptyRow}>
+          <Text style={styles.emptyText}>No vehicles available</Text>
         </View>
-      ))}
+      )}
     </View>
   );
 }
@@ -111,8 +111,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  image: {
-    width: 20,
-    height: 20,
+  emptyRow: {
+    padding: 20,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#777",
+    fontStyle: "italic",
   },
 });

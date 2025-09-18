@@ -270,7 +270,10 @@ export default class FareCalculator extends Component {
               >
                 <Text style={fareStyles.fareText}>Detailed Fare Matrices</Text>
                 <TouchableOpacity style={fareStyles.fareButton}>
-                  <FareIcon style={fareStyles.fareIcon} />
+                  <FareIcon
+                    onPress={() => router.push("/FareMatrix")}
+                    style={fareStyles.fareIcon}
+                  />
                 </TouchableOpacity>
               </View>
 

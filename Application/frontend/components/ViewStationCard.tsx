@@ -4,31 +4,51 @@ import LocationIcon from "../assets/images/loc 3.svg";
 import OpStartIcon from "../assets/images/opstart.svg";
 import VehicleTypeIcon from "../assets/images/vehicletype.svg";
 
-//backend here
+interface StationCardProps {
+  location?: string;
+  operation_time_am?: string;
+  operation_time_pm?: string;
+  vehicle_types?: string[];
+}
 
-export default function ViewStationCard() {
+export default function ViewStationCard({
+  location,
+  operation_time_am,
+  operation_time_pm,
+  vehicle_types,
+}: StationCardProps) {
   return (
     <View style={cardStyle.container}>
+      {/* Location */}
       <View style={cardStyle.subcontainer}>
         <LocationIcon width={20} height={20} />
         <Text style={cardStyle.label}>Location:</Text>
       </View>
       <Text style={cardStyle.sublabel}>
-        Carnation St, Naga City, Camarines Sur
+        {location || "No location available"}
       </Text>
 
+      {/* Operation Time */}
       <View style={cardStyle.subcontainer}>
         <OpStartIcon />
-        <Text style={cardStyle.label}>Operation Time (Start - End): </Text>
+        <Text style={cardStyle.label}>Operation Time (Start - End):</Text>
       </View>
-      <Text style={cardStyle.sublabel}>6:00 AM-9:00 PM</Text>
+      <Text style={cardStyle.sublabel}>
+        {operation_time_am && operation_time_pm
+          ? `${operation_time_am} - ${operation_time_pm}`
+          : "No operation time set"}
+      </Text>
 
+      {/* Vehicle Types */}
       <View style={cardStyle.subcontainer}>
         <VehicleTypeIcon />
-        <Text style={cardStyle.label}>Types of Vehicles: </Text>
+        <Text style={cardStyle.label}>Types of Vehicles:</Text>
       </View>
-
-      <Text style={cardStyle.sublabel}> Jeepneys & UVExpress</Text>
+      <Text style={cardStyle.sublabel}>
+        {vehicle_types && vehicle_types.length > 0
+          ? vehicle_types.join(", ")
+          : "No vehicles listed"}
+      </Text>
     </View>
   );
 }

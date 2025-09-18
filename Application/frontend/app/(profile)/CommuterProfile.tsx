@@ -40,8 +40,8 @@ export default function CommuterProfile() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut(); // ✅ logout user from Supabase
-    router.replace("/"); // ✅ redirect to login/root
+    await supabase.auth.signOut(); //
+    router.replace("/(auth)/Login"); //
   };
 
   return (

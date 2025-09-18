@@ -1,29 +1,88 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Text, View, StyleSheet, ScrollView } from "react-native";
 import "@fontsource/poppins";
+import { useLocalSearchParams } from "expo-router";
 import BackButton from "@/components/Backbutton";
 import StationDetailsCard from "@/components/ViewStationCard";
 import ViewStationTable from "@/components/ViewStationTable";
+import { supabase } from "@/scripts/supabase";
+
+// Interface matching your database structure
+interface StationDestination {
+  vehicle_type: string;
+  destination: string;
+  count: number;
+}
+
+// Interface for the table component (matching ViewStationTable expectations)
+interface Vehicle {
+  type: string;
+  destination: string;
+  count: number;
+}
 
 export default function StationDetails() {
-  const vehicleData = [
-    { image: "Jeep", destination: "Manila", count: 5 },
-    { image: "Jeep", destination: "Quezon City", count: 2 },
-    { image: "Van", destination: "Pasig", count: 7 },
-    { image: "Jeep", destination: "Taguig", count: 3 },
-    { image: "Jeep", destination: "Makati", count: 4 },
-  ];
+  const { id } = useLocalSearchParams(); // station id passed from map
+  const [station, setStation] = useState<any>(null);
+  const [vehicleData, setVehicleData] = useState<Vehicle[]>([]);
+
+  useEffect(() => {
+    if (id) {
+      fetchStationDetails(id as string);
+    }
+  }, [id]);
+
+  const fetchStationDetails = async (stationId: string) => {
+    // Fetch station info
+    const { data: stationData, error: stationError } = await supabase
+      .from("stations")
+      .select("*")
+      .eq("id", stationId)
+      .single();
+
+    if (stationError) {
+      console.error("Error fetching station:", stationError);
+      return;
+    }
+    setStation(stationData);
+
+    const { data: destinationRows, error: destinationError } = await supabase
+      .from("station_destinations")
+      .select("vehicle_type, destination, count")
+      .eq("station_id", stationId);
+
+    if (destinationError) {
+      console.error("Error fetching destinations:", destinationError);
+      return;
+    }
+
+    // Transform data to match ViewStationTable expectations
+    const transformedData: Vehicle[] = (destinationRows || []).map(
+      (row: StationDestination) => ({
+        type: row.vehicle_type,
+        destination: row.destination,
+        count: row.count,
+      })
+    );
+
+    setVehicleData(transformedData);
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
-      {/* Static header */}
       <BackButton />
-      <Text style={stationStyles.header}>East Bound Van {"\n"} Terminal</Text>
+      <Text style={stationStyles.header}>{station?.name || "Loading..."}</Text>
 
-      {/* Scrollable content */}
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         <View style={stationStyles.container}>
-          <StationDetailsCard />
+          {station && (
+            <StationDetailsCard
+              location={station.location}
+              operation_time_am={station.operation_time_am}
+              operation_time_pm={station.operation_time_pm}
+              vehicle_types={station.vehicle_types}
+            />
+          )}
         </View>
 
         <Text style={stationStyles.subheader}>
