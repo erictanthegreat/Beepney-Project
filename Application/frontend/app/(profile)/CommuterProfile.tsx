@@ -16,6 +16,7 @@ import ProfileIcon from "../../assets/images/prof.svg";
 import EditIcon from "../../assets/images/Edit.svg";
 import DriverIcon from "../../assets/images/driber.svg";
 import LogoutIcon from "../../assets/images/logout.svg";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ added
 
 export default function CommuterProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -40,8 +41,18 @@ export default function CommuterProfile() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut(); //
-    router.replace("/(auth)/Login"); //
+    try {
+      // sign out from Supabase
+      await supabase.auth.signOut();
+
+      // clear local persisted session
+      await AsyncStorage.clear();
+
+      // redirect to login
+      router.replace("/(auth)/Login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
