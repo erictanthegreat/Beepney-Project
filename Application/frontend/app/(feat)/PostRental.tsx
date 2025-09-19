@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -9,162 +9,197 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import "@fontsource/poppins";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "@/scripts/supabase";
 
 import BackButton from "@/components/Backbutton";
 import Input from "../../components/Input";
 import CustomButton from "../../components/ui/CustomButton";
 import SegmentedButton from "../../components/SegmentedButton";
 
-type RentingState = {
-  services: string[];
-  name: string;
-  contact: string;
-  location: string;
-  vehicleType: "Jeep" | "Van" | "Jeep & Van";
-};
+export default function PostRental() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
 
-export default class PostRental extends Component<{}, RentingState> {
-  constructor(props: {}) {
-    super(props);
-    this.state = {
-      services: [""],
-      name: "",
-      contact: "",
-      location: "",
-      vehicleType: "Jeep",
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [location, setLocation] = useState("");
+  const [vehicleType, setVehicleType] = useState<"Jeep" | "Van" | "Jeep & Van">(
+    "Jeep"
+  );
+  const [services, setServices] = useState<string[]>([""]);
+
+  useEffect(() => {
+    const fetchRental = async () => {
+      if (id) {
+        const { data, error } = await supabase
+          .from("rental")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching rental:", error.message);
+        } else if (data) {
+          setName(data.station_name || "");
+          setContact(data.contact_number || "");
+          setLocation(data.location || "");
+          setVehicleType(data.types_of_vehicles || "Jeep");
+          setServices(
+            data.service_offered ? data.service_offered.split(", ") : [""]
+          );
+        }
+      }
     };
-  }
 
-  addService = () => {
-    this.setState((prevState) => ({
-      services: [...prevState.services, ""],
-    }));
+    fetchRental();
+  }, [id]);
+
+  const addService = () => {
+    setServices((prev) => [...prev, ""]);
   };
 
-  updateService = (text: string, index: number) => {
-    const updatedServices = [...this.state.services];
-    updatedServices[index] = text;
-    this.setState({ services: updatedServices });
+  const updateService = (text: string, index: number) => {
+    const updated = [...services];
+    updated[index] = text;
+    setServices(updated);
   };
 
-  removeService = (index: number) => {
-    const updatedServices = [...this.state.services];
-    updatedServices.splice(index, 1);
-    this.setState({ services: updatedServices });
+  const removeService = (index: number) => {
+    const updated = [...services];
+    updated.splice(index, 1);
+    setServices(updated);
   };
 
-  saveRental = async () => {
-    const { name, contact, location, services, vehicleType } = this.state;
-    const newRental = { name, contact, location, services, vehicleType };
-
+  const saveRental = async () => {
     try {
-      const existing = await AsyncStorage.getItem("rentals");
-      const rentals = existing ? JSON.parse(existing) : [];
+      if (id) {
+        const { error } = await supabase
+          .from("rental")
+          .update({
+            station_name: name,
+            contact_number: contact,
+            location,
+            types_of_vehicles: vehicleType,
+            service_offered: services.join(", "),
+          })
+          .eq("id", id);
 
-      rentals.push(newRental);
+        if (error) {
+          console.error("Error updating rental:", error.message);
+          return;
+        }
+      } else {
+        const { error } = await supabase.from("rental").insert([
+          {
+            station_name: name,
+            contact_number: contact,
+            location,
+            types_of_vehicles: vehicleType,
+            service_offered: services.join(", "),
+          },
+        ]);
 
-      await AsyncStorage.setItem("rentals", JSON.stringify(rentals));
+        if (error) {
+          console.error("Error inserting rental:", error.message);
+          return;
+        }
+      }
 
       router.push("/(driver)/Renting");
     } catch (e) {
-      console.error("Error saving rental:", e);
+      console.error("Unexpected error saving rental:", e);
     }
   };
 
-  render() {
-    return (
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
-      >
-        <View style={rentStyles.container}>
-          <BackButton />
-          <Text style={rentStyles.header}>Jeepney/Van Rental</Text>
-          <Text style={{ marginLeft: 25, color: "#595959" }}>
-            Post your rental info.
-          </Text>
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+    >
+      <View style={rentStyles.container}>
+        <BackButton />
+        <Text style={rentStyles.header}>
+          {id ? "Edit Rental" : "Jeepney/Van Rental"}
+        </Text>
+        <Text style={{ marginLeft: 25, color: "#595959" }}>
+          {id ? "Update your rental info." : "Post your rental info."}
+        </Text>
 
-          <ScrollView
-            contentContainerStyle={{
-              marginLeft: 25,
-              marginTop: 20,
-              paddingBottom: 70,
-            }}
-            keyboardShouldPersistTaps="handled"
-          >
-            <Input
-              label="Name"
-              placeholder="E.g Kevin's Rental"
-              keyboardType="default"
-              containerStyle={{ width: "90%" }}
-              value={this.state.name}
-              onChangeText={(text) => this.setState({ name: text })}
-            />
+        <ScrollView
+          contentContainerStyle={{
+            marginLeft: 25,
+            marginTop: 20,
+            paddingBottom: 70,
+          }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Input
+            label="Name"
+            placeholder="E.g Kevin's Rental"
+            keyboardType="default"
+            containerStyle={{ width: "90%" }}
+            value={name}
+            onChangeText={setName}
+          />
 
-            <Text style={rentStyles.label}>Types of Vehicles</Text>
-            <SegmentedButton
-              value={this.state.vehicleType}
-              onChange={(val) => this.setState({ vehicleType: val })}
-            />
+          <Text style={rentStyles.label}>Types of Vehicles</Text>
+          <SegmentedButton value={vehicleType} onChange={setVehicleType} />
 
-            <Input
-              label="Contact Number"
-              placeholder="E.g 09XX-XXX-XXXX"
-              keyboardType="numeric"
-              containerStyle={{ width: "90%" }}
-              value={this.state.contact}
-              onChangeText={(text) => this.setState({ contact: text })}
-            />
+          <Input
+            label="Contact Number"
+            placeholder="E.g 09XX-XXX-XXXX"
+            keyboardType="phone-pad"
+            containerStyle={{ width: "90%" }}
+            value={contact}
+            onChangeText={setContact}
+          />
 
-            <Input
-              label="Location"
-              placeholder="E.g To Vigan"
-              keyboardType="default"
-              containerStyle={{ width: "90%" }}
-              value={this.state.location}
-              onChangeText={(text) => this.setState({ location: text })}
-            />
+          <Input
+            label="Location"
+            placeholder="E.g To Vigan"
+            keyboardType="default"
+            containerStyle={{ width: "90%" }}
+            value={location}
+            onChangeText={setLocation}
+          />
 
-            {this.state.services.map((service, index) => (
-              <View style={rentStyles.inputWrapper} key={index}>
-                <Input
-                  label="Services Offered"
-                  placeholder="E.g Private Transport"
-                  keyboardType="default"
-                  containerStyle={{ width: "100%" }}
-                  value={service}
-                  onChangeText={(text) => this.updateService(text, index)}
-                />
+          {services.map((service, index) => (
+            <View style={rentStyles.inputWrapper} key={index}>
+              <Input
+                label="Services Offered"
+                placeholder="E.g Private Transport"
+                keyboardType="default"
+                containerStyle={{ width: "100%" }}
+                value={service}
+                onChangeText={(text) => updateService(text, index)}
+              />
 
-                {index > 0 && (
-                  <Pressable
-                    style={rentStyles.deleteInside}
-                    onPress={() => this.removeService(index)}
-                  >
-                    <Ionicons name="close-circle" size={22} color="#FF4D4F" />
-                  </Pressable>
-                )}
-              </View>
-            ))}
+              {index > 0 && (
+                <Pressable
+                  style={rentStyles.deleteInside}
+                  onPress={() => removeService(index)}
+                >
+                  <Ionicons name="close-circle" size={22} color="#FF4D4F" />
+                </Pressable>
+              )}
+            </View>
+          ))}
 
-            <Pressable style={rentStyles.addButton} onPress={this.addService}>
-              <Ionicons name="add-circle" size={32} color="#0D99FF" />
-            </Pressable>
+          <Pressable style={rentStyles.addButton} onPress={addService}>
+            <Ionicons name="add-circle" size={32} color="#0D99FF" />
+          </Pressable>
 
-            <CustomButton
-              title="Done"
-              onPress={this.saveRental}
-              style={rentStyles.custButton}
-            />
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    );
-  }
+          <CustomButton
+            title={id ? "Update" : "Done"}
+            onPress={saveRental}
+            style={rentStyles.custButton}
+          />
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
+  );
 }
 
 const rentStyles = StyleSheet.create({
@@ -179,7 +214,6 @@ const rentStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
-
   addButton: {
     alignItems: "center",
     marginTop: 8,
@@ -208,3 +242,4 @@ const rentStyles = StyleSheet.create({
     marginTop: 10,
   },
 });
+8;

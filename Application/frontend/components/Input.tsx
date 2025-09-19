@@ -34,6 +34,7 @@ export default function LabeledInput({
 const styles = StyleSheet.create({
   inputGroup: {
     width: "43.3%",
+    gap: 5,
   },
   label: {
     fontSize: 18,
@@ -41,6 +42,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#073051",
     fontFamily: "Poppins",
+    marginTop: 5,
   },
   input: {
     height: 45,

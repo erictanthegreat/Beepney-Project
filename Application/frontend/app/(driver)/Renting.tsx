@@ -16,8 +16,10 @@ import ContactIcon from "@/assets/images/contact.svg";
 import LocationIcon from "@/assets/images/location.svg";
 import VehicleIcon from "@/assets/images/vehicle type.svg";
 import CRUD from "@/assets/images/crud.svg";
+import { supabase } from "@/scripts/supabase";
 
 type Rental = {
+  id: string;
   name: string;
   contact: string;
   location: string;
@@ -36,17 +38,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
     openDropdownIndex: null,
   };
 
-  async componentDidMount() {
-    try {
-      const stored = await AsyncStorage.getItem("rentals");
-      if (stored) {
-        this.setState({ rentals: JSON.parse(stored) });
-      }
-    } catch (e) {
-      console.error("Error loading rentals:", e);
-    }
-  }
-
   // Toggle dropdown for CRUD
   toggleDropdown = (index: number) => {
     this.setState((prev) => ({
@@ -54,38 +45,87 @@ export default class Renting extends Component<{}, DriverRentingState> {
     }));
   };
 
-  // Edit rental
-  editRental = (index: number) => {
-    const rentalToEdit = this.state.rentals[index];
-    router.push({
-      pathname: "/(feat)/PostRental",
-      params: {
-        rentalIndex: index.toString(),
-        rentalData: JSON.stringify(rentalToEdit),
-      },
-    });
-    this.setState({ openDropdownIndex: null });
-  };
+  async fetchRentals() {
+    try {
+      const { data, error } = await supabase
+        .from("rental")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.error("Error fetching rentals:", error.message);
+        return;
+      }
+
+      const rentals: Rental[] = data.map((row: any) => ({
+        id: row.id,
+        name: row.station_name,
+        contact: row.contact_number,
+        location: row.location,
+        services: Array.isArray(row.service_offered)
+          ? row.service_offered
+          : row.service_offered
+            ? row.service_offered.split(",").map((s: string) => s.trim())
+            : [],
+        vehicleType: row.types_of_vehicles,
+      }));
+      this.setState({ rentals });
+    } catch (e) {
+      console.error("Unexpected error fetching rentals", e);
+    }
+  }
+  componentDidMount() {
+    this.fetchRentals();
+  }
 
   // Delete rental
   deleteRental = async (index: number) => {
+    const rentals = this.state.rentals[index];
     try {
+      const { error } = await supabase
+        .from("rental")
+        .delete()
+        .eq("station_name", rentals.name)
+        .eq("contact_number", rentals.contact);
+
+      if (error) {
+        console.error("Error deleting rentals:", error.message);
+        return;
+      }
+      56;
       const newRentals = [...this.state.rentals];
       newRentals.splice(index, 1);
       this.setState({ rentals: newRentals, openDropdownIndex: null });
-      await AsyncStorage.setItem("rentals", JSON.stringify(newRentals));
     } catch (e) {
-      console.error("Error deleting rental:", e);
+      console.error("Unexpected error fetching rentals", e);
     }
   };
-  updateRental = async (index: number, updatedRental: Rental) => {
+
+  // Edit rental
+  updatedRental = async (index: number, updatedRental: Rental) => {
+    const rentals = this.state.rentals[index];
     try {
+      const { error } = await supabase
+        .from("rental")
+        .update({
+          station_name: updatedRental.name,
+          contact_number: updatedRental.contact,
+          location: updatedRental.location,
+          types_of_vehicle: updatedRental.vehicleType,
+          service_offered: updatedRental.services,
+        })
+        .eq("station_name", rentals.name)
+        .eq("contact_number", rentals.contact);
+
+      if (error) {
+        console.error("Error updating rentals:", error.message);
+        return;
+      }
       const newRentals = [...this.state.rentals];
       newRentals[index] = updatedRental;
       this.setState({ rentals: newRentals });
-      await AsyncStorage.setItem("rentals", JSON.stringify(newRentals));
+      this.setState({ openDropdownIndex: null });
     } catch (e) {
-      console.error("Error updating rental:", e);
+      console.error("Unexpected error updating rental:", e);
     }
   };
 
@@ -186,7 +226,12 @@ export default class Renting extends Component<{}, DriverRentingState> {
                     <View style={rentStyles.dropdown}>
                       <TouchableOpacity
                         style={rentStyles.dropdownItem}
-                        onPress={() => this.editRental(index)}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/(feat)/PostRental",
+                            params: { id: item.id },
+                          })
+                        }
                       >
                         <Text style={rentStyles.dropdownText}>Edit</Text>
                       </TouchableOpacity>

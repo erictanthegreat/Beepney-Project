@@ -19,6 +19,7 @@ import VehicleIcon from "@/assets/images/vehicle type.svg";
 import Call from "@/assets/images/call-rental.svg";
 import Chat from "@/assets/images/chat.svg";
 import { useLocalSearchParams } from "expo-router";
+import { supabase } from "@/scripts/supabase";
 
 type Rental = {
   name: string;
@@ -29,25 +30,47 @@ type Rental = {
 };
 
 export default function Renting() {
-  const { contact } = useLocalSearchParams<{
-    contact: string;
-  }>();
+  const { contact } = useLocalSearchParams<{ contact: string }>();
 
   const [rentals, setRentals] = useState<Rental[]>([]);
 
-  // Fetch rentals from AsyncStorage
-  const loadRentals = async () => {
+  // ✅ renamed from setRentals to fetchRentals
+  const fetchRentals = async () => {
     try {
-      const stored = await AsyncStorage.getItem("rentals");
-      if (stored) {
-        setRentals(JSON.parse(stored));
-      } else {
-        setRentals([]);
+      const { data, error } = await supabase
+        .from("rental")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching rentals:", error.message);
+        return;
+      }
+
+      if (data) {
+        const rentals: Rental[] = data.map((row: any) => ({
+          name: row.station_name,
+          contact: row.contact_number,
+          location: row.location,
+          services: Array.isArray(row.service_offered)
+            ? row.service_offered
+            : row.service_offered
+              ? row.service_offered.split(",").map((s: string) => s.trim())
+              : [],
+          vehicleType: row.types_of_vehicles,
+        }));
+        setRentals(rentals);
       }
     } catch (e) {
-      console.error("Error loading rentals:", e);
+      console.error("Unexpected error fetching rentals", e);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRentals();
+    }, [])
+  );
 
   const makeaPhonecall = (phoneNumber: string) => {
     if (!phoneNumber) return;
@@ -59,13 +82,6 @@ export default function Renting() {
       console.error("Error making call:", err)
     );
   };
-
-  // Re-run loadRentals whenever screen is focused
-  useFocusEffect(
-    useCallback(() => {
-      loadRentals();
-    }, [])
-  );
 
   const isEmpty = rentals.length === 0;
 
@@ -145,10 +161,10 @@ export default function Renting() {
               )}
               <View style={rentStyles.contacts}>
                 <TouchableOpacity onPress={() => makeaPhonecall(item.contact)}>
-                  <Call></Call>
+                  <Call />
                 </TouchableOpacity>
                 <TouchableOpacity>
-                  <Chat></Chat>
+                  <Chat />
                 </TouchableOpacity>
               </View>
             </View>
