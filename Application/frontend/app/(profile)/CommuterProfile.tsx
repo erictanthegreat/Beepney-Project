@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -16,53 +18,111 @@ import ProfileIcon from "../../assets/images/prof.svg";
 import EditIcon from "../../assets/images/Edit.svg";
 import DriverIcon from "../../assets/images/driber.svg";
 import LogoutIcon from "../../assets/images/logout.svg";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // ✅ added
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function CommuterProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [submissionStatus, setSubmissionStatus] = useState<
+    "pending" | "approved" | null
+  >(null);
 
+  const [profileData, setProfileData] = useState<{
+    username: string;
+    email: string;
+  } | null>(null);
+
+  // Fetch profile info and submission status on mount
+  useEffect(() => {
+    const fetchProfileAndStatus = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const userId = session.user.id;
+
+        // Fetch profile
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("username, email, avatar_url")
+          .eq("id", userId)
+          .single();
+
+        if (profileError) {
+          console.error(profileError);
+        } else {
+          setProfileData({
+            username: profile.username,
+            email: profile.email,
+          });
+          setProfileImage(profile.avatar_url);
+        }
+
+        // Fetch latest submission status
+        const { data: submission, error: submissionError } = await supabase
+          .from("submissions")
+          .select("status")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!submissionError && submission?.status) {
+          setSubmissionStatus(submission.status);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchProfileAndStatus();
+  }, []);
+
+  // Profile image picker
   const pickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       alert("Permission to access camera roll is required!");
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: "images", // lowercase
       quality: 1,
     });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-    }
+    if (!result.canceled) setProfileImage(result.assets[0].uri);
   };
-
+  
+  // Logout
   const handleLogout = async () => {
     try {
-      // sign out from Supabase
       await supabase.auth.signOut();
-
-      // clear local persisted session
       await AsyncStorage.clear();
-
-      // redirect to login
       router.replace("/(auth)/Login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
 
+  // Redirect to submission screen
+  const handleIdPress = () => {
+    if (submissionStatus === "pending" || submissionStatus === "approved") {
+      Alert.alert(
+        "ID Already Submitted",
+        "Your ID submission is currently under review or approved."
+      );
+      return;
+    }
+    router.push("/(profile)/ProfileSubmission"); // <-- redirect to new submission screen
+  };
+
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      {/* Back Button */}
       <BackButton />
       <View style={profStyles.container}>
         <Text style={profStyles.header}>Profile</Text>
-
-        {/* Toggle button: switch to Driver interface */}
         <TouchableOpacity
           onPress={() => router.replace("/(driver)/Home")}
           style={profStyles.icon}
@@ -74,7 +134,6 @@ export default function CommuterProfile() {
         View your profile.
       </Text>
 
-      {/* Profile Image */}
       <View style={profStyles.profileContainer}>
         {profileImage ? (
           <Image
@@ -89,28 +148,53 @@ export default function CommuterProfile() {
         </TouchableOpacity>
       </View>
 
-      {/* Profile Form */}
       <View style={credStyles.container}>
+        {/* Name */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Name</Text>
-          <View style={credStyles.input} />
+          <View style={credStyles.input}>
+            <Text style={{ padding: 10 }}>
+              {profileData?.username ?? "Loading..."}
+            </Text>
+          </View>
         </View>
 
+        {/* Email */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Email</Text>
-          <View style={credStyles.input} />
+          <View style={credStyles.input}>
+            <Text style={{ padding: 10 }}>
+              {profileData?.email ?? "Loading..."}
+            </Text>
+          </View>
         </View>
 
+        {/* Password */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Password</Text>
-          <View style={credStyles.input} />
+          <View style={credStyles.input}>
+            <Text style={{ padding: 10 }}>********</Text>
+          </View>
         </View>
 
+        {/* ID Discount Section */}
         <View style={credStyles.formGroup}>
-          <View style={credStyles.labelRow}>
-            <Text style={credStyles.label}>ID Discount (Student ID)</Text>
-          </View>
-          <View style={[credStyles.input, { height: 150 }]} />
+          <Text style={credStyles.label}>ID Discount</Text>
+          <TouchableOpacity
+            style={[
+              credStyles.input,
+              { justifyContent: "center", alignItems: "center" },
+            ]}
+            onPress={handleIdPress}
+          >
+            <Text>
+              {submissionStatus === "pending"
+                ? "Pending Submission"
+                : submissionStatus === "approved"
+                ? "ID Approved"
+                : "Tap to submit your ID"}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -178,7 +262,7 @@ const credStyles = StyleSheet.create({
     shadowRadius: 4,
   },
   formGroup: {
-    marginBottom: 5,
+    marginBottom: 10,
   },
   label: {
     fontSize: 16,
@@ -187,18 +271,12 @@ const credStyles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    height: 35,
+    height: 40,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 20,
     paddingHorizontal: 15,
     backgroundColor: "#fff",
-  },
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
   },
   driverRow: {
     flexDirection: "row",
