@@ -1,4 +1,3 @@
-// components/ForApproval.tsx
 import React from "react";
 import {
   View,
@@ -8,13 +7,24 @@ import {
   Image,
   SafeAreaView,
 } from "react-native";
-import { router } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import ApprovalIcon from "@/assets/images/approval.svg";
 import CustomButton from "@/components/ui/CustomButton";
 
 const { width, height } = Dimensions.get("window");
 
 export default function ForApproval() {
+  const router = useRouter();
+  const { role } = useLocalSearchParams<{ role: "commuter" | "driver" }>();
+
+  const handleConfirm = () => {
+    if (role === "driver") {
+      router.push("/(driver)/Home");
+    } else {
+      router.push("/(commuter)/Home");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Image
@@ -32,13 +42,12 @@ export default function ForApproval() {
         <ApprovalIcon width={width * 0.4} height={width * 0.4} />
       </View>
 
-      <CustomButton
-        title="Confirm"
-        onPress={() => router.push("/(commuter)/Home")}
-      ></CustomButton>
+      <CustomButton title="Confirm" onPress={handleConfirm} />
     </SafeAreaView>
   );
 }
+
+// ...styles remain the same
 
 const styles = StyleSheet.create({
   container: {

@@ -116,7 +116,7 @@ export default function CommuterProfile() {
       );
       return;
     }
-    router.push("/(profile)/ProfileSubmission"); // <-- redirect to new submission screen
+    router.push("/(profile)/ProfileSubmission");
   };
 
   return (
@@ -183,7 +183,7 @@ export default function CommuterProfile() {
           <Text style={credStyles.label}>ID Discount</Text>
           <TouchableOpacity
             style={[
-              credStyles.input,
+              credStyles.card,
               { justifyContent: "center", alignItems: "center" },
             ]}
             onPress={handleIdPress}
@@ -273,6 +273,15 @@ const credStyles = StyleSheet.create({
   },
   input: {
     height: 40,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    backgroundColor: "#fff",
+  },
+
+  card: {
+    height: 150,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 20,

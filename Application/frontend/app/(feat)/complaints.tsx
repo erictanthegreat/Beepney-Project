@@ -1,3 +1,4 @@
+// pages/Complaints.tsx
 import React, { Component } from "react";
 import {
   Text,
@@ -36,6 +37,7 @@ interface State {
   description: string;
   selectedIssue: string;
   complaints: any[];
+  role: "commuter" | "driver"; // store role
 }
 
 export default class Complaints extends Component<{}, State> {
@@ -50,6 +52,7 @@ export default class Complaints extends Component<{}, State> {
     description: "",
     selectedIssue: "",
     complaints: [],
+    role: "commuter",
   };
 
   componentDidMount() {
@@ -57,7 +60,6 @@ export default class Complaints extends Component<{}, State> {
     this.fetchComplaints();
   }
 
-  // Fetch logged-in user's name to prefill
   fetchUserName = async () => {
     try {
       const {
@@ -65,29 +67,24 @@ export default class Complaints extends Component<{}, State> {
         error: sessionError,
       } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
-
       if (!session?.user) return;
 
       const userId = session.user.id;
-
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("username")
+        .select("username, role")
         .eq("id", userId)
         .single();
 
       if (error) throw error;
 
-      if (profile?.username) {
-        const firstName = profile.username;
-        this.setState({ name: firstName });
-      }
+      if (profile?.username) this.setState({ name: profile.username });
+      if (profile?.role) this.setState({ role: profile.role });
     } catch (err) {
       console.error("Error fetching user name:", err);
     }
   };
 
-  // Fetch existing complaints
   fetchComplaints = async () => {
     try {
       const { data, error } = await supabase.from("complaints").select("*");
@@ -138,6 +135,7 @@ export default class Complaints extends Component<{}, State> {
       selectedIssue,
       description,
       attachments,
+      role,
     } = this.state;
 
     if (
@@ -154,12 +152,10 @@ export default class Complaints extends Component<{}, State> {
     }
 
     try {
-      // Convert attachments to proofs array
       const proofs = attachments
         .filter((att) => att.uri)
         .map((att) => att.uri) as string[];
 
-      // Insert complaint into Supabase
       const { data, error } = await supabase.from("complaints").insert([
         {
           name,
@@ -186,7 +182,10 @@ export default class Complaints extends Component<{}, State> {
         nextId: 1,
       });
 
-      router.push("/(result)/Review (Commuter)");
+      router.push({
+        pathname: "/(result)/Review (Commuter)",
+        params: { role },
+      });
     } catch (err) {
       console.error("Error submitting complaint:", err);
       Alert.alert("Error", "Failed to submit complaint.");
@@ -357,6 +356,13 @@ const rentStyles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "Poppins",
   },
-  submit: { alignSelf: "center", width: "90%", backgroundColor: "#0D99FF" },
-  proof: { alignItems: "center", marginTop: 10 },
+  submit: {
+    alignSelf: "center",
+    width: "90%",
+    backgroundColor: "#0D99FF",
+  },
+  proof: {
+    alignItems: "center",
+    marginTop: 10,
+  },
 });
