@@ -81,20 +81,21 @@ export default function CommuterProfile() {
 
   // Profile image picker
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
       alert("Permission to access camera roll is required!");
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images", // lowercase
+      mediaTypes: "images",
       quality: 1,
     });
 
     if (!result.canceled) setProfileImage(result.assets[0].uri);
   };
-  
+
   // Logout
   const handleLogout = async () => {
     try {
@@ -191,8 +192,8 @@ export default function CommuterProfile() {
               {submissionStatus === "pending"
                 ? "Pending Submission"
                 : submissionStatus === "approved"
-                ? "ID Approved"
-                : "Tap to submit your ID"}
+                  ? "ID Approved"
+                  : "Tap to submit your ID"}
             </Text>
           </TouchableOpacity>
         </View>

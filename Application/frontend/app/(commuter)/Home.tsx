@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -7,6 +7,7 @@ import {
   PixelRatio,
   ScrollView,
   Dimensions,
+  Image,
 } from "react-native";
 import Table from "../../components/ui/TableComponent";
 import "@fontsource/poppins";
@@ -20,176 +21,210 @@ import RHIcon from "../../assets/images/ride history.svg";
 import DDIcon from "../../assets/images/scan.svg";
 import FareIcon from "../../assets/images/fare.svg";
 import ComplaintIcon from "../../assets/images/complaint.svg";
+import { supabase } from "@/scripts/supabase";
 import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 const scale = width / 375;
-
 const scaleFont = (size: number) => size * PixelRatio.getFontScale();
 
-export default class Home extends Component {
-  state = {
-    activeTab: 1,
-  };
+export default function Home() {
+  const [activeTab, setActiveTab] = useState(1);
+  const [firstName, setFirstName] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
 
-  setActiveTab = (tab: number) => {
-    this.setState({ activeTab: tab });
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-  renderTable = () => {
-    const tableData = [
-      {
-        headers: ["Distance (kms.)", "Jeepney"],
-        data: [
-          ["Regular 1- 4 Kilometers", "₱13.00"],
-          ["Succeeding Kilometers", "₱1.80 p/kms"],
-          ["Student/Elder/PWD/Solo Parent", "₱10.40"],
-          ["Succeeding Kilometers", "₱1.44 p/kms"],
-        ],
-      },
-      {
-        headers: ["Distance (kms.)", "Tricycle"],
-        data: [
-          ["Regular 1- 4 Kilometers", "₱15.00"],
-          ["Succeeding Kilometers", "₱7.50 p/500 m"],
-          ["Student/Elder/PWD/Solo Parent", "₱13.00"],
-          ["Succeeding Kilometers", "₱6.50 p/500 m"],
-        ],
-      },
-      {
-        headers: ["Distance (kms.)", "Bus"],
-        data: [
-          ["Regular 1- 4 Kilometers", "₱15.00"],
-          ["Succeeding Kilometers", "₱7.50 p/500 m"],
-          ["Student/Elder/PWD/Solo Parent", "₱13.00"],
-          ["Succeeding Kilometers", "₱6.50 p/500 m"],
-        ],
-      },
-    ];
+        if (!session?.user) return;
 
-    return (
-      <Table
-        headers={tableData[this.state.activeTab - 1].headers}
-        data={tableData[this.state.activeTab - 1].data}
-      />
-    );
-  };
+        const userId = session.user.id;
 
-  render() {
-    const { activeTab } = this.state;
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("username, avatar_url")
+          .eq("id", userId)
+          .single();
 
-    return (
-      <View style={{ flex: 1 }}>
-        {/* Top bar */}
-        <View style={styles.topBar}>
+        if (error) {
+          console.error("Error fetching profile:", error.message);
+          return;
+        }
+
+        if (profile?.username) {
+          const first = profile.username.split(" ")[0];
+          setFirstName(first);
+        }
+
+        if (profile?.avatar_url) {
+          setAvatar(profile.avatar_url);
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  const tableData = [
+    {
+      headers: ["Distance (kms.)", "Jeepney"],
+      data: [
+        ["Regular 1- 4 Kilometers", "₱13.00"],
+        ["Succeeding Kilometers", "₱1.80 p/kms"],
+        ["Student/Elder/PWD/Solo Parent", "₱10.40"],
+        ["Succeeding Kilometers", "₱1.44 p/kms"],
+      ],
+    },
+    {
+      headers: ["Distance (kms.)", "Tricycle"],
+      data: [
+        ["Regular 1- 4 Kilometers", "₱15.00"],
+        ["Succeeding Kilometers", "₱7.50 p/500 m"],
+        ["Student/Elder/PWD/Solo Parent", "₱13.00"],
+        ["Succeeding Kilometers", "₱6.50 p/500 m"],
+      ],
+    },
+    {
+      headers: ["Distance (kms.)", "Bus"],
+      data: [
+        ["Regular 1- 4 Kilometers", "₱15.00"],
+        ["Succeeding Kilometers", "₱7.50 p/500 m"],
+        ["Student/Elder/PWD/Solo Parent", "₱13.00"],
+        ["Succeeding Kilometers", "₱6.50 p/500 m"],
+      ],
+    },
+  ];
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
             onPress={() => router.push("/(profile)/CommuterProfile")}
           >
-            <ProfileIcon width={32} height={32} />
+            {avatar ? (
+              <Image
+                source={{ uri: avatar }}
+                style={{ width: 32, height: 32, borderRadius: 16 }}
+              />
+            ) : (
+              <ProfileIcon width={32} height={32} />
+            )}
           </TouchableOpacity>
-          <Text style={styles.name}>Hello, Ayath!</Text>
-          <TouchableOpacity>
-            <NotifIcon width={28} height={28} />
+          <Text style={[styles.name, { marginLeft: 10 }]}>
+            Hello, {firstName || "Commuter"}!
+          </Text>
+        </View>
+        <TouchableOpacity>
+          <NotifIcon width={28} height={28} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Tabs */}
+        <View style={styles.headerRow}>
+          <Text style={styles.text}>Overview</Text>
+          <View style={styles.segmentContainer}>
+            {[1, 2, 3].map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.segmentButton,
+                  activeTab === tab && styles.activeButton,
+                ]}
+                onPress={() => setActiveTab(tab)}
+              >
+                {tab === 1 && (
+                  <JeepIcon
+                    color={activeTab === tab ? "#ffffff" : "#888888"}
+                    width={26}
+                    height={26}
+                  />
+                )}
+                {tab === 2 && (
+                  <TricyIcon
+                    color={activeTab === tab ? "#ffffff" : "#888888"}
+                    width={26}
+                    height={26}
+                  />
+                )}
+                {tab === 3 && (
+                  <BusIcon
+                    color={activeTab === tab ? "#ffffff" : "#888888"}
+                    width={28}
+                    height={28}
+                  />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Table */}
+        <Table
+          headers={tableData[activeTab - 1].headers}
+          data={tableData[activeTab - 1].data}
+        />
+
+        {/* Fare Matrix Shortcut */}
+        <View style={styles.rowBetween}>
+          <Text style={fareStyle.fare}>Detailed Fare Matrices</Text>
+          <TouchableOpacity
+            onPress={() => router.push("/(feat)/FareMatrix")}
+            style={fareStyle.button}
+          >
+            <FareIcon width={26} height={26} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Tabs */}
-          <View style={styles.headerRow}>
-            <Text style={styles.text}>Overview</Text>
-            <View style={styles.segmentContainer}>
-              {[1, 2, 3].map((tab) => (
-                <TouchableOpacity
-                  key={tab}
-                  style={[
-                    styles.segmentButton,
-                    activeTab === tab && styles.activeButton,
-                  ]}
-                  onPress={() => this.setActiveTab(tab)}
-                >
-                  {tab === 1 && (
-                    <JeepIcon
-                      color={activeTab === tab ? "#ffffff" : "#888888"}
-                      width={26}
-                      height={26}
-                    />
-                  )}
-                  {tab === 2 && (
-                    <TricyIcon
-                      color={activeTab === tab ? "#ffffff" : "#888888"}
-                      width={26}
-                      height={26}
-                    />
-                  )}
-                  {tab === 3 && (
-                    <BusIcon
-                      color={activeTab === tab ? "#ffffff" : "#888888"}
-                      width={28}
-                      height={28}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+        {/* Other Features */}
+        <View style={featStyles.container}>
+          <TouchableOpacity
+            onPress={() => router.push("/(feat)/FareCalculator")}
+            style={featStyles.featureButton}
+          >
+            <FCIcon style={featStyles.icon} />
+            <Text style={featStyles.text}>Fare Calculator</Text>
+          </TouchableOpacity>
 
-          {/* Table */}
-          {this.renderTable()}
+          <TouchableOpacity
+            onPress={() => router.push("/(feat)/ScanDriverdets")}
+            style={featStyles.featureButton}
+          >
+            <DDIcon style={featStyles.icon} />
+            <Text style={featStyles.text}>Scan QR</Text>
+          </TouchableOpacity>
 
-          {/* Fare Matrix Shortcut */}
-          <View style={styles.rowBetween}>
-            <Text style={fareStyle.fare}>Detailed Fare Matrices</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/(feat)/FareMatrix")}
-              style={fareStyle.button}
-            >
-              <FareIcon width={26} height={26} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => router.push("/(feat)/RideHistory")}
+            style={featStyles.featureButton}
+          >
+            <RHIcon style={featStyles.icon} />
+            <Text style={featStyles.text}>Ride History</Text>
+          </TouchableOpacity>
 
-          {/* Other Features */}
-          <View style={featStyles.container}>
-            <TouchableOpacity
-              onPress={() => router.push("/(feat)/FareCalculator")}
-              style={featStyles.featureButton}
-            >
-              <FCIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>Fare Calculator</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/(feat)/ScanDriverdets")}
-              style={featStyles.featureButton}
-            >
-              <DDIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>Scan QR</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/(feat)/RideHistory")}
-              style={featStyles.featureButton}
-            >
-              <RHIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>Ride History</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/(feat)/Complaints")}
-              style={featStyles.featureButton}
-            >
-              <ComplaintIcon style={featStyles.icon} />
-              <Text style={featStyles.text}>File a Complaint</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-        {/* ✅ Closed ScrollView properly */}
-      </View>
-    );
-  }
+          <TouchableOpacity
+            onPress={() => router.push("/(feat)/Complaints")}
+            style={featStyles.featureButton}
+          >
+            <ComplaintIcon style={featStyles.icon} />
+            <Text style={featStyles.text}>File a Complaint</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -206,7 +241,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginTop: 20,
-    marginBottom: 15,
   },
   text: {
     fontWeight: "bold",
@@ -241,7 +275,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginHorizontal: 15,
-    marginTop: 10,
+    marginTop: 5,
+    marginBottom: 15,
   },
 });
 
@@ -269,7 +304,6 @@ const featStyles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginTop: 25,
     marginHorizontal: 10,
     backgroundColor: "#FFFFFF",
     borderColor: "#CBCBCB",
@@ -281,7 +315,7 @@ const featStyles = StyleSheet.create({
     flexBasis: "48%",
     flexGrow: 1,
     flexShrink: 1,
-    marginBottom: 20,
+    marginBottom: 14,
     alignItems: "center",
   },
   text: {

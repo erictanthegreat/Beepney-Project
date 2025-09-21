@@ -11,7 +11,6 @@ import {
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import EmptyStateIcon from "../../assets/images/empty.svg";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import ContactIcon from "@/assets/images/contact.svg";
 import LocationIcon from "@/assets/images/location.svg";
@@ -34,7 +33,6 @@ export default function Renting() {
 
   const [rentals, setRentals] = useState<Rental[]>([]);
 
-  // ✅ renamed from setRentals to fetchRentals
   const fetchRentals = async () => {
     try {
       const { data, error } = await supabase

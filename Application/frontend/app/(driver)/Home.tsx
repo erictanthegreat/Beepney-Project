@@ -23,9 +23,8 @@ import ComplaintIcon from "../../assets/images/complaint.svg";
 import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
-const scale = width / 375; // iPhone X base
+const scale = width / 375;
 
-// font scaler
 const scaleFont = (size: number) => size * PixelRatio.getFontScale();
 
 export default class Home extends Component {
@@ -207,7 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     marginTop: 20,
-    marginBottom: 15,
   },
   text: {
     fontWeight: "bold",
@@ -242,7 +240,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginHorizontal: 15,
-    marginTop: 10,
+    marginTop: 5,
+    marginBottom: 15,
   },
 });
 
@@ -270,7 +269,7 @@ const featStyles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginTop: 25,
+
     marginHorizontal: 10,
     backgroundColor: "#FFFFFF",
     borderColor: "#CBCBCB",
@@ -279,10 +278,10 @@ const featStyles = StyleSheet.create({
     padding: 15,
   },
   featureButton: {
-    flexBasis: "48%", // ~half width
+    flexBasis: "48%",
     flexGrow: 1,
     flexShrink: 1,
-    marginBottom: 20,
+    marginBottom: 14,
     alignItems: "center",
   },
   text: {
