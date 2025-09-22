@@ -25,11 +25,13 @@ export default function ProfileSubmission() {
 
   const [step, setStep] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
   const [idType, setIdType] = useState("");
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [frontIdUri, setFrontIdUri] = useState<string | null>(null);
   const [backIdUri, setBackIdUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
 
   const handleToggle = (index: number, open: boolean) => {
     setOpenDropdown(open ? index : null);
@@ -46,11 +48,8 @@ export default function ProfileSubmission() {
       const fileName = `${filenamePrefix}_${Date.now()}.${ext}`;
       const path = `submissions/${userId}/${fileName}`;
 
-      // Read file as Base64
       const fileBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-
-      // Convert Base64 to Uint8Array
-      const fileData = Uint8Array.from(atob(fileBase64), c => c.charCodeAt(0));
+      const fileData = Uint8Array.from(atob(fileBase64), (c) => c.charCodeAt(0));
 
       const { error: uploadError } = await supabase.storage
         .from("beepney-bucket")
@@ -78,6 +77,33 @@ export default function ProfileSubmission() {
         return;
       }
       setCurrentUserId(session.user.id);
+
+      // ✅ Fetch full_name from profiles
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", session.user.id)
+        .single();
+
+      if (!profileError && profile) {
+        setFullName(profile.username);
+      }
+
+      // ✅ Detect whether the user is commuter or driver
+      const { data: commuter } = await supabase
+        .from("commuterprofiles")
+        .select("id")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      const { data: driver } = await supabase
+        .from("driverprofiles")
+        .select("id")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (commuter) setUserType("Commuter");
+      if (driver) setUserType("Driver");
     };
     getSession();
   }, []);
@@ -96,11 +122,12 @@ export default function ProfileSubmission() {
       const { error } = await supabase.from("submissions").insert([
         {
           user_id: currentUserId,
-          submitted_info: `ID Submission (${idType || "N/A"})`,
+          submitted_info: "ID Discount" + idType,
           front_id_url: frontUrl,
           back_id_url: backUrl,
-          type: "Commuter",
-          status: "pending",
+          submission_type: idType || "Student",
+          type: userType || "Commuter",  // ✅ either "Commuter" or "Driver"
+          status: "Pending",
         },
       ]);
 
@@ -119,7 +146,7 @@ export default function ProfileSubmission() {
     if (step === 1) {
       await handleSubmitIDs();
     } else {
-      router.push("/"); // redirect after submission pending
+      router.push("/Home"); 
     }
   };
 

@@ -37,9 +37,11 @@ const supabase = createClient(
 
 interface Submission {
   id: string;
-  full_name: string;
+  user_id: string;
+  username: string; // mapped from profiles
   submitted_info: string;
-  type: string;
+  submission_type: string; // mapped from submissions.submission_type
+  role: string; // commuter or driver
   updated_at: string;
   created_at: string;
   status: 'Pending' | 'Approved' | 'Declined';
@@ -54,25 +56,47 @@ const DashboardPage = () => {
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
   const [overlayData, setOverlayData] = useState<Submission | null>(null);
 
-  const itemsPerPage = 10; // show 10 rows per page
+  const itemsPerPage = 10;
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
   // Fetch data from Supabase
   useEffect(() => {
     const fetchData = async () => {
-      const { data: submissions, error } = await supabase
-        .from('submissions')
-        .select('*')
-        .order('created_at', { ascending: false }); // newest first for table display
+      try {
+        // Step 1: fetch submissions
+        const { data: submissions, error } = await supabase
+          .from('submissions')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Supabase fetch error:', error);
+        if (error) throw error;
+
+        if (!submissions) return;
+
+        // Step 2: fetch usernames from profiles
+        const userIds = submissions.map(s => s.user_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        const profilesMap = Object.fromEntries(
+          (profilesData || []).map(p => [p.id, p.username])
+        );
+
+        // Step 3: map usernames and roles
+        const mapped = submissions.map((s: any) => ({
+          ...s,
+          username: profilesMap[s.user_id] || 'N/A',
+          role: s.type || 'N/A',
+        }));
+
+        setData(mapped as Submission[]);
+      } catch (err) {
+        console.error('Supabase fetch error:', err);
         toast.error('Failed to fetch submissions');
-        return;
-      }
-
-      if (submissions) {
-        setData(submissions as Submission[]);
       }
     };
 
@@ -80,14 +104,12 @@ const DashboardPage = () => {
   }, []);
 
   const handleDecision = async (id: string, decision: 'Approved' | 'Declined') => {
-    // Find row number based on creation order (oldest = 1)
     const sortedByOldest = [...data].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
     const rowIndex = sortedByOldest.findIndex(item => item.id === id);
     const displayNumber = rowIndex + 1;
 
-    // Update frontend state
     setData((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, status: decision } : item
@@ -101,7 +123,6 @@ const DashboardPage = () => {
         : `Submission #${displayNumber} declined`
     );
 
-    // Update Supabase
     const { error } = await supabase
       .from('submissions')
       .update({ status: decision })
@@ -112,7 +133,6 @@ const DashboardPage = () => {
     }
   };
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.dropdown-menu') &&
@@ -124,7 +144,6 @@ const DashboardPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Slice data for current page
   const currentData = data.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -170,7 +189,7 @@ const DashboardPage = () => {
               <PaginationItem>
                 <PaginationPrevious
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200 ${
+                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
                     currentPage === 1 ? 'pointer-events-none opacity-50' : ''
                   }`}
                 />
@@ -181,7 +200,7 @@ const DashboardPage = () => {
                   <PaginationLink
                     isActive={currentPage === i + 1}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200 ${
+                    className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
                       currentPage === i + 1 ? 'bg-[#D1D1D1] text-[#6B6B6B]' : ''
                     }`}
                   >
@@ -193,7 +212,7 @@ const DashboardPage = () => {
               <PaginationItem>
                 <PaginationNext
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200 ${
+                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
                     currentPage === totalPages ? 'pointer-events-none opacity-50' : ''
                   }`}
                 />
@@ -210,6 +229,7 @@ const DashboardPage = () => {
               <TableHead>Name</TableHead>
               <TableHead>Submitted Info</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>Submitted At</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
@@ -218,7 +238,6 @@ const DashboardPage = () => {
 
           <TableBody>
             {currentData.map((item) => {
-              // Row number based on creation order (oldest = 1)
               const sortedByOldest = [...data].sort(
                 (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
               );
@@ -227,7 +246,7 @@ const DashboardPage = () => {
               return (
                 <TableRow key={item.id}>
                   <TableCell>{rowNumber}</TableCell>
-                  <TableCell>{item.full_name}</TableCell>
+                  <TableCell>{item.username}</TableCell>
                   <TableCell>
                     <button
                       className="text-blue-600 underline"
@@ -236,7 +255,8 @@ const DashboardPage = () => {
                       {item.submitted_info}
                     </button>
                   </TableCell>
-                  <TableCell>{item.type}</TableCell>
+                  <TableCell>{item.submission_type}</TableCell>
+                  <TableCell>{item.role}</TableCell>
                   <TableCell>{new Date(item.updated_at).toLocaleString()}</TableCell>
                   <TableCell>
                     <span
@@ -300,8 +320,8 @@ const DashboardPage = () => {
       <Overlay2
         isOpen={!!overlayData}
         onClose={() => setOverlayData(null)}
-        name={overlayData?.full_name || ''}
-        idType={overlayData?.type || ''}
+        name={overlayData?.username || ''}
+        idType={overlayData?.submission_type || ''}
         frontImageUrl={overlayData?.front_id_url || '/placeholder-front.png'}
         backImageUrl={overlayData?.back_id_url || '/placeholder-back.png'}
       />

@@ -22,9 +22,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function CommuterProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
-  const [submissionStatus, setSubmissionStatus] = useState<
-    "pending" | "approved" | null
-  >(null);
+  const [submission, setSubmission] = useState<{
+    status: "pending" | "approved" | "declined" | null;
+    front_id_url: string | null;
+    back_id_url: string | null;
+  } | null>(null);
 
   const [profileData, setProfileData] = useState<{
     username: string;
@@ -59,17 +61,25 @@ export default function CommuterProfile() {
           setProfileImage(profile.avatar_url);
         }
 
-        // Fetch latest submission status
-        const { data: submission, error: submissionError } = await supabase
-          .from("submissions")
-          .select("status")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
+        // Fetch latest submission
+        const { data: latestSubmission, error: submissionError } =
+          await supabase
+            .from("submissions")
+            .select("status, front_id_url, back_id_url")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
 
-        if (!submissionError && submission?.status) {
-          setSubmissionStatus(submission.status);
+        if (!submissionError && latestSubmission) {
+          setSubmission({
+            status: latestSubmission.status.toLowerCase() as
+              | "pending"
+              | "approved"
+              | "declined",
+            front_id_url: latestSubmission.front_id_url,
+            back_id_url: latestSubmission.back_id_url,
+          });
         }
       } catch (err) {
         console.error(err);
@@ -89,7 +99,7 @@ export default function CommuterProfile() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 1,
     });
 
@@ -109,13 +119,19 @@ export default function CommuterProfile() {
 
   // Redirect to submission screen
   const handleIdPress = () => {
-    if (submissionStatus === "pending" || submissionStatus === "approved") {
+    if (submission?.status === "pending") {
       Alert.alert(
         "ID Already Submitted",
-        "Your ID submission is currently under review or approved."
+        "Your ID submission is currently under review."
       );
       return;
     }
+
+    if (submission?.status === "approved") {
+      Alert.alert("ID Approved", "Your ID has been approved.");
+      return;
+    }
+
     router.push("/(profile)/ProfileSubmission");
   };
 
@@ -181,21 +197,33 @@ export default function CommuterProfile() {
         {/* ID Discount Section */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>ID Discount</Text>
-          <TouchableOpacity
-            style={[
-              credStyles.card,
-              { justifyContent: "center", alignItems: "center" },
-            ]}
-            onPress={handleIdPress}
-          >
-            <Text>
-              {submissionStatus === "pending"
-                ? "Pending Submission"
-                : submissionStatus === "approved"
-                  ? "ID Approved"
+
+          {submission?.status === "approved" && submission.front_id_url ? (
+            <TouchableOpacity
+              style={[credStyles.card, { justifyContent: "center" }]}
+              onPress={() => {
+                // TODO: show full front/back images modal
+                Alert.alert("ID Approved", "You can view your ID images here.");
+              }}
+            >
+              <Image
+                source={{ uri: submission.front_id_url }}
+                style={{ width: "100%", height: 150, borderRadius: 20 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[credStyles.card, { justifyContent: "center", alignItems: "center" }]}
+              onPress={handleIdPress}
+            >
+              <Text>
+                {submission?.status === "pending"
+                  ? "Pending Submission"
                   : "Tap to submit your ID"}
-            </Text>
-          </TouchableOpacity>
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <TouchableOpacity
@@ -279,7 +307,6 @@ const credStyles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: "#fff",
   },
-
   card: {
     height: 150,
     borderWidth: 1,
@@ -303,11 +330,11 @@ const credStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 20,
   },
   logoutText: {
-    color: "red",
-    fontSize: 16,
+    color: "#d32f2f",
     fontWeight: "bold",
+    fontSize: 16,
   },
 });
