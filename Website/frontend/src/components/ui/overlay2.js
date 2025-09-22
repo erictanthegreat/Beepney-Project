@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { IdentificationIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 
 /**
  * @typedef {Object} Overlay2Props
@@ -44,26 +45,43 @@ export default function Overlay2({ isOpen, onClose, name, idType, frontImageUrl,
 
         {/* Pictures */}
         <div className="flex flex-col sm:flex-row gap-6">
+          {/* Front */}
           <div className="flex-1">
             <p className="text-sm text-gray-500 mb-2">Front</p>
-            <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
-              <Image
-                src={frontImageUrl}
-                alt="Front"
-                fill
-                className="object-cover"
-              />
+            <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
+              {frontImageUrl ? (
+                <Image
+                  src={frontImageUrl}
+                  alt="Front"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400">
+                  <IdentificationIcon className="w-20 h-20 mb-2" />
+                  <p className="text-center">No photo here</p>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Back */}
           <div className="flex-1">
             <p className="text-sm text-gray-500 mb-2">Back</p>
-            <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden">
-              <Image
-                src={backImageUrl}
-                alt="Back"
-                fill
-                className="object-cover"
-              />
+            <div className="relative w-full h-[500px] border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
+              {backImageUrl ? (
+                <Image
+                  src={backImageUrl}
+                  alt="Back"
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-gray-400">
+                  <CreditCardIcon className="w-20 h-20 mb-2" />
+                  <p className="text-center">No photo here</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

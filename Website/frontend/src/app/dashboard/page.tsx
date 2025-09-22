@@ -322,8 +322,8 @@ const DashboardPage = () => {
         onClose={() => setOverlayData(null)}
         name={overlayData?.username || ''}
         idType={overlayData?.submission_type || ''}
-        frontImageUrl={overlayData?.front_id_url || '/placeholder-front.png'}
-        backImageUrl={overlayData?.back_id_url || '/placeholder-back.png'}
+        frontImageUrl={overlayData?.front_id_url || ''}
+        backImageUrl={overlayData?.back_id_url || ''}
       />
     </>
   );
