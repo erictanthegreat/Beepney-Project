@@ -15,7 +15,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ Auto check if already logged in (session persists with AsyncStorage)
   useEffect(() => {
     const checkSession = async () => {
       const {
@@ -139,7 +138,6 @@ const inputStyles = StyleSheet.create({
     fontFamily: "Poppins",
   },
   input: {
-    height: 45,
     borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 8,
