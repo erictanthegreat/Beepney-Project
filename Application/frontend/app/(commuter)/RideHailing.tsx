@@ -29,9 +29,6 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-/**
- * Calculates the tricycle fare based on distance and ride type.
- */
 const calculateTricycleFare = (distanceInKm, selectedRide) => {
   const BASE_DISTANCE_KM = 4;
   const BASE_FARE_PESOS = 15;
@@ -94,7 +91,7 @@ export default function RideHailing() {
   // Debounce timer
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Get user location and set as pickup ---
+  //Get user location and set as pickup
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -120,7 +117,7 @@ export default function RideHailing() {
     })();
   }, []);
 
-  // --- Fetch route from Mapbox Directions API ---
+  //Fetch route from Mapbox Directions API
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
     try {
       const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
@@ -150,7 +147,7 @@ export default function RideHailing() {
     }
   }, [pickup, destination, selectedRide]);
 
-  // --- Fetch address from coords ---
+  //Fetch address from coords
   const fetchAddress = async (
     coords: [number, number],
     type: "pickup" | "destination"
@@ -174,7 +171,7 @@ export default function RideHailing() {
     }
   };
 
-  // --- Fetch autocomplete suggestions ---
+  //Fetch autocomplete suggestions
   const fetchSuggestions = async (
     query: string,
     type: "pickup" | "destination"
@@ -206,7 +203,7 @@ export default function RideHailing() {
     }
   };
 
-  // --- Handle suggestion select ---
+  //Handle suggestion select
   const handleSuggestionSelect = (
     place: any,
     type: "pickup" | "destination"
@@ -231,7 +228,7 @@ export default function RideHailing() {
     });
   };
 
-  // --- Handle marker drag ---
+  //Handle marker drag
   const handleDragEnd = (
     coords: [number, number],
     marker: "pickup" | "destination"
@@ -250,7 +247,7 @@ export default function RideHailing() {
     );
   };
 
-  // --- Focus camera on marker ---
+  //Focus camera on marker
   const focusOnMarker = (marker: "pickup" | "destination") => {
     const coords = marker === "pickup" ? pickup : destination;
     mapCameraRef.current?.setCamera({
@@ -361,8 +358,8 @@ export default function RideHailing() {
               <Text style={rideStyles.pickText}>Pick Up</Text>
             </View>
           </TouchableOpacity>
-          {/* Pickup */}
 
+          {/* Pickup */}
           <View style={rideStyles.tripPoint}>
             <TextInput
               style={[
