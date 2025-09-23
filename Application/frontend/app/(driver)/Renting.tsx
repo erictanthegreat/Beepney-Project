@@ -303,8 +303,9 @@ const rentStyles = StyleSheet.create({
     marginLeft: 20,
     borderRadius: 15,
     height: 40,
+
     alignItems: "center",
-    maxWidth: "47%",
+    maxWidth: "50%",
     borderColor: "#073051",
   },
   postHeader: {

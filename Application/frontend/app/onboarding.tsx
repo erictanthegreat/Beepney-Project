@@ -96,7 +96,7 @@ export default function Onboarding() {
               <View style={{ marginTop: height * 0.08 }}>
                 <TricyCallMockup1 width={120} height={height * 0.29} />
               </View>
-              <View style={{ marginTop: height * 0.1 }}>
+              <View style={{ marginTop: height * 0.15 }}>
                 <TricyCallMockup2 width={120} height={height * 0.29} />
               </View>
             </View>
