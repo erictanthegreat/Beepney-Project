@@ -177,7 +177,7 @@ export default function ProfileSubmission() {
           <>
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { fontSize: width * 0.04 }]}>
-                ID Discount
+                ID Discount 
               </Text>
               <DropDown
                 data={["Student", "PWD", "Senior Citizen", "Solo Parent"]}
