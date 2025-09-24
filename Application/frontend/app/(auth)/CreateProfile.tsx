@@ -96,11 +96,10 @@ export default function CreateProfile() {
         return;
       }
 
-      // ✅ Profile row is created automatically by your trigger
-
+      // Inform user to verify email
       Alert.alert(
         "Sign Up Successful",
-        "Your account has been created. You can now log in."
+        "Your account has been created. Please confirm via the email we sent."
       );
 
       // Navigate to login
