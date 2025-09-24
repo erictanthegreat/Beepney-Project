@@ -67,6 +67,7 @@ export default function CommuterProfile() {
             .from("submissions")
             .select("status, front_id_url, back_id_url")
             .eq("user_id", userId)
+            .eq("type", "commuter")
             .order("created_at", { ascending: false })
             .limit(1)
             .single();
@@ -135,15 +136,52 @@ export default function CommuterProfile() {
     router.push("/(profile)/ProfileSubmission");
   };
 
+  // 🔹 Switch role to driver
+  const handleSwitchToDriver = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const userId = session.user.id;
+
+      // Update role in profiles (now small letter "driver")
+      const { error } = await supabase
+        .from("profiles")
+        .update({ role: "driver" })
+        .eq("id", userId);
+
+      if (error) {
+        Alert.alert("Error", "Could not switch to driver role.");
+        console.error(error);
+        return;
+      }
+
+      // Insert into driverprofiles if not already there
+      const { data: driverProfile, error: driverError } = await supabase
+        .from("driverprofiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!driverProfile && !driverError) {
+        await supabase.from("driverprofiles").insert([{ id: userId }]);
+      }
+
+      router.replace("/(driver)/Home");
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Something went wrong while switching role.");
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <BackButton />
       <View style={profStyles.container}>
         <Text style={profStyles.header}>Profile</Text>
-        <TouchableOpacity
-          onPress={() => router.replace("/(driver)/Home")}
-          style={profStyles.icon}
-        >
+        <TouchableOpacity onPress={handleSwitchToDriver} style={profStyles.icon}>
           <DriverButton />
         </TouchableOpacity>
       </View>
@@ -214,7 +252,10 @@ export default function CommuterProfile() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[credStyles.card, { justifyContent: "center", alignItems: "center" }]}
+              style={[
+                credStyles.card,
+                { justifyContent: "center", alignItems: "center" },
+              ]}
               onPress={handleIdPress}
             >
               <Text>

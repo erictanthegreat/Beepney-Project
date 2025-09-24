@@ -9,8 +9,14 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 
-export default function DropDown({ data = [], onSelect, isOpen, onToggle }) {
-  const [selected, setSelected] = useState(data[0] || "Select");
+export default function DropDown({
+  data = [],
+  value, // <-- NEW
+  onSelect,
+  isOpen,
+  onToggle,
+}) {
+  const [selected, setSelected] = useState(value || data[0] || "Select");
   const [buttonWidth, setButtonWidth] = useState(100);
   const dropdownWidth = 145;
 
@@ -24,6 +30,13 @@ export default function DropDown({ data = [], onSelect, isOpen, onToggle }) {
       useNativeDriver: false,
     }).start();
   }, [isOpen, data.length]);
+
+  // keep in sync when parent value changes
+  useEffect(() => {
+    if (value) {
+      setSelected(value);
+    }
+  }, [value]);
 
   const handleSelect = (item) => {
     setSelected(item);
@@ -56,7 +69,7 @@ export default function DropDown({ data = [], onSelect, isOpen, onToggle }) {
         />
       </TouchableOpacity>
 
-      {/* Animated Dropdown Menu (pushes content down) */}
+      {/* Animated Dropdown Menu */}
       <Animated.View
         style={[
           styles.dropdown,

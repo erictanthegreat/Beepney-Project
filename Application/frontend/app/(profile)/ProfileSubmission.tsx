@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
   TouchableOpacity,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { supabase } from "../../scripts/supabase";
 import AttachComp from "../../components/Attachfile";
 import DropDown from "../../components/ui/DropDown";
@@ -31,7 +32,17 @@ export default function ProfileSubmission() {
   const [frontIdUri, setFrontIdUri] = useState<string | null>(null);
   const [backIdUri, setBackIdUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [userType, setUserType] = useState<string | null>(null);
+  const [userType, setUserType] = useState<string | null>(null); // "commuter" | "driver"
+
+  useEffect(() => {
+    if (userType === "driver") {
+      setIdType("Jeepney");
+    } else if (userType === "commuter") {
+      setIdType("Student");
+    } else {
+      setIdType("");
+    }
+  }, [userType]);
 
   const handleToggle = (index: number, open: boolean) => {
     setOpenDropdown(open ? index : null);
@@ -68,8 +79,9 @@ export default function ProfileSubmission() {
     }
   };
 
-  useEffect(() => {
-    const getSession = async () => {
+  // central fetch function used on mount and when screen gains focus
+  const fetchUserAndRole = useCallback(async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
         Alert.alert("Error", "User not authenticated");
@@ -78,18 +90,28 @@ export default function ProfileSubmission() {
       }
       setCurrentUserId(session.user.id);
 
-      // ✅ Fetch full_name from profiles
+      // Try to get role directly from profiles (authoritative)
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("username")
+        .select("username, role")
         .eq("id", session.user.id)
         .single();
 
       if (!profileError && profile) {
-        setFullName(profile.username);
+        setFullName(profile.username ?? null);
+
+        // normalize role to lowercase if present
+        if (profile.role && typeof profile.role === "string") {
+          const normalized = profile.role.toLowerCase();
+          if (normalized === "commuter" || normalized === "driver") {
+            setUserType(normalized);
+            // done — role determined
+            return;
+          }
+        }
       }
 
-      // ✅ Detect whether the user is commuter or driver
+      // Fallback: check commuterprofiles/driverprofiles explicitly
       const { data: commuter } = await supabase
         .from("commuterprofiles")
         .select("id")
@@ -102,11 +124,29 @@ export default function ProfileSubmission() {
         .eq("id", session.user.id)
         .maybeSingle();
 
-      if (commuter) setUserType("Commuter");
-      if (driver) setUserType("Driver");
-    };
-    getSession();
+      if (commuter && (commuter as any).id) {
+        setUserType("commuter");
+      } else if (driver && (driver as any).id) {
+        setUserType("driver");
+      } else {
+        setUserType(null);
+      }
+    } catch (err) {
+      console.error("fetchUserAndRole error:", err);
+    }
   }, []);
+
+  // run once on mount
+  useEffect(() => {
+    fetchUserAndRole();
+  }, [fetchUserAndRole]);
+
+  // refresh whenever screen focus changes (so role changes applied elsewhere will reflect)
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserAndRole();
+    }, [fetchUserAndRole])
+  );
 
   const handleSubmitIDs = async () => {
     if (!currentUserId) return;
@@ -119,17 +159,17 @@ export default function ProfileSubmission() {
       if (frontIdUri) frontUrl = await uploadFileToStorage(frontIdUri, currentUserId, "front_id");
       if (backIdUri) backUrl = await uploadFileToStorage(backIdUri, currentUserId, "back_id");
 
-      const { error } = await supabase.from("submissions").insert([
-        {
-          user_id: currentUserId,
-          submitted_info: "ID Discount" + idType,
-          front_id_url: frontUrl,
-          back_id_url: backUrl,
-          submission_type: idType || "Student",
-          type: userType || "Commuter",  // ✅ either "Commuter" or "Driver"
-          status: "Pending",
-        },
-      ]);
+      const submissionPayload = {
+        user_id: currentUserId,
+        submitted_info: userType === "commuter" ? "ID Discount" : "Driver's License",
+        front_id_url: frontUrl,
+        back_id_url: backUrl,
+        submission_type: idType || (userType === "commuter" ? "Student" : "Jeepney"),
+        type: userType ?? "commuter", // store lowercase to match your DB
+        status: "Pending",
+      };
+
+      const { error } = await supabase.from("submissions").insert([submissionPayload]);
 
       if (error) throw error;
 
@@ -146,7 +186,14 @@ export default function ProfileSubmission() {
     if (step === 1) {
       await handleSubmitIDs();
     } else {
-      router.push("/Home"); 
+      console.log("Navigating, userType =", userType); // debug
+      if (userType === "driver") {
+        router.push("/(driver)/Home");
+      } else if (userType === "commuter") {
+        router.push("/(commuter)/Home");
+      } else {
+        router.push("/Home"); // fallback
+      }
     }
   };
 
@@ -172,39 +219,66 @@ export default function ProfileSubmission() {
           style={[styles.logo, { width: width * 0.7, height: height * 0.18 }]}
         />
 
-        {/* STEP 1: SUBMIT ID */}
+        {/* STEP 1: SUBMIT */}
         {step === 1 && (
           <>
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { fontSize: width * 0.04 }]}>
-                ID Discount 
+                {userType === "driver" ? "Driver's License" : "ID Discount"}
               </Text>
+
               <DropDown
-                data={["Student", "PWD", "Senior Citizen", "Solo Parent"]}
+                data={
+                  userType === "driver"
+                    ? ["Jeepney", "UV Express", "Tricycle"]
+                    : ["Student", "PWD", "Senior Citizen", "Solo Parent"]
+                }
+                value={idType} // <-- works now
                 onSelect={(value) => setIdType(value)}
                 isOpen={openDropdown === 1}
                 onToggle={(open) => handleToggle(1, open)}
               />
-              <AttachComp
-                label="Tap here to take the front picture of the ID"
-                onImageSelected={(uri: string) => handleImage(uri, "front")}
-              />
+
+              {/* front image */}
+              <View style={{ marginTop: 12, marginBottom: 6 }}>
+                <AttachComp
+                  label={
+                    userType === "driver"
+                      ? "Tap here to take the front picture of the Driver's License"
+                      : "Tap here to take the front picture of the ID"
+                  }
+                  onImageSelected={(uri: string) => handleImage(uri, "front")}
+                />
+              </View>
             </View>
 
+            {/* back image */}
             <View style={styles.inputGroup}>
               <AttachComp
-                label="Tap here to take the back picture of the ID"
+                label={
+                  userType === "driver"
+                    ? "Tap here to take the back picture of the Driver's License"
+                    : "Tap here to take the back picture of the ID"
+                }
                 onImageSelected={(uri: string) => handleImage(uri, "back")}
               />
             </View>
 
             <Text style={{ marginTop: height * 0.02, textAlign: "center" }}>
-              <Text style={[styles.idText, { fontSize: width * 0.04 }]}>
-                (e.g PWD ID, Senior Citizen ID, Solo Parent ID
-              </Text>
-              <Text style={[styles.idText, { fontSize: width * 0.04 }]}>
-                {"\n"} and Student ID)
-              </Text>
+              {userType === "driver" ? (
+                <Text style={[styles.idText, { fontSize: width * 0.04 }]}>
+                  Please upload a clear photo of your Driver's License (front and back).
+                </Text>
+              ) : (
+                <>
+                  <Text style={[styles.idText, { fontSize: width * 0.04 }]}>
+                    (e.g PWD ID, Senior Citizen ID, Solo Parent ID
+                  </Text>
+                  <Text style={[styles.idText, { fontSize: width * 0.04 }]}>
+                    {"\n"} and Student ID)
+                  </Text>
+                </>
+              )}
             </Text>
           </>
         )}

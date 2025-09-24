@@ -15,18 +15,41 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // ✅ Function to redirect based on role
+  const redirectBasedOnRole = async (userId: string) => {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (error || !profile) {
+      console.error("Error fetching role:", error);
+      router.replace("/(commuter)/Home"); // fallback
+      return;
+    }
+
+    if (profile.role === "driver") {
+      router.replace("/(driver)/Home");
+    } else {
+      router.replace("/(commuter)/Home");
+    }
+  };
+
+  // ✅ Check if user already logged in
   useEffect(() => {
     const checkSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (session) {
-        router.replace("/(commuter)/Home");
+      if (session?.user) {
+        redirectBasedOnRole(session.user.id);
       }
     };
     checkSession();
   }, []);
 
+  // ✅ Handle login
   const handleLogin = async () => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -35,9 +58,9 @@ export default function Login() {
 
     if (error) {
       Alert.alert("Login failed", error.message);
-    } else {
-      console.log("User logged in:", data);
-      router.replace("/(commuter)/Home");
+    } else if (data.user) {
+      console.log("User logged in:", data.user.id);
+      redirectBasedOnRole(data.user.id);
     }
   };
 
