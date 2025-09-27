@@ -53,14 +53,22 @@ export default function ProfileSubmission() {
     else setBackIdUri(uri);
   };
 
-  const uploadFileToStorage = async (uri: string, userId: string, filenamePrefix: string) => {
+  const uploadFileToStorage = async (
+    uri: string,
+    userId: string,
+    filenamePrefix: string
+  ) => {
     try {
       const ext = uri.split(".").pop() || "jpg";
       const fileName = `${filenamePrefix}_${Date.now()}.${ext}`;
       const path = `submissions/${userId}/${fileName}`;
 
-      const fileBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
-      const fileData = Uint8Array.from(atob(fileBase64), (c) => c.charCodeAt(0));
+      const fileBase64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const fileData = Uint8Array.from(atob(fileBase64), (c) =>
+        c.charCodeAt(0)
+      );
 
       const { error: uploadError } = await supabase.storage
         .from("beepney-bucket")
@@ -71,7 +79,9 @@ export default function ProfileSubmission() {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage.from("beepney-bucket").getPublicUrl(path);
+      const { data } = supabase.storage
+        .from("beepney-bucket")
+        .getPublicUrl(path);
       return data.publicUrl;
     } catch (err) {
       console.error(err);
@@ -82,7 +92,9 @@ export default function ProfileSubmission() {
   // central fetch function used on mount and when screen gains focus
   const fetchUserAndRole = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) {
         Alert.alert("Error", "User not authenticated");
         router.replace("/(auth)/Login");
@@ -156,20 +168,34 @@ export default function ProfileSubmission() {
       let frontUrl: string | null = null;
       let backUrl: string | null = null;
 
-      if (frontIdUri) frontUrl = await uploadFileToStorage(frontIdUri, currentUserId, "front_id");
-      if (backIdUri) backUrl = await uploadFileToStorage(backIdUri, currentUserId, "back_id");
+      if (frontIdUri)
+        frontUrl = await uploadFileToStorage(
+          frontIdUri,
+          currentUserId,
+          "front_id"
+        );
+      if (backIdUri)
+        backUrl = await uploadFileToStorage(
+          backIdUri,
+          currentUserId,
+          "back_id"
+        );
 
       const submissionPayload = {
         user_id: currentUserId,
-        submitted_info: userType === "commuter" ? "ID Discount" : "Driver's License",
+        submitted_info:
+          userType === "commuter" ? "ID Discount" : "Driver's License",
         front_id_url: frontUrl,
         back_id_url: backUrl,
-        submission_type: idType || (userType === "commuter" ? "Student" : "Jeepney"),
+        submission_type:
+          idType || (userType === "commuter" ? "Student" : "Jeepney"),
         type: userType ?? "commuter", // store lowercase to match your DB
         status: "Pending",
       };
 
-      const { error } = await supabase.from("submissions").insert([submissionPayload]);
+      const { error } = await supabase
+        .from("submissions")
+        .insert([submissionPayload]);
 
       if (error) throw error;
 
@@ -267,7 +293,8 @@ export default function ProfileSubmission() {
             <Text style={{ marginTop: height * 0.02, textAlign: "center" }}>
               {userType === "driver" ? (
                 <Text style={[styles.idText, { fontSize: width * 0.04 }]}>
-                  Please upload a clear photo of your Driver's License (front and back).
+                  Please upload a clear photo of your Driver's License (front
+                  and back).
                 </Text>
               ) : (
                 <>
@@ -317,7 +344,10 @@ export default function ProfileSubmission() {
 
         {/* BUTTON */}
         <TouchableOpacity
-          style={[styles.button, { width: width * 0.8, marginTop: height * 0.05 }]}
+          style={[
+            styles.button,
+            { width: width * 0.8, marginTop: height * 0.05 },
+          ]}
           onPress={onPrimaryButtonPress}
           disabled={loading}
         >
@@ -337,7 +367,6 @@ export default function ProfileSubmission() {
 const styles = StyleSheet.create({
   backButtonWrapper: {
     position: "absolute",
-    top: 50,
     left: 20,
     zIndex: 10,
   },

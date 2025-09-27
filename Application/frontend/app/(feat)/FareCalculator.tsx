@@ -15,6 +15,7 @@ import DropDown from "@/components/ui/DropDown";
 import FareIcon from "@/assets/images/fare.svg";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
+import { supabase } from "scripts/supabase";
 
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
@@ -49,11 +50,13 @@ export default class FareCalculator extends Component {
     destinationCoords: null,
     originSuggestions: [],
     destinationSuggestions: [],
-    IdType: "",
+    IdType: "Regular",
+    discountTypes: ["Regular"], // Always start with Regular
   };
 
   async componentDidMount() {
     await this.getCurrentLocation();
+    await this.fetchDiscountTypes();
   }
 
   // Get Current Location and reverse geocode it via Mapbox
@@ -85,7 +88,7 @@ export default class FareCalculator extends Component {
     }
   };
 
-  // --- Fetch address suggestions ---
+  //Fetch address suggestions
   fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
       this.setState({ [`${type}Suggestions`]: [] });
@@ -103,6 +106,39 @@ export default class FareCalculator extends Component {
       });
     } catch (err) {
       console.error("Mapbox fetch error:", err);
+    }
+  };
+
+  // Fetch only allowed discount types
+  fetchDiscountTypes = async () => {
+    const allowedTypes = ["Student", "PWD", "Senior Citizen", "Solo Parent"];
+    try {
+      const { data, error } = await supabase
+        .from("submissions")
+        .select("submission_type");
+
+      if (error) {
+        console.error("Supabase fetch error:", error);
+        return;
+      }
+
+      if (data) {
+        const uniqueTypes = [
+          ...new Set(data.map((item) => item.submission_type)),
+        ];
+
+        // Filter only allowed ones
+        const filteredTypes = uniqueTypes.filter((t) =>
+          allowedTypes.includes(t)
+        );
+
+        // Always prepend "Regular"
+        const finalTypes = ["Regular", ...filteredTypes];
+
+        this.setState({ discountTypes: finalTypes });
+      }
+    } catch (err) {
+      console.error("Error fetching discount types:", err);
     }
   };
 
@@ -202,21 +238,16 @@ export default class FareCalculator extends Component {
                   />
                 )}
 
-                {/* FIRST DROPDOWN */}
+                {/* FIRST DROPDOWN (Discount Types) */}
                 <DropDown
-                  data={[
-                    "Regular",
-                    "Student",
-                    "Solo Parent",
-                    "PWD",
-                    "Senior Citizen",
-                  ]}
+                  data={this.state.discountTypes}
                   onSelect={(value) => this.setState({ IdType: value })}
                   isOpen={this.state.openDropdown === 1}
                   onToggle={(open) => this.handleToggle(1, open)}
+                  value={this.state.IdType}
                 />
 
-                {/* SECOND DROPDOWN */}
+                {/* SECOND DROPDOWN (Vehicle Types) */}
                 <DropDown
                   data={[
                     "E-Tricycles",
@@ -232,6 +263,7 @@ export default class FareCalculator extends Component {
                   onSelect={(value) => this.setState({ vehicleType: value })}
                   isOpen={this.state.openDropdown === 2}
                   onToggle={(open) => this.handleToggle(2, open)}
+                  value={this.state.vehicleType || undefined}
                 />
 
                 {/* CALCULATE FARE BUTTON */}
@@ -351,7 +383,7 @@ const fareStyles = StyleSheet.create({
   },
   fareText: {
     fontWeight: "bold",
-    fontSize: 23,
+    fontSize: 20,
     color: "#073051",
     marginLeft: 20,
     fontFamily: "Poppins",
@@ -366,7 +398,7 @@ const fareStyles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 40,
-    marginLeft: 25,
+    marginLeft: 30,
     borderRadius: 15,
   },
   fareButton2: {

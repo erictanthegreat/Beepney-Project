@@ -285,7 +285,7 @@ const fareStyle = StyleSheet.create({
     borderColor: "#CBCBCB",
     borderWidth: 1,
     paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingHorizontal: 40,
     borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
