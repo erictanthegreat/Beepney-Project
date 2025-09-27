@@ -24,21 +24,47 @@ export default function DriverProfile() {
   const [operatorAddress, setOperatorAddress] = useState("");
 
   const handleSubmit = async () => {
-    const { data, error } = await supabase.from("driverprofiles").insert([
-      {
-        phone_number: phoneNumber,
-        full_address: fullAddress,
-        operator_name: operatorName,
-        operator_number: operatoreNumber,
-        plate_number: plateNumber,
-        operator_address: operatorAddress,
-      },
-    ]);
-    if (error) {
-      Alert.alert("Error", "failed to submit your profile. Try again");
-      console.error("Supabase error:", error);
-    } else {
+    try {
+      // Get current user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        Alert.alert("Error", "Unable to get current user.");
+        return;
+      }
+
+      // Insert driver profile with profile_id
+      const { error: insertError } = await supabase
+        .from("driverprofiles")
+        .insert([
+          {
+            id: user.id, // 🔑 Required for RLS
+            phone_number: phoneNumber,
+            full_address: fullAddress,
+            operator_name: operatorName,
+            operator_number: operatoreNumber,
+            plate_number: plateNumber,
+            operator_address: operatorAddress,
+            status: "Pending",
+          },
+        ]);
+
+      if (insertError) {
+        console.error("Supabase insert error:", insertError);
+        Alert.alert("Error", "Failed to submit your profile. Try again.");
+        return;
+      }
+
+      // 🚫 Removed role update
+      // User stays "commuter" until admin approval
+
       setStep(3);
+    } catch (err) {
+      console.error("handleSubmit error:", err);
+      Alert.alert("Error", "Something went wrong. Please try again.");
     }
   };
 
