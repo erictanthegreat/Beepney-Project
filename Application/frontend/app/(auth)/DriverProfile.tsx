@@ -7,23 +7,42 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import "@fontsource/poppins";
-
+import { supabase } from "scripts/supabase";
 import { router } from "expo-router";
-import AttachComp from "../../components/Attachfile";
 import ApprovalIcon from "../../assets/images/approval.svg";
 
 export default function DriverProfile() {
   const [step, setStep] = useState(1);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [fullAddress, setFullAdress] = useState("");
+  const [operatorName, setOperatorName] = useState("");
+  const [operatoreNumber, setOperatorNumber] = useState("");
+  const [plateNumber, setPlateNumber] = useState("");
+  const [operatorAddress, setOperatorAddress] = useState("");
 
-  // CAMERA PERMISSION FUNCTIONS
-  const handleImage = (uri) => {
-    console.log("Selected Image:", uri);
-    // -> BACKEND <-
+  const handleSubmit = async () => {
+    const { data, error } = await supabase.from("driverprofiles").insert([
+      {
+        phone_number: phoneNumber,
+        full_address: fullAddress,
+        operator_name: operatorName,
+        operator_number: operatoreNumber,
+        plate_number: plateNumber,
+        operator_address: operatorAddress,
+      },
+    ]);
+    if (error) {
+      Alert.alert("Error", "failed to submit your profile. Try again");
+      console.error("Supabase error:", error);
+    } else {
+      setStep(3);
+    }
   };
 
-  //BACK BUTTON
+  // BACK BUTTON
   useEffect(() => {
     const handleBackPress = () => {
       if (step > 1) {
@@ -43,15 +62,18 @@ export default function DriverProfile() {
 
   return (
     <View style={viewStyles.container}>
-      <View>
-        <Image
-          source={require("@/assets/images/Beepney LOGO.png")}
-          style={imageStyles.logo}
-        />
-        <Text style={textStyles.header}>Welcome to Beepney!</Text>
-        <Text style={textStyles.subheader}>Sign In to Continue</Text>
-      </View>
-
+      {/* Show Logo and Headers only for Step 1 & 2 */}
+      {step !== 3 && (
+        <View>
+          <Image
+            source={require("@/assets/images/Beepney LOGO.png")}
+            style={imageStyles.logo}
+          />
+          <Text style={textStyles.header}>Welcome to Beepney!</Text>
+          <Text style={textStyles.subheader}>Sign In to Continue</Text>
+        </View>
+      )}
+      {/* Step 1 */}
       {step === 1 && (
         <>
           <View style={inputStyles.inputGroup}>
@@ -60,6 +82,8 @@ export default function DriverProfile() {
               style={inputStyles.input}
               placeholder="Enter a 10-digit number"
               placeholderTextColor="#B6B6B6"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
               keyboardType="numeric"
             />
           </View>
@@ -68,38 +92,28 @@ export default function DriverProfile() {
             <Text style={inputStyles.label}>Full Address</Text>
             <TextInput
               style={inputStyles.input}
-              placeholder="Street Address, Apt/Unit/etc., City, Province, Country"
+              placeholder="Street Address, Apt/Unit/etc., City, Province"
               placeholderTextColor="#B6B6B6"
+              value={fullAddress}
+              onChangeText={setFullAdress}
+              keyboardType="default"
+            />
+          </View>
+          <View style={inputStyles.inputGroup}>
+            <Text style={inputStyles.label}>Vehicle&apos;s Plate Number</Text>
+            <TextInput
+              style={inputStyles.input}
+              placeholder="e.g 001 2345"
+              placeholderTextColor="#B6B6B6"
+              value={plateNumber}
+              onChangeText={setPlateNumber}
               keyboardType="default"
             />
           </View>
         </>
       )}
-
+      {/* Step 2 */}
       {step === 2 && (
-        <>
-          <View style={inputId.inputGroup}>
-            <Text style={inputStyles.label}>Driver's License</Text>
-
-            <AttachComp
-              label={["Tap here to take the front", "picture of the ID"].join(
-                "\n"
-              )}
-              onImageSelected={handleImage}
-            />
-          </View>
-
-          <View style={inputId.inputGroup}>
-            <AttachComp
-              label={["Tap here to take the back", "picture of the ID"].join(
-                "\n"
-              )}
-              onImageSelected={handleImage}
-            />
-          </View>
-        </>
-      )}
-      {step === 3 && (
         <>
           <View style={inputStyles.inputGroup}>
             <Text style={inputStyles.label}>Name of the Operator/Company</Text>
@@ -107,6 +121,8 @@ export default function DriverProfile() {
               style={inputStyles.input}
               placeholder="e.g 997 Sandigan Transport Service Cooperative"
               placeholderTextColor="#B6B6B6"
+              value={operatorName}
+              onChangeText={setOperatorName}
               keyboardType="default"
             />
           </View>
@@ -119,24 +135,32 @@ export default function DriverProfile() {
               style={inputStyles.input}
               placeholder="Enter a 10-digit number"
               placeholderTextColor="#B6B6B6"
+              value={operatoreNumber}
+              onChangeText={setOperatorNumber}
               keyboardType="numeric"
             />
           </View>
 
           <View style={inputStyles.inputGroup}>
-            <Text style={inputStyles.label}>Vehicle&apos;s Plate Number</Text>
+            <Text style={inputStyles.label}> Operator's Full Address</Text>
             <TextInput
               style={inputStyles.input}
-              placeholder="e.g 001 2345"
+              placeholder="Street Address, Apt/Unit/etc., City, Province"
               placeholderTextColor="#B6B6B6"
+              value={operatorAddress}
+              onChangeText={setOperatorAddress}
               keyboardType="default"
             />
           </View>
         </>
       )}
-
-      {step === 4 && (
+      {/* Step 3 */}
+      {step === 3 && (
         <View style={{ alignItems: "center" }}>
+          <Image
+            source={require("@/assets/images/Beepney LOGO.png")}
+            style={imageStyles.logo}
+          />
           <Text
             style={{
               fontSize: 40,
@@ -157,11 +181,11 @@ export default function DriverProfile() {
             }}
           >
             {"\t"}Your documents are being reviewed {"\n"} by the Admin. Please
-            wait 1-2 Business Days. Will {"\n"} message you through email once
-            your account {"\n"} {"\t"} gets verified. Thank you!{" "}
+            wait 1-2 Business Days. We will notify you through email once your
+            account {"\n"} {"\t"} gets verified. Thank you!
           </Text>
           <View>
-            <ApprovalIcon style={{ marginTop: 20 }}></ApprovalIcon>
+            <ApprovalIcon style={{ marginTop: 20 }} />
           </View>
         </View>
       )}
@@ -170,38 +194,27 @@ export default function DriverProfile() {
         style={styles.button}
         onPress={() => {
           if (step === 1) {
+            // Step 1 validation
+            if (!phoneNumber || !fullAddress || !plateNumber) {
+              Alert.alert("Error", "Please fill out all fields.");
+              return;
+            }
             setStep(2);
           } else if (step === 2) {
-            setStep(3);
+            if (!operatorName || !operatoreNumber || !operatorAddress) {
+              Alert.alert("Error", "Please fill out all fields.");
+              return;
+            }
+            handleSubmit();
           } else if (step === 3) {
-            setStep(4);
-          } else if (step === 4) {
             router.push("/(commuter)/Home");
           }
         }}
       >
         <Text style={styles.buttonText}>
-          {step === 1
-            ? "Next"
-            : step === 2
-              ? "Next"
-              : step === 3
-                ? "Submit"
-                : "Confirm"}
+          {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
         </Text>
       </TouchableOpacity>
-
-      {step === 1 && (
-        <Text style={{ marginTop: 15 }}>
-          Already have an account?{" "}
-          <Text
-            style={{ color: "#073051", fontWeight: "bold" }}
-            onPress={() => router.push("/")}
-          >
-            Sign-In
-          </Text>
-        </Text>
-      )}
     </View>
   );
 }
@@ -238,41 +251,6 @@ const textStyles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
     color: "#073051",
-  },
-});
-
-const inputId = StyleSheet.create({
-  inputGroup: {
-    width: "43.3%",
-    marginTop: 20,
-    marginRight: 150,
-  },
-  buttonId: {
-    height: 90,
-    width: 300,
-    borderColor: "#ccc",
-    paddingLeft: 10,
-    borderWidth: 1,
-    borderRadius: 10,
-    alignItems: "center",
-    paddingTop: 12,
-  },
-  buttonText: {
-    alignItems: "center",
-    color: "#073051",
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 40,
-    fontFamily: "Poppins-Regular",
-  },
-  idText: {
-    alignItems: "center",
-    color: "#073051",
-    textAlign: "center",
-    flexDirection: "row",
-    marginTop: 45,
-    fontFamily: "Poppins-Regular",
-    fontSize: 17,
   },
 });
 

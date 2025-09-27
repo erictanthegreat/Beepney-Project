@@ -32,7 +32,7 @@ export default function GenerateQr() {
         </TouchableOpacity>
         <TouchableOpacity
           style={genStyles.iconButton}
-          onPress={() => router.push("/(result)/DriverDetails")}
+          onPress={() => router.push("/(result)/DriverQR")}
         >
           <GenerateProfIcon />
           <Text style={genStyles.genHeader}>Generate Driver Details</Text>

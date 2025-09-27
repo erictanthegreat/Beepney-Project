@@ -1,66 +1,58 @@
 import React, { Component } from "react";
 import { Text, View, StyleSheet } from "react-native";
 import "@fontsource/poppins";
-import QRCode from "react-native-qrcode-svg";
 import BackButton from "@/components/Backbutton";
+import ProfileIcon from "../../assets/images/prof.svg";
+import DriverDetails from "@/components/DriverDetailsCard";
+export default class DriverQr extends Component {
+  render() {
+    return (
+      <View>
+        <View style={rentStyles.container}>
+          <BackButton />
+          <Text style={rentStyles.header}> Driver Details </Text>
+        </View>
 
-export default function DriverDetails() {
-  return (
-    <View style={statStyles.container}>
-      <View style={statStyles.topBar}>
-        <BackButton />
-        <Text style={statStyles.title}>Driver's Details QR</Text>
-        <View style={{ width: 50 }} />
+        <View style={rentStyles.profile}>
+          <ProfileIcon />
+          <Text style={rentStyles.name}>Test C.</Text>
+
+          <DriverDetails
+            contactNumber={undefined}
+            plateNumber={undefined}
+            operatorName={undefined}
+            operatorAddress={undefined}
+            eligible={undefined}
+          ></DriverDetails>
+        </View>
       </View>
-      <View style={statStyles.qrContainer}>
-        <QRCode value="http://facebook.com" size={200} color={"#1E86DA"} />
-        <Text style={statStyles.text}>
-          Scan the QR to view {"\n"}Driver's Details
-        </Text>
-      </View>
-    </View>
-  );
+    );
+  }
 }
-
-const statStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-
-  topBar: {
-    marginTop: 10,
-    paddingHorizontal: 13,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  title: {
+const rentStyles = StyleSheet.create({
+  header: {
     fontWeight: "bold",
     fontSize: 25,
-    marginLeft: 1,
+    marginTop: 50,
+    marginLeft: 50,
+    alignSelf: "center",
     color: "#073051",
-    paddingTop: 50,
-  },
-  qrContainer: {
-    top: 150,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 20,
-    paddingVertical: 30,
-    width: "80%",
-    marginLeft: 35,
-    borderWidth: 1,
-    borderColor: "#CBCBCB",
-    backgroundColor: "#fff",
-    elevation: 3,
-    borderBottomWidth: 3,
-  },
-  text: {
-    fontSize: 17,
     fontFamily: "Poppins",
-    marginTop: 30,
     textAlign: "center",
+  },
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profile: {
+    alignItems: "center",
+    marginTop: 40,
+  },
+  name: {
+    fontWeight: "bold",
     color: "#073051",
+    fontSize: 25,
+    paddingTop: 20,
+    marginBottom: 20,
   },
 });

@@ -5,14 +5,35 @@ import {
   StyleSheet,
   Platform,
   StatusBar,
-  Linking,
+  Alert,
 } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import { CameraView } from "expo-camera";
 import QR from "../../assets/images/qr grid.svg";
+import { router } from "expo-router";
 
 export default class ScanDriverdets extends Component {
+  scanned = false; // class property
+
+  handleScan = ({ data }) => {
+    if (this.scanned) return; // ignore if already scanned
+    this.scanned = true;
+
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed.screen) {
+        const path = `${parsed.screen}${parsed.id ? `?id=${parsed.id}` : ""}`;
+        router.push("/(result)/DriverDetails");
+      } else {
+        Alert.alert("Invalid QR", "This QR code is not valid for navigation.");
+      }
+    } catch (err) {
+      Alert.alert("Error", "Failed to read QR code.");
+      console.error(err);
+    }
+  };
+
   render() {
     return (
       <View style={scanStyles.container}>
@@ -20,9 +41,7 @@ export default class ScanDriverdets extends Component {
         <CameraView
           style={StyleSheet.absoluteFillObject}
           facing="back"
-          onBarcodeScanned={({ data }) => {
-            Linking.openURL(data);
-          }}
+          onBarcodeScanned={this.handleScan}
         >
           <BackButton />
           <View style={scanStyles.overlay}>

@@ -1,31 +1,71 @@
 import React, { Component } from "react";
 import { Text, View, StyleSheet } from "react-native";
 import "@fontsource/poppins";
+import QRCode from "react-native-qrcode-svg";
 import BackButton from "@/components/Backbutton";
 
-export default class DriverQr extends Component {
-  render() {
-    return (
-      <View style={rentStyles.container}>
+export default function DriverDetails() {
+  return (
+    <View style={statStyles.container}>
+      <View style={statStyles.topBar}>
         <BackButton />
-        <Text style={rentStyles.header}> Jeepney/Van Rental </Text>
-        <Text style={{ marginLeft: 25, color: "#595959" }}>
-          Book Your Barkada Trip with Beepney
+        <Text style={statStyles.title}>Driver's Details QR</Text>
+        <View style={{ width: 50 }} />
+      </View>
+      <View style={statStyles.qrContainer}>
+        <QRCode
+          value={JSON.stringify({ screen: "driverProfile", id: 123 })}
+          size={200}
+          color="#1E86DA"
+        />
+
+        <Text style={statStyles.text}>
+          Scan the QR to view {"\n"}Driver's Details
         </Text>
       </View>
-    );
-  }
+    </View>
+  );
 }
 
-const rentStyles = StyleSheet.create({
-  header: {
-    fontWeight: "bold",
-    alignItems: "flex-start",
-    fontSize: 25,
-    marginLeft: 20,
-    marginTop: 10,
-    color: "#073051",
-    fontFamily: "Poppins",
+const statStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
   },
-  container: {},
+
+  topBar: {
+    marginTop: 10,
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  title: {
+    fontWeight: "bold",
+    fontSize: 25,
+    marginLeft: 1,
+    color: "#073051",
+    paddingTop: 50,
+  },
+  qrContainer: {
+    top: 150,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 20,
+    paddingVertical: 30,
+    width: "80%",
+    marginLeft: 35,
+    borderWidth: 1,
+    borderColor: "#CBCBCB",
+    backgroundColor: "#fff",
+    elevation: 3,
+    borderBottomWidth: 3,
+  },
+  text: {
+    fontSize: 17,
+    fontFamily: "Poppins",
+    marginTop: 30,
+    textAlign: "center",
+    color: "#073051",
+  },
 });
