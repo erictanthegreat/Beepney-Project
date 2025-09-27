@@ -39,7 +39,7 @@ const FareMatrixPage = () => {
     const { data, error } = await supabase
       .from('fare_matrix')
       .select('*')
-      .order('created_at', { ascending: true }); // oldest first → left
+      .order('created_at', { ascending: true });
     if (!error && data) setMatrices(data);
   };
 
@@ -72,7 +72,6 @@ const FareMatrixPage = () => {
       let fileUrl: string | null = null;
       let fileName: string | null = null;
 
-      // If new file uploaded → push to storage
       if (file) {
         const timestamp = Date.now();
         const filePath = `fare-matrix/${selectedSection}/${timestamp}-${file.name}`;
@@ -94,7 +93,6 @@ const FareMatrixPage = () => {
       }
 
       if (id) {
-        // 🔄 update existing
         const { error: updateError } = await supabase
           .from('fare_matrix')
           .update({
@@ -107,7 +105,6 @@ const FareMatrixPage = () => {
 
         if (updateError) throw updateError;
       } else {
-        // ➕ insert new
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -138,7 +135,6 @@ const FareMatrixPage = () => {
   };
 
   const handleDeleteFare = async (id: string) => {
-    // 🔥 confirmation removed here (already in Overlay3)
     const { error } = await supabase.from('fare_matrix').delete().eq('id', id);
 
     if (error) {
@@ -184,16 +180,14 @@ const FareMatrixPage = () => {
                   >
                     <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
 
-                    <div className="flex flex-col flex-1">
+                    <div className="flex flex-col flex-1 min-w-0">
                       <p className="font-semibold text-[#073051] text-lg truncate">
                         {key} Fare {idx + 1}{' '}
-                        <span className="text-[#595959] font-normal">
+                        <span className="text-[#595959] font-normal truncate">
                           ({m.title})
                         </span>
                       </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {m.file_name}
-                      </p>
+                      <p className="text-sm text-gray-500 truncate">{m.file_name}</p>
                       <p className="text-xs text-gray-400 mt-2">
                         {new Date(m.created_at).toLocaleDateString()}
                       </p>
