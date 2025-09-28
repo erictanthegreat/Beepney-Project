@@ -14,7 +14,7 @@ export default function DriverDetails() {
       </View>
       <View style={statStyles.qrContainer}>
         <QRCode
-          value={JSON.stringify({ screen: "driverProfile", id: 123 })}
+          value={JSON.stringify({ screen: "DriverQR", id: 123 })}
           size={200}
           color="#1E86DA"
         />

@@ -14,10 +14,10 @@ import QR from "../../assets/images/qr grid.svg";
 import { router } from "expo-router";
 
 export default class ScanDriverdets extends Component {
-  scanned = false; // class property
+  scanned = false; 
 
   handleScan = ({ data }) => {
-    if (this.scanned) return; // ignore if already scanned
+    if (this.scanned) return; 
     this.scanned = true;
 
     try {

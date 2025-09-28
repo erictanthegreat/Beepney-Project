@@ -3,8 +3,7 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: ["babel-preset-expo"],
-    compact: false, // disable compact mode (no deopt warnings)
-    // OR set threshold higher:
+    compact: false, 
     overrides: [
       {
         compact: true,

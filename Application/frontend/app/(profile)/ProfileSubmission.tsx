@@ -189,7 +189,7 @@ export default function ProfileSubmission() {
         back_id_url: backUrl,
         submission_type:
           idType || (userType === "commuter" ? "Student" : "Jeepney"),
-        type: userType ?? "commuter", // store lowercase to match your DB
+        type: userType ?? "commuter", 
         status: "Pending",
       };
 

@@ -43,7 +43,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     string | null
   >(null);
 
-  // Generate redirect URLs once
+
   const successUrl = Linking.createURL("payment-result?status=success");
   const failedUrl = Linking.createURL("payment-result?status=failed");
 
@@ -124,7 +124,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     onClose();
   };
 
-  // ✅ Show WebView if paying
+ 
   if (showWebView) {
     return (
       <Modal visible={visible} animationType="slide" style={{ flex: 1 }}>
@@ -158,7 +158,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     );
   }
 
-  // ✅ Otherwise show method picker
+  
   return (
     <Modal
       visible={visible}
