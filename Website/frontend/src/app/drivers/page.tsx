@@ -1,33 +1,49 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
+import ReactDOM from 'react-dom';
 import Header from '../../components/ui/header';
 import { FunnelIcon, BarsArrowDownIcon, MagnifyingGlassIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext, PaginationLink } from '@/components/ui/pagination';
-import Image from 'next/image'; // ✅ use Next.js Image
+import Image from 'next/image';
+import { createClient } from '@supabase/supabase-js';
 
-const drivers = [
-  { id: 1, name: 'John Doe', status: 'Active', createdAt: '2023-06-10 09:00', plateNumber: 'ABC-1234' },
-  { id: 2, name: 'Jane Smith', status: 'Inactive', createdAt: '2023-07-21 13:45', plateNumber: 'XYZ-5678' },
-  { id: 3, name: 'Mark Johnson', status: 'Active', createdAt: '2023-05-01 08:30', plateNumber: 'JKL-9101' },
-  { id: 4, name: 'Sarah Lee', status: 'Active', createdAt: '2023-04-12 11:15', plateNumber: 'MNO-2345' },
-  { id: 5, name: 'Tom Williams', status: 'Inactive', createdAt: '2023-08-30 14:00', plateNumber: 'PQR-6789' },
-  { id: 6, name: 'Emily Davis', status: 'Active', createdAt: '2023-09-05 09:20', plateNumber: 'STU-3456' }
-];
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+interface Driver {
+  id: string;
+  profile: {
+    username: string;
+    avatar_url: string | null;
+    email: string;
+    role: string;
+  };
+  status: 'Pending' | 'Verified' | 'Declined';
+  created_at: string;
+  plate_number: string;
+}
 
 const DriversPage = () => {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedDrivers, setSelectedDrivers] = useState<number[]>([]);
-  const itemsPerPage = 3;
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [selectedDrivers, setSelectedDrivers] = useState<string[]>([]);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
+  const itemsPerPage = 3;
   const totalPages = Math.ceil(drivers.length / itemsPerPage);
   const currentData = drivers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const toggleDriverSelection = (id: number) => {
-    setSelectedDrivers((prev) => prev.includes(id) ? prev.filter((driverId) => driverId !== id) : [...prev, id]);
+  const toggleDriverSelection = (id: string) => {
+    setSelectedDrivers((prev) =>
+      prev.includes(id) ? prev.filter((driverId) => driverId !== id) : [...prev, id]
+    );
   };
 
   const toggleSelectAll = () => {
@@ -40,13 +56,83 @@ const DriversPage = () => {
 
   const allSelected = selectedDrivers.length === currentData.length && currentData.length > 0;
 
+  // Fetch drivers with profiles
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('driverprofiles')
+          .select(`
+            id,
+            status,
+            created_at,
+            plate_number,
+            profiles!inner(username, avatar_url, email, role)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const mappedData: Driver[] = (data || []).map((d: any) => ({
+          id: d.id,
+          profile: {
+            username: d.profiles.username,
+            avatar_url: d.profiles.avatar_url,
+            email: d.profiles.email,
+            role: d.profiles.role
+          },
+          status: d.status as 'Pending' | 'Verified' | 'Declined',
+          created_at: d.created_at,
+          plate_number: d.plate_number
+        }));
+
+        setDrivers(mappedData);
+      } catch (err) {
+        console.error('Supabase fetch error:', err);
+      }
+    };
+
+    fetchDrivers();
+  }, []);
+
+  // Improved: update status immediately on click
+  const handleStatusChange = async (id: string, newStatus: 'Verified' | 'Declined') => {
+    // Update local state immediately
+    setDrivers((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d))
+    );
+    setSelectedDriver(null);
+
+    // Update in Supabase
+    try {
+      const { error } = await supabase.from('driverprofiles').update({ status: newStatus }).eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Supabase update error:', err);
+      // Optionally revert local state if error occurs
+      setDrivers((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, status: 'Pending' } : d))
+      );
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.dropdown-menu') &&
+          !(e.target as HTMLElement).closest('.dropdown-trigger')) {
+        setSelectedDriver(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <>
       <Header />
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
         {/* Search + Filter */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          {/* Search */}
           <div className="relative w-full max-w-md md:w-[320px] min-w-0">
             <input
               type="text"
@@ -58,7 +144,6 @@ const DriversPage = () => {
             </button>
           </div>
 
-          {/* Sort & Filter */}
           <div className="flex flex-wrap md:flex-nowrap gap-4">
             <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A]
                 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
@@ -125,6 +210,7 @@ const DriversPage = () => {
               <TableHead>Plate Number</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created At</TableHead>
+              <TableHead>Action</TableHead>
             </tr>
           </TableHeader>
 
@@ -147,25 +233,72 @@ const DriversPage = () => {
                 </TableCell>
 
                 <TableCell>
-                  {/* ✅ Fix: use Next.js Image */}
                   <Image
-                    src="/Default Profile.svg"
-                    alt={driver.name}
+                    src={driver.profile.avatar_url || "/Default Profile.svg"}
+                    alt={driver.profile.username}
                     width={32}
                     height={32}
                     className="rounded-full object-cover"
                   />
                 </TableCell>
 
-                <TableCell>{driver.name}</TableCell>
-                <TableCell>{driver.plateNumber}</TableCell>
-                <TableCell>{driver.status}</TableCell>
-                <TableCell>{driver.createdAt}</TableCell>
+                <TableCell>{driver.profile.username}</TableCell>
+                <TableCell>{driver.plate_number}</TableCell>
 
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <button className="flex items-center justify-center w-6 h-6 text-gray-500">
+                {/* Status with same format as dashboard */}
+                <TableCell>
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm font-medium ${
+                      driver.status === 'Verified'
+                        ? 'bg-blue-100 text-blue-700'
+                        : driver.status === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {driver.status}
+                  </span>
+                </TableCell>
+
+                <TableCell>{new Date(driver.created_at).toLocaleString()}</TableCell>
+
+                <TableCell onClick={(e) => e.stopPropagation()} className="relative">
+                  <button
+                    className="dropdown-trigger flex items-center justify-center w-6 h-6 text-gray-500"
+                    onClick={(e) => {
+                      const rect = (e.target as HTMLElement).getBoundingClientRect();
+                      setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
+                      setSelectedDriver(selectedDriver?.id === driver.id ? null : driver);
+                    }}
+                  >
                     <EllipsisVerticalIcon className="h-5 w-5" />
                   </button>
+
+                  {selectedDriver?.id === driver.id &&
+                    dropdownPosition &&
+                    ReactDOM.createPortal(
+                      <div
+                        className="dropdown-menu absolute w-40 bg-white border border-gray-200 rounded-lg shadow-md z-50"
+                        style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+                      >
+                        <button
+                          onClick={() => handleStatusChange(driver.id, 'Verified')}
+                          className="flex items-center w-full px-3 py-2 text-blue-600 hover:bg-gray-50 font-semibold"
+                        >
+                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-blue-600" />
+                          Verify
+                        </button>
+                        <div className="border-t border-gray-200" />
+                        <button
+                          onClick={() => handleStatusChange(driver.id, 'Declined')}
+                          className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
+                        >
+                          <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
+                          Decline
+                        </button>
+                      </div>,
+                      document.body
+                    )}
                 </TableCell>
               </TableRow>
             ))}

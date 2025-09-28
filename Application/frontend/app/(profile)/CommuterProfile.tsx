@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -136,7 +135,7 @@ export default function CommuterProfile() {
     router.push("/(profile)/ProfileSubmission");
   };
 
-  // 🔹 Switch role to driver
+  // 🔹 Top-right button: check driver profile status before switching
   const handleSwitchToDriver = async () => {
     try {
       const {
@@ -146,27 +145,42 @@ export default function CommuterProfile() {
 
       const userId = session.user.id;
 
-      // Update role in profiles (now small letter "driver")
+      // Check driver profile
+      const { data: driverProfile, error: driverError } = await supabase
+        .from("driverprofiles")
+        .select("status")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (driverError) {
+        console.error(driverError);
+        Alert.alert("Error", "Could not fetch driver profile.");
+        return;
+      }
+
+      if (!driverProfile) {
+        Alert.alert("Not Verified", "Please submit your driver information first.");
+        return;
+      }
+
+      if (driverProfile.status !== "Verified") {
+        Alert.alert(
+          "Not Verified",
+          "Your driver profile is pending review. You cannot switch yet."
+        );
+        return;
+      }
+
+      // Update role to driver
       const { error } = await supabase
         .from("profiles")
         .update({ role: "driver" })
         .eq("id", userId);
 
       if (error) {
-        Alert.alert("Error", "Could not switch to driver role.");
         console.error(error);
+        Alert.alert("Error", "Could not switch to driver role.");
         return;
-      }
-
-      // Insert into driverprofiles if not already there
-      const { data: driverProfile, error: driverError } = await supabase
-        .from("driverprofiles")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
-
-      if (!driverProfile && !driverError) {
-        await supabase.from("driverprofiles").insert([{ id: userId }]);
       }
 
       router.replace("/(driver)/Home");
@@ -240,7 +254,6 @@ export default function CommuterProfile() {
             <TouchableOpacity
               style={[credStyles.card, { justifyContent: "center" }]}
               onPress={() => {
-                // TODO: show full front/back images modal
                 Alert.alert("ID Approved", "You can view your ID images here.");
               }}
             >
@@ -267,6 +280,7 @@ export default function CommuterProfile() {
           )}
         </View>
 
+        {/* Drive with Beepney → no role change, just goes to driver profile form */}
         <TouchableOpacity
           onPress={() => router.push("/(auth)/DriverProfile")}
           style={credStyles.driverRow}
