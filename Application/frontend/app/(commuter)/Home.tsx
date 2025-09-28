@@ -199,7 +199,7 @@ export default function Home() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/ScanDriverdets")}
+            onPress={() => router.push("/(feat)/ScanDriverDets")}
             style={featStyles.featureButton}
           >
             <DDIcon style={featStyles.icon} />
