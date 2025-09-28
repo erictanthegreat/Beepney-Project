@@ -1,38 +1,128 @@
-import React, { Component } from "react";
-import { Text, View, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Text, View, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import "@fontsource/poppins";
 import QRCode from "react-native-qrcode-svg";
 import BackButton from "@/components/Backbutton";
+import { supabase } from "@/scripts/supabase";
 
-export default function DriverDetails() {
+interface DriverInfo {
+  id: string;
+  operator_name: string;
+  plate_number: string;
+}
+
+export default function DriverQR() {
+  const [driverInfo, setDriverInfo] = useState<DriverInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [qrValue, setQrValue] = useState<string>("");
+
+  useEffect(() => {
+    fetchCurrentDriver();
+  }, []);
+
+  const fetchCurrentDriver = async () => {
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        Alert.alert("Error", "Please login first");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("driverprofiles")
+        .select("*")
+        .eq("id", user.id.trim())
+        .single();
+
+      if (error) {
+        Alert.alert("Error", "Failed to load driver information");
+      } else if (data) {
+        setDriverInfo(data);
+
+        const qrData = {
+          screen: "DriverQR",
+          id: data.id,
+          driverName: data.operator_name,
+          plateNumber: data.plate_number,
+          generatedAt: new Date().toISOString(),
+        };
+
+        setQrValue(JSON.stringify(qrData));
+      } else {
+        Alert.alert("Error", "Driver profile not found");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.topBar}>
+          <BackButton />
+          <Text style={styles.title}>Driver's QR Code</Text>
+          <View style={{ width: 50 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#073051" />
+          <Text style={styles.loadingText}>Generating QR Code...</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View style={statStyles.container}>
-      <View style={statStyles.topBar}>
+    <View style={styles.container}>
+      <View style={styles.topBar}>
         <BackButton />
-        <Text style={statStyles.title}>Driver's Details QR</Text>
+        <Text style={styles.title}>Driver's QR Code</Text>
         <View style={{ width: 50 }} />
       </View>
-      <View style={statStyles.qrContainer}>
-        <QRCode
-          value={JSON.stringify({ screen: "DriverQR", id: 123 })}
-          size={200}
-          color="#1E86DA"
-        />
 
-        <Text style={statStyles.text}>
-          Scan the QR to view {"\n"}Driver's Details
-        </Text>
+      <View style={styles.qrContainer}>
+        {qrValue ? (
+          <>
+            <QRCode
+              value={qrValue}
+              size={200}
+              color="#1E86DA"
+              backgroundColor="white"
+            />
+            {driverInfo && (
+              <View style={styles.driverInfoContainer}>
+                <Text style={styles.driverName}>
+                  {driverInfo.operator_name}
+                </Text>
+                <Text style={styles.plateNumber}>
+                  Plate: {driverInfo.plate_number}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.text}>
+              Scan the QR to view {"\n"}Driver's Details
+            </Text>
+            <Text style={styles.generatedText}>
+              Generated: {new Date().toLocaleTimeString()}
+            </Text>
+          </>
+        ) : (
+          <Text style={styles.errorText}>Failed to generate QR code</Text>
+        )}
       </View>
     </View>
   );
 }
 
-const statStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
   topBar: {
     marginTop: 10,
     paddingHorizontal: 13,
@@ -40,13 +130,7 @@ const statStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  title: {
-    fontWeight: "bold",
-    fontSize: 25,
-    marginLeft: 1,
-    color: "#073051",
-    paddingTop: 50,
-  },
+  title: { fontWeight: "bold", fontSize: 25, color: "#073051", paddingTop: 50 },
   qrContainer: {
     top: 150,
     justifyContent: "center",
@@ -68,4 +152,21 @@ const statStyles = StyleSheet.create({
     textAlign: "center",
     color: "#073051",
   },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  loadingText: { marginTop: 20, fontSize: 16, color: "#073051" },
+  driverInfoContainer: { marginTop: 20, alignItems: "center" },
+  driverName: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#073051",
+    marginBottom: 5,
+  },
+  plateNumber: { fontSize: 14, color: "#666" },
+  generatedText: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 15,
+    textAlign: "center",
+  },
+  errorText: { color: "red", fontSize: 16, textAlign: "center" },
 });
