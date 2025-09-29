@@ -18,6 +18,7 @@ import EditIcon from "../../assets/images/Edit.svg";
 import DriverIcon from "../../assets/images/driber.svg";
 import LogoutIcon from "../../assets/images/logout.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Verified from "../../assets/images/verified.svg";
 
 export default function CommuterProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -31,6 +32,8 @@ export default function CommuterProfile() {
     username: string;
     email: string;
   } | null>(null);
+
+  const [discountType, setDiscountType] = useState<string | null>(null);
 
   // Fetch profile info and submission status on mount
   useEffect(() => {
@@ -64,7 +67,7 @@ export default function CommuterProfile() {
         const { data: latestSubmission, error: submissionError } =
           await supabase
             .from("submissions")
-            .select("status, front_id_url, back_id_url")
+            .select("status, front_id_url, back_id_url, submission_type")
             .eq("user_id", userId)
             .eq("type", "commuter")
             .order("created_at", { ascending: false })
@@ -80,6 +83,20 @@ export default function CommuterProfile() {
             front_id_url: latestSubmission.front_id_url,
             back_id_url: latestSubmission.back_id_url,
           });
+
+          // store discount type if allowed
+          const allowedTypes = [
+            "Student",
+            "PWD",
+            "Senior Citizen",
+            "Solo Parent",
+          ];
+          if (
+            latestSubmission.submission_type &&
+            allowedTypes.includes(latestSubmission.submission_type)
+          ) {
+            setDiscountType(latestSubmission.submission_type);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -135,7 +152,7 @@ export default function CommuterProfile() {
     router.push("/(profile)/ProfileSubmission");
   };
 
-  // 🔹 Top-right button: check driver profile status before switching
+  // Top-right button: check driver profile status before switching
   const handleSwitchToDriver = async () => {
     try {
       const {
@@ -159,7 +176,10 @@ export default function CommuterProfile() {
       }
 
       if (!driverProfile) {
-        Alert.alert("Not Verified", "Please submit your driver information first.");
+        Alert.alert(
+          "Not Verified",
+          "Please submit your driver information first."
+        );
         return;
       }
 
@@ -195,7 +215,10 @@ export default function CommuterProfile() {
       <BackButton />
       <View style={profStyles.container}>
         <Text style={profStyles.header}>Profile</Text>
-        <TouchableOpacity onPress={handleSwitchToDriver} style={profStyles.icon}>
+        <TouchableOpacity
+          onPress={handleSwitchToDriver}
+          style={profStyles.icon}
+        >
           <DriverButton />
         </TouchableOpacity>
       </View>
@@ -248,7 +271,46 @@ export default function CommuterProfile() {
 
         {/* ID Discount Section */}
         <View style={credStyles.formGroup}>
-          <Text style={credStyles.label}>ID Discount</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginBottom: 6,
+            }}
+          >
+            <Text style={credStyles.label}>
+              ID Discount {discountType ? `(${discountType})` : ""}
+            </Text>
+
+            {submission?.status && (
+              <View
+                style={[
+                  credStyles.badge,
+                  submission.status === "approved"
+                    ? { backgroundColor: "#7CBFEF" }
+                    : submission.status === "pending"
+                      ? { backgroundColor: "#FFC107" }
+                      : { backgroundColor: "#F44336" },
+                ]}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Text style={credStyles.badgeText}>
+                    {submission.status === "approved"
+                      ? "Verified"
+                      : submission.status === "pending"
+                        ? "Pending"
+                        : "Declined"}
+                  </Text>
+
+                  {submission.status === "approved" && (
+                    <View style={{ marginLeft: 6 }}>
+                      <Verified width={16} height={16} />
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
 
           {submission?.status === "approved" && submission.front_id_url ? (
             <TouchableOpacity
@@ -280,7 +342,7 @@ export default function CommuterProfile() {
           )}
         </View>
 
-        {/* Drive with Beepney → no role change, just goes to driver profile form */}
+        {/* Drive with Beepney */}
         <TouchableOpacity
           onPress={() => router.push("/(auth)/DriverProfile")}
           style={credStyles.driverRow}
@@ -289,6 +351,7 @@ export default function CommuterProfile() {
           <DriverIcon />
         </TouchableOpacity>
 
+        {/* Logout */}
         <TouchableOpacity onPress={handleLogout} style={credStyles.logoutRow}>
           <Text style={credStyles.logoutText}>Logout</Text>
           <LogoutIcon />
@@ -369,6 +432,18 @@ const credStyles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 15,
     backgroundColor: "#fff",
+  },
+  badge: {
+    paddingHorizontal: 15,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
+    opacity: 0.75,
+  },
+  badgeText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
   },
   driverRow: {
     flexDirection: "row",

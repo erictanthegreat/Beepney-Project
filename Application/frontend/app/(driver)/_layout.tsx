@@ -37,7 +37,7 @@ export default function DriverLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <HomeIcon width={28} height={28} color={color} />
+            <HomeIcon width={22} height={22} color={color} />
           ),
         }}
       />
