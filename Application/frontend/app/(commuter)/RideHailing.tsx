@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Animated,
+  Modal,
 } from "react-native";
 import { supabase } from "scripts/supabase";
 import "@fontsource/poppins";
@@ -16,7 +17,7 @@ import * as Location from "expo-location";
 import BackButton from "@/components/Backbutton";
 import BottomSheetContainer from "@/components/BottomSheetContainer";
 import CustomButton from "@/components/ui/CustomButton";
-
+import PaymentMethod from "@/assets/images/payment method.svg";
 import FindIcon from "../../assets/images/find.svg";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
@@ -83,11 +84,16 @@ export default function RideHailing() {
   const [destinationAddress, setDestinationAddress] = useState<string>("");
   const [pickupInput, setPickupInput] = useState<string>("");
   const [destinationInput, setDestinationInput] = useState<string>("");
-
+  const [rideStatus, setRideStatus] = useState<
+    "booking" | "waiting" | "toPickUp"
+  >("booking");
   const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>(
     []
   );
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
+    "cash" | "cashless" | null
+  >(null);
 
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
   const [distance, setDistance] = useState<number>(0);
@@ -96,8 +102,9 @@ export default function RideHailing() {
 
   const [waitingModalVisible, setWaitingModalVisible] = useState(false);
   const [currentRideId, setCurrentRideId] = useState<string | null>(null);
-
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [assignedDriver, setAssignedDriver] = useState<any | null>(null);
 
   // Get user location
   useEffect(() => {
@@ -267,36 +274,48 @@ export default function RideHailing() {
       return;
     }
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    setTimeout(() => {
+      setPaymentModalVisible(true);
+    }, 200);
+  };
 
-      const { data, error } = await supabase
-        .from("tricycall")
-        .insert([
-          {
-            pick_up: pickupAddress,
-            destination: destinationAddress,
-            selected_ride: selectedRide,
-            fare_price: fare,
-            user_id: user.id,
-          },
-        ])
-        .select();
+  const handlePaymentSelection = async (method: "cash" | "cashless") => {
+    setPaymentModalVisible(false);
+    setSelectedPaymentMethod(method);
 
-      if (error) {
-        console.error("Error inserting ride:", error);
-        alert("Failed to book ride. Please try again.");
-      } else if (data && data.length > 0) {
-        setCurrentRideId(data[0].id);
-        setWaitingModalVisible(true);
-        bottomSheetRef.current?.expand?.();
+    setTimeout(async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        const { data, error } = await supabase
+          .from("tricycall")
+          .insert([
+            {
+              pick_up: pickupAddress,
+              destination: destinationAddress,
+              selected_ride: selectedRide,
+              fare_price: fare,
+              user_id: user.id,
+              payment_method: method,
+              status: "Pending",
+            },
+          ])
+          .select();
+
+        if (error) {
+          console.error("Error inserting ride:", error);
+          alert("Failed to book ride. Please try again.");
+        } else if (data && data.length > 0) {
+          setCurrentRideId(data[0].id);
+          setWaitingModalVisible(true);
+        }
+      } catch (err) {
+        console.error("Unexpected error:", err);
+        alert("Something went wrong.");
       }
-    } catch (err) {
-      console.error("Unexpected error:", err);
-      alert("Something went wrong.");
-    }
+    }, 300);
   };
 
   const handleCancelRide = async () => {
@@ -313,6 +332,27 @@ export default function RideHailing() {
       alert("Ride canceled.");
     }
   };
+
+  useEffect(() => {
+    if (!currentRideId) return;
+
+    const interval = setInterval(async () => {
+      const { data, error } = await supabase
+        .from("tricycall")
+        .select("status, driver_id")
+        .eq("id", currentRideId)
+        .single();
+
+      if (error) return console.log(error);
+
+      if (data?.status === "accepted" && data.driver_id) {
+        setRideStatus("toPickUp");
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [currentRideId]);
 
   return (
     <View style={rideStyles.container}>
@@ -397,7 +437,38 @@ export default function RideHailing() {
         </TouchableOpacity>
       </View>
 
-      {/* Waiting state */}
+      <Modal
+        visible={paymentModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPaymentModalVisible(false)}
+      >
+        <View style={rideStyles.modalOverlay}>
+          <View style={rideStyles.modalContent}>
+            <Text style={rideStyles.modalHeader}>Choose Payment Method</Text>
+            <TouchableOpacity
+              style={rideStyles.paymentButton}
+              onPress={() => handlePaymentSelection("cash")}
+            >
+              <Text style={rideStyles.paymentText}>Cash</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={rideStyles.paymentButton}
+              onPress={() => handlePaymentSelection("cashless")}
+            >
+              <Text style={rideStyles.paymentText}>Pay Cashless</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[rideStyles.paymentButton, { backgroundColor: "#CBCBCB" }]}
+              onPress={() => setPaymentModalVisible(false)}
+            >
+              <Text style={rideStyles.paymentText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Bottom Sheet */}
       <BottomSheetContainer ref={bottomSheetRef}>
         <Animated.View
           style={{
@@ -431,6 +502,13 @@ export default function RideHailing() {
               </View>
               <Text style={rideStyles.waitText}> {destinationAddress}</Text>
 
+              <View style={{ flexDirection: "row" }}>
+                <PaymentMethod style={rideStyles.icon2} />
+                <Text style={rideStyles.destText}>Payment Method</Text>
+              </View>
+              <Text style={rideStyles.waitText2}>
+                {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
+              </Text>
               <View style={rideStyles.line}></View>
 
               {/* Summary */}
@@ -442,7 +520,7 @@ export default function RideHailing() {
 
                 <View style={rideStyles.iconWithText}>
                   <FareIcon />
-                  <Text style={rideStyles.waitSumText}>{fare.toFixed(2)}</Text>
+                  <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
                 </View>
 
                 <View style={rideStyles.iconWithText}>
@@ -541,8 +619,8 @@ export default function RideHailing() {
                   onPress={() => setSelectedRide("solo")}
                 >
                   <SoloIcon
-                    width={50}
-                    height={50}
+                    width={30}
+                    height={30}
                     color={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
                   />
                   <Text
@@ -563,8 +641,8 @@ export default function RideHailing() {
                   onPress={() => setSelectedRide("group")}
                 >
                   <GroupIcon
-                    width={50}
-                    height={50}
+                    width={30}
+                    height={30}
                     color={selectedRide === "group" ? "#0D99FF" : "#CBCBCB"}
                   />
                   <Text
@@ -719,7 +797,7 @@ const rideStyles = StyleSheet.create({
     borderWidth: 2,
   },
   text: {
-    fontSize: 16,
+    fontSize: 13,
     color: "#CBCBCB",
     marginTop: 5,
   },
@@ -750,6 +828,13 @@ const rideStyles = StyleSheet.create({
     marginLeft: 25,
     marginBottom: 10,
   },
+  waitText2: {
+    color: "#737F83",
+    fontFamily: "Poppins",
+    textAlign: "left",
+    marginLeft: 35,
+    marginBottom: 10,
+  },
   waitSumm: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -758,5 +843,37 @@ const rideStyles = StyleSheet.create({
     color: "#737F83",
     fontFamily: "Poppins",
     marginLeft: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    alignItems: "center",
+  },
+  modalHeader: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#073051",
+  },
+  paymentButton: {
+    width: "100%",
+    padding: 15,
+    backgroundColor: "#0D99FF",
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  paymentText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

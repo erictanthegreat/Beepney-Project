@@ -9,6 +9,7 @@ export default function TricyCallCard({
   destination,
   farePrice,
   name,
+  onAccept,
 }) {
   return (
     <View style={styles.card}>
@@ -16,20 +17,15 @@ export default function TricyCallCard({
         <Text style={styles.label}>
           {name} - ₱{farePrice}
         </Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push("/")}
-        >
+        <TouchableOpacity style={styles.button} onPress={onAccept}>
           <Text style={styles.buttonText}>Accept</Text>
         </TouchableOpacity>
       </View>
-
       <View style={styles.row}>
         <OriginIcon />
         <Text style={styles.text1}> Pick up From</Text>
       </View>
       <Text style={styles.dest}>{pickup}</Text>
-
       <View style={styles.row}>
         <DestIcon />
         <Text style={styles.text2}> Destination</Text>
@@ -63,7 +59,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: "#fff",
     alignSelf: "center",
-    marginTop: 25,
+    marginTop: 10,
   },
   label: {
     fontWeight: "bold",
