@@ -294,7 +294,6 @@ export default function RideHailing() {
     }
   };
 
-  // Cancel ride
   const handleCancelRide = async () => {
     if (!currentRideId) return;
     const { error } = await supabase
