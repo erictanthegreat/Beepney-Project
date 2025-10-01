@@ -36,21 +36,24 @@ export default function DriverDets() {
         const { data, error } = await supabase
           .from("driverprofiles")
           .select(
-            "phone_number, plate_number, operator_name, operator_address, verified"
+            "phone_number, plate_number, operator_name, full_address, status"
           )
           .eq("id", id)
           .single();
 
-        if (error) setError("Driver not found or invalid ID");
-        else if (data)
+        if (error) {
+          setError("Driver not found or invalid ID");
+        } else if (data) {
           setDriver({
             contact_number: data.phone_number,
             plate_number: data.plate_number,
             operator_name: data.operator_name,
-            operator_address: data.operator_address,
-            eligible: data.verified ? "yes" : "no",
+            operator_address: data.full_address, // matches your schema
+            eligible: data.status === "Verified" ? "yes" : "no", // map status to yes/no
           });
-        else setError("Driver not found");
+        } else {
+          setError("Driver not found");
+        }
       } catch (err) {
         setError("An unexpected error occurred");
       } finally {

@@ -9,6 +9,8 @@ interface DriverInfo {
   id: string;
   operator_name: string;
   plate_number: string;
+  phone_number?: string;
+  full_address?: string;
 }
 
 export default function DriverQR() {
@@ -33,9 +35,10 @@ export default function DriverQR() {
         return;
       }
 
+      // fetch the driver's profile
       const { data, error } = await supabase
         .from("driverprofiles")
-        .select("*")
+        .select("id, operator_name, plate_number, phone_number, full_address")
         .eq("id", user.id.trim())
         .single();
 
@@ -44,11 +47,14 @@ export default function DriverQR() {
       } else if (data) {
         setDriverInfo(data);
 
+        // QR data (include more fields if you want commuters to see them)
         const qrData = {
           screen: "DriverQR",
           id: data.id,
-          driverName: data.operator_name,
+          operatorName: data.operator_name,
           plateNumber: data.plate_number,
+          phoneNumber: data.phone_number,
+          fullAddress: data.full_address,
           generatedAt: new Date().toISOString(),
         };
 
@@ -104,6 +110,16 @@ export default function DriverQR() {
                 <Text style={styles.plateNumber}>
                   Plate: {driverInfo.plate_number}
                 </Text>
+                {driverInfo.phone_number && (
+                  <Text style={styles.subInfo}>
+                    Phone: {driverInfo.phone_number}
+                  </Text>
+                )}
+                {driverInfo.full_address && (
+                  <Text style={styles.subInfo}>
+                    Address: {driverInfo.full_address}
+                  </Text>
+                )}
               </View>
             )}
             <Text style={styles.text}>
@@ -162,6 +178,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   plateNumber: { fontSize: 14, color: "#666" },
+  subInfo: { fontSize: 13, color: "#444", marginTop: 3 },
   generatedText: {
     fontSize: 12,
     color: "#999",
