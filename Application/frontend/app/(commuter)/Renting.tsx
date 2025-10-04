@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Platform,
   Linking,
+  RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
@@ -32,9 +34,13 @@ export default function Renting() {
   const { contact } = useLocalSearchParams<{ contact: string }>();
 
   const [rentals, setRentals] = useState<Rental[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchRentals = async () => {
     try {
+      if (!refreshing) setLoading(true);
+
       const { data, error } = await supabase
         .from("rental")
         .select("*")
@@ -61,6 +67,9 @@ export default function Renting() {
       }
     } catch (e) {
       console.error("Unexpected error fetching rentals", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -69,6 +78,11 @@ export default function Renting() {
       fetchRentals();
     }, [])
   );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchRentals();
+  }, []);
 
   const makeaPhonecall = (phoneNumber: string) => {
     if (!phoneNumber) return;
@@ -81,7 +95,7 @@ export default function Renting() {
     );
   };
 
-  const isEmpty = rentals.length === 0;
+  const isEmpty = !loading && rentals.length === 0;
 
   return (
     <View style={{ flex: 1 }}>
@@ -95,15 +109,37 @@ export default function Renting() {
         </Text>
       </View>
 
-      {isEmpty ? (
-        <View style={rentStyles.emptyContainer}>
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#073051"
+          style={{ marginTop: 20 }}
+        />
+      ) : isEmpty ? (
+        <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
+          contentContainerStyle={rentStyles.emptyContainer}
+        >
           <EmptyStateIcon />
           <Text style={rentStyles.emptyText}>
             Whoops......Looks like there's {"\n"}nothing here.
           </Text>
-        </View>
+        </ScrollView>
       ) : (
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
           contentContainerStyle={{
             marginLeft: 25,
             marginTop: 20,

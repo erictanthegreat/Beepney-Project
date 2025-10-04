@@ -51,7 +51,7 @@ export default class FareCalculator extends Component {
     originSuggestions: [],
     destinationSuggestions: [],
     IdType: "Regular",
-    discountTypes: ["Regular"], // Always start with Regular
+    discountTypes: ["Regular"],
   };
 
   async componentDidMount() {
@@ -88,7 +88,6 @@ export default class FareCalculator extends Component {
     }
   };
 
-  //Fetch address suggestions
   fetchSuggestions = async (query, type) => {
     if (!query.trim()) {
       this.setState({ [`${type}Suggestions`]: [] });
@@ -109,7 +108,6 @@ export default class FareCalculator extends Component {
     }
   };
 
-  // Fetch only allowed discount types
   fetchDiscountTypes = async () => {
     const allowedTypes = ["Student", "PWD", "Senior Citizen", "Solo Parent"];
     try {
@@ -132,7 +130,6 @@ export default class FareCalculator extends Component {
           allowedTypes.includes(t)
         );
 
-        // Always prepend "Regular"
         const finalTypes = ["Regular", ...filteredTypes];
 
         this.setState({ discountTypes: finalTypes });

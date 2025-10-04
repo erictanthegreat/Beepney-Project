@@ -89,7 +89,6 @@ export default function ProfileSubmission() {
     }
   };
 
-  // central fetch function used on mount and when screen gains focus
   const fetchUserAndRole = useCallback(async () => {
     try {
       const {
@@ -102,7 +101,6 @@ export default function ProfileSubmission() {
       }
       setCurrentUserId(session.user.id);
 
-      // Try to get role directly from profiles (authoritative)
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("username, role")
@@ -112,18 +110,16 @@ export default function ProfileSubmission() {
       if (!profileError && profile) {
         setFullName(profile.username ?? null);
 
-        // normalize role to lowercase if present
         if (profile.role && typeof profile.role === "string") {
           const normalized = profile.role.toLowerCase();
           if (normalized === "commuter" || normalized === "driver") {
             setUserType(normalized);
-            // done — role determined
+
             return;
           }
         }
       }
 
-      // Fallback: check commuterprofiles/driverprofiles explicitly
       const { data: commuter } = await supabase
         .from("commuterprofiles")
         .select("id")
@@ -148,12 +144,10 @@ export default function ProfileSubmission() {
     }
   }, []);
 
-  // run once on mount
   useEffect(() => {
     fetchUserAndRole();
   }, [fetchUserAndRole]);
 
-  // refresh whenever screen focus changes (so role changes applied elsewhere will reflect)
   useFocusEffect(
     useCallback(() => {
       fetchUserAndRole();
@@ -189,7 +183,7 @@ export default function ProfileSubmission() {
         back_id_url: backUrl,
         submission_type:
           idType || (userType === "commuter" ? "Student" : "Jeepney"),
-        type: userType ?? "commuter", 
+        type: userType ?? "commuter",
         status: "Pending",
       };
 
@@ -212,13 +206,13 @@ export default function ProfileSubmission() {
     if (step === 1) {
       await handleSubmitIDs();
     } else {
-      console.log("Navigating, userType =", userType); // debug
+      console.log("Navigating, userType =", userType);
       if (userType === "driver") {
         router.push("/(driver)/Home");
       } else if (userType === "commuter") {
         router.push("/(commuter)/Home");
       } else {
-        router.push("/Home"); // fallback
+        router.push("/Home");
       }
     }
   };
@@ -259,7 +253,7 @@ export default function ProfileSubmission() {
                     ? ["Jeepney", "UV Express", "Tricycle"]
                     : ["Student", "PWD", "Senior Citizen", "Solo Parent"]
                 }
-                value={idType} // <-- works now
+                value={idType}
                 onSelect={(value) => setIdType(value)}
                 isOpen={openDropdown === 1}
                 onToggle={(open) => handleToggle(1, open)}

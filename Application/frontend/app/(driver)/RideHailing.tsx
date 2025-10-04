@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Text,
   View,
@@ -8,10 +8,13 @@ import {
   Alert,
   Modal,
   TouchableOpacity,
+  RefreshControl,
+  ListRenderItemInfo,
 } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import TricyCallCard from "@/components/TricyCallCard";
+import EmptyStateIcon from "../../assets/images/empty.svg";
 import { supabase } from "scripts/supabase";
 
 export default function RideHailingDriver() {
@@ -19,72 +22,80 @@ export default function RideHailingDriver() {
   const [loading, setLoading] = useState(true);
   const [selectedRide, setSelectedRide] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchRidesWithUsers = useCallback(async () => {
+    try {
+      if (!refreshing) setLoading(true);
+
+      const { data: ridesData, error: ridesError } = await supabase
+        .from("tricycall")
+        .select(
+          "id, pick_up, destination, fare_price, user_id, payment_method, status"
+        );
+
+      if (ridesError) throw ridesError;
+
+      if (!ridesData || ridesData.length === 0) {
+        setRides([]);
+        setLoading(false);
+        return;
+      }
+
+      const userIds = ridesData.map((r) => r.user_id).filter(Boolean);
+
+      let profilesData: any[] = [];
+      if (userIds.length > 0) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .in("id", userIds);
+        if (error) throw error;
+        profilesData = data || [];
+      }
+
+      const merged = ridesData.map((ride) => {
+        const fullName = profilesData.find(
+          (p) => p.id === ride.user_id
+        )?.username;
+        let anonymized = "Unknown";
+
+        if (fullName) {
+          const parts = fullName.split(" ");
+          anonymized =
+            parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}.`;
+        }
+
+        return {
+          ...ride,
+          username: anonymized,
+          payment_method_label:
+            ride.payment_method === "cash"
+              ? "Cash"
+              : ride.payment_method === "cashless"
+                ? "Cashless"
+                : "Unknown",
+        };
+      });
+
+      setRides(merged);
+    } catch (err) {
+      console.error("Error fetching rides:", err);
+      Alert.alert("Error", "Failed to fetch rides. Try again later.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [refreshing]);
 
   useEffect(() => {
-    const fetchRidesWithUsers = async () => {
-      setLoading(true);
-      try {
-        const { data: ridesData, error: ridesError } = await supabase
-          .from("tricycall")
-          .select(
-            "id, pick_up, destination, fare_price, user_id, payment_method, status"
-          );
-
-        if (ridesError) throw ridesError;
-
-        if (!ridesData || ridesData.length === 0) {
-          setRides([]);
-          setLoading(false);
-          return;
-        }
-
-        const userIds = ridesData.map((r) => r.user_id).filter(Boolean);
-
-        let profilesData: any[] = [];
-        if (userIds.length > 0) {
-          const { data, error } = await supabase
-            .from("profiles")
-            .select("id, username")
-            .in("id", userIds);
-          if (error) throw error;
-          profilesData = data || [];
-        }
-
-        const merged = ridesData.map((ride) => {
-          const fullName = profilesData.find(
-            (p) => p.id === ride.user_id
-          )?.username;
-          let anonymized = "Unknown";
-
-          if (fullName) {
-            const parts = fullName.split(" ");
-            anonymized =
-              parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}.`;
-          }
-
-          return {
-            ...ride,
-            username: anonymized,
-            payment_method_label:
-              ride.payment_method === "cash"
-                ? "Cash"
-                : ride.payment_method === "cashless"
-                  ? "Cashless"
-                  : "Unknown",
-          };
-        });
-
-        setRides(merged);
-      } catch (err) {
-        console.error("Error fetching rides:", err);
-        Alert.alert("Error", "Failed to fetch rides. Try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRidesWithUsers();
-  }, []);
+  }, [fetchRidesWithUsers]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchRidesWithUsers();
+  }, [fetchRidesWithUsers]);
 
   const handleCardPress = (ride: any) => {
     setSelectedRide(ride);
@@ -136,11 +147,39 @@ export default function RideHailingDriver() {
           style={{ marginTop: 20 }}
         />
       ) : rides.length === 0 ? (
-        <Text style={{ textAlign: "center", marginTop: 20 }}>
-          No rides available
-        </Text>
+        <FlatList
+          data={[]} // Empty data still enables refresh
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <EmptyStateIcon />
+              <Text style={styles.emptyText}>
+                Whoops......Looks like there's {"\n"}nothing here.
+              </Text>
+            </View>
+          }
+          contentContainerStyle={{ flexGrow: 1 }}
+          renderItem={function (
+            info: ListRenderItemInfo<any>
+          ): React.ReactElement | null {
+            throw new Error("Function not implemented.");
+          }}
+        />
       ) : (
         <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
           data={rides}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
@@ -159,6 +198,7 @@ export default function RideHailingDriver() {
         />
       )}
 
+      {/* Ride Details Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -283,5 +323,18 @@ const styles = StyleSheet.create({
   acceptButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    marginBottom: 100,
+    alignItems: "center",
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 15,
+    marginTop: 15,
+    fontFamily: "Poppins",
+    color: "#595959",
   },
 });

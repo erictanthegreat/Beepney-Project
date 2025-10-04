@@ -8,7 +8,11 @@ import {
   TextInput,
   Animated,
   Modal,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+
 import { supabase } from "scripts/supabase";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
@@ -62,6 +66,8 @@ const calculateTricycleFare = (
 };
 
 export default function RideHailing() {
+  const navigation = useNavigation();
+
   const bottomSheetRef = useRef<any>(null);
   const mapCameraRef = useRef<any>(null);
 
@@ -105,6 +111,7 @@ export default function RideHailing() {
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [assignedDriver, setAssignedDriver] = useState<any | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Get user location
   useEffect(() => {
@@ -329,29 +336,94 @@ export default function RideHailing() {
     } else {
       setWaitingModalVisible(false);
       setCurrentRideId(null);
+      setRideStatus("booking");
+      setAssignedDriver(null);
       alert("Ride canceled.");
     }
+  };
+
+  const checkRideStatus = async () => {
+    if (!currentRideId) return;
+
+    const { data, error } = await supabase
+      .from("tricycall")
+      .select("status, driver_id")
+      .eq("id", currentRideId)
+      .single();
+
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    if (data?.status === "accepted" && data.driver_id) {
+      // Fetch driver details
+      const { data: driverData, error: driverError } = await supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", data.driver_id)
+        .single();
+
+      if (!driverError && driverData) {
+        setAssignedDriver(driverData);
+      }
+
+      setRideStatus("toPickUp");
+      setWaitingModalVisible(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await checkRideStatus();
+    setRefreshing(false);
   };
 
   useEffect(() => {
     if (!currentRideId) return;
 
-    const interval = setInterval(async () => {
-      const { data, error } = await supabase
-        .from("tricycall")
-        .select("status, driver_id")
-        .eq("id", currentRideId)
-        .single();
+    const channel = supabase
+      .channel(`ride-status-${currentRideId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "tricycall",
+          filter: `id=eq.${currentRideId}`,
+        },
+        async (payload) => {
+          const newStatus = payload.new.status;
+          const driverId = payload.new.driver_id;
 
-      if (error) return console.log(error);
+          if (newStatus === "accepted" && driverId) {
+            const { data: driverData, error: driverError } = await supabase
+              .from("profiles")
+              .select("full_name, phone")
+              .eq("id", driverId)
+              .single();
 
-      if (data?.status === "accepted" && data.driver_id) {
-        setRideStatus("toPickUp");
-        clearInterval(interval);
-      }
-    }, 2000);
+            if (!driverError && driverData) {
+              setAssignedDriver(driverData);
+            }
 
-    return () => clearInterval(interval);
+            setRideStatus("toPickUp");
+            setWaitingModalVisible(false);
+          }
+
+          if (newStatus === "cancelled") {
+            alert("Your ride has been cancelled by the driver.");
+            setRideStatus("booking");
+            setWaitingModalVisible(false);
+            setCurrentRideId(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentRideId]);
 
   return (
@@ -470,219 +542,301 @@ export default function RideHailing() {
 
       {/* Bottom Sheet */}
       <BottomSheetContainer ref={bottomSheetRef}>
-        <Animated.View
-          style={{
-            height: contentAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1000, 1000],
-            }),
-            overflow: "hidden",
-          }}
+        <ScrollView
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
-          {waitingModalVisible ? (
-            <View style={rideStyles.waitcontainer}>
-              <Text
-                style={{ fontSize: 20, fontWeight: "bold", color: "#073051" }}
-              >
-                Waiting for a driver...
-              </Text>
-
-              {/* Pick Up */}
-              <View style={rideStyles.line}></View>
-              <View style={rideStyles.waitcont}>
-                <OriginIcon style={rideStyles.icon2} />
-                <Text style={rideStyles.pickText}>Pickup: </Text>
-              </View>
-              <Text style={rideStyles.waitText}>{pickupAddress}</Text>
-
-              {/* Destination */}
-              <View style={{ flexDirection: "row" }}>
-                <DestIcon style={rideStyles.icon2} />
-                <Text style={rideStyles.destText}>Destination:</Text>
-              </View>
-              <Text style={rideStyles.waitText}> {destinationAddress}</Text>
-
-              <View style={{ flexDirection: "row" }}>
-                <PaymentMethod style={rideStyles.icon2} />
-                <Text style={rideStyles.destText}>Payment Method</Text>
-              </View>
-              <Text style={rideStyles.waitText2}>
-                {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
-              </Text>
-              <View style={rideStyles.line}></View>
-
-              {/* Summary */}
-              <View style={rideStyles.waitSumm}>
-                <View style={rideStyles.iconWithText}>
-                  <KmIcon />
-                  <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
-                </View>
-
-                <View style={rideStyles.iconWithText}>
-                  <FareIcon />
-                  <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
-                </View>
-
-                <View style={rideStyles.iconWithText}>
-                  <SoloIcon width={20} height={15} color={"#CBCBCB"} />
-                  <Text style={rideStyles.waitSumText}> {selectedRide}</Text>
-                </View>
-              </View>
-
-              <CustomButton
-                title="Cancel Ride"
-                backgroundColor="#FF4D4F"
-                onPress={handleCancelRide}
-                style={{ marginTop: 80, alignSelf: "center" }}
-              />
-            </View>
-          ) : (
-            <View style={rideStyles.bsCont}>
-              <Text style={rideStyles.label}>Your Trip</Text>
-              {/* Pickup Destination Inputs */}
-              <TouchableOpacity
-                style={rideStyles.tripPoint}
-                onPress={() => focusOnMarker("pickup")}
-              >
-                <OriginIcon style={rideStyles.icon2} />
-                <Text style={rideStyles.pickText}>Pick Up</Text>
-              </TouchableOpacity>
-              <TextInput
-                style={[
-                  rideStyles.textInput,
-                  activeSelection === "pickup" && rideStyles.activeInput,
-                ]}
-                placeholder="Enter pickup address"
-                value={pickupInput}
-                onChangeText={(text) => {
-                  setPickupInput(text);
-                  if (debounceRef.current) clearTimeout(debounceRef.current);
-                  debounceRef.current = setTimeout(
-                    () => fetchSuggestions(text, "pickup"),
-                    300
-                  );
-                }}
-                onFocus={() => setActiveSelection("pickup")}
-              />
-              {pickupSuggestions.map((sug, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() => handleSuggestionSelect(sug, "pickup")}
+          <Animated.View
+            style={{
+              height: contentAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [1000, 1000],
+              }),
+              overflow: "hidden",
+            }}
+          >
+            {waitingModalVisible ? (
+              <View style={rideStyles.waitcontainer}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "bold", color: "#073051" }}
                 >
-                  <Text>{sug.place_name}</Text>
-                </TouchableOpacity>
-              ))}
+                  Waiting for a driver...
+                </Text>
 
-              <TouchableOpacity
-                style={rideStyles.tripPoint}
-                onPress={() => focusOnMarker("destination")}
-              >
-                <DestIcon style={rideStyles.icon2} />
-                <Text style={rideStyles.destText}>Destination</Text>
-              </TouchableOpacity>
-              <TextInput
-                style={[
-                  rideStyles.textInput,
-                  activeSelection === "destination" && rideStyles.activeInput2,
-                ]}
-                placeholder="Enter destination address"
-                value={destinationInput}
-                onChangeText={(text) => {
-                  setDestinationInput(text);
-                  if (debounceRef.current) clearTimeout(debounceRef.current);
-                  debounceRef.current = setTimeout(
-                    () => fetchSuggestions(text, "destination"),
-                    300
-                  );
-                }}
-                onFocus={() => setActiveSelection("destination")}
-              />
-              {destinationSuggestions.map((sug, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() => handleSuggestionSelect(sug, "destination")}
+                {/* Pick Up */}
+                <View style={rideStyles.line}></View>
+                <View style={rideStyles.waitcont}>
+                  <OriginIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.pickText}>Pickup: </Text>
+                </View>
+                <Text style={rideStyles.waitText}>{pickupAddress}</Text>
+
+                {/* Destination */}
+                <View style={{ flexDirection: "row" }}>
+                  <DestIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Destination:</Text>
+                </View>
+                <Text style={rideStyles.waitText}> {destinationAddress}</Text>
+
+                <View style={{ flexDirection: "row" }}>
+                  <PaymentMethod style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Payment Method</Text>
+                </View>
+                <Text style={rideStyles.waitText2}>
+                  {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
+                </Text>
+                <View style={rideStyles.line}></View>
+
+                {/* Summary */}
+                <View style={rideStyles.waitSumm}>
+                  <View style={rideStyles.iconWithText}>
+                    <KmIcon />
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
+                  </View>
+
+                  <View style={rideStyles.iconWithText}>
+                    <FareIcon />
+                    <Text style={rideStyles.waitSumText}>
+                      ₱{fare.toFixed(2)}
+                    </Text>
+                  </View>
+
+                  <View style={rideStyles.iconWithText}>
+                    <SoloIcon width={20} height={15} color={"#CBCBCB"} />
+                    <Text style={rideStyles.waitSumText}> {selectedRide}</Text>
+                  </View>
+                </View>
+
+                <CustomButton
+                  title="Cancel Ride"
+                  backgroundColor="#FF4D4F"
+                  onPress={handleCancelRide}
+                  style={{ marginTop: 80, alignSelf: "center" }}
+                />
+              </View>
+            ) : rideStatus === "toPickUp" && assignedDriver ? (
+              <View style={rideStyles.waitcontainer}>
+                <Text
+                  style={{ fontSize: 20, fontWeight: "bold", color: "#073051" }}
                 >
-                  <Text>{sug.place_name}</Text>
-                </TouchableOpacity>
-              ))}
+                  Driver on the way!
+                </Text>
 
-              <View style={rideStyles.line}></View>
+                {/* Driver Details */}
+                <View style={rideStyles.line}></View>
+                <Text>Driver Details</Text>
 
-              {/* Ride selection */}
-              <Text style={rideStyles.label}>Select Ride</Text>
-              <View style={rideStyles.rideCont}>
+                <View>
+                  <Text>Name:</Text>
+                  <Text>{assignedDriver.full_name || "N/A"}</Text>
+                </View>
+
+                <View>
+                  <Text>Contact:</Text>
+                  <Text>{assignedDriver.phone || "N/A"}</Text>
+                </View>
+
+                <View style={rideStyles.line}></View>
+
+                {/* Pick Up */}
+                <View style={rideStyles.waitcont}>
+                  <OriginIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.pickText}>Pickup: </Text>
+                </View>
+                <Text style={rideStyles.waitText}>{pickupAddress}</Text>
+
+                {/* Destination */}
+                <View style={{ flexDirection: "row" }}>
+                  <DestIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Destination:</Text>
+                </View>
+                <Text style={rideStyles.waitText}> {destinationAddress}</Text>
+
+                <View style={{ flexDirection: "row" }}>
+                  <PaymentMethod style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Payment Method</Text>
+                </View>
+                <Text style={rideStyles.waitText2}>
+                  {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
+                </Text>
+                <View style={rideStyles.line}></View>
+
+                {/* Summary */}
+                <View style={rideStyles.waitSumm}>
+                  <View style={rideStyles.iconWithText}>
+                    <KmIcon />
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
+                  </View>
+
+                  <View style={rideStyles.iconWithText}>
+                    <FareIcon />
+                    <Text style={rideStyles.waitSumText}>
+                      ₱{fare.toFixed(2)}
+                    </Text>
+                  </View>
+
+                  <View style={rideStyles.iconWithText}>
+                    <SoloIcon width={20} height={15} color={"#CBCBCB"} />
+                    <Text style={rideStyles.waitSumText}> {selectedRide}</Text>
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View style={rideStyles.bsCont}>
+                <Text style={rideStyles.label}>Your Trip</Text>
+                {/* Pickup Destination Inputs */}
                 <TouchableOpacity
+                  style={rideStyles.tripPoint}
+                  onPress={() => focusOnMarker("pickup")}
+                >
+                  <OriginIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.pickText}>Pick Up</Text>
+                </TouchableOpacity>
+                <TextInput
                   style={[
-                    rideStyles.rideButton,
-                    selectedRide === "solo" && rideStyles.selectedButton,
+                    rideStyles.textInput,
+                    activeSelection === "pickup" && rideStyles.activeInput,
                   ]}
-                  onPress={() => setSelectedRide("solo")}
-                >
-                  <SoloIcon
-                    width={30}
-                    height={30}
-                    color={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
-                  />
-                  <Text
-                    style={[
-                      rideStyles.text,
-                      selectedRide === "solo" && { color: "#0D99FF" },
-                    ]}
+                  placeholder="Enter pickup address"
+                  value={pickupInput}
+                  onChangeText={(text) => {
+                    setPickupInput(text);
+                    if (debounceRef.current) clearTimeout(debounceRef.current);
+                    debounceRef.current = setTimeout(
+                      () => fetchSuggestions(text, "pickup"),
+                      300
+                    );
+                  }}
+                  onFocus={() => setActiveSelection("pickup")}
+                />
+                {pickupSuggestions.map((sug, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => handleSuggestionSelect(sug, "pickup")}
                   >
-                    Solo
-                  </Text>
-                </TouchableOpacity>
+                    <Text>{sug.place_name}</Text>
+                  </TouchableOpacity>
+                ))}
 
                 <TouchableOpacity
-                  style={[
-                    rideStyles.rideButton,
-                    selectedRide === "group" && rideStyles.selectedButton,
-                  ]}
-                  onPress={() => setSelectedRide("group")}
+                  style={rideStyles.tripPoint}
+                  onPress={() => focusOnMarker("destination")}
                 >
-                  <GroupIcon
-                    width={30}
-                    height={30}
-                    color={selectedRide === "group" ? "#0D99FF" : "#CBCBCB"}
-                  />
-                  <Text
-                    style={[
-                      rideStyles.text,
-                      selectedRide === "group" && { color: "#0D99FF" },
-                    ]}
-                  >
-                    Group
-                  </Text>
+                  <DestIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Destination</Text>
                 </TouchableOpacity>
+                <TextInput
+                  style={[
+                    rideStyles.textInput,
+                    activeSelection === "destination" &&
+                      rideStyles.activeInput2,
+                  ]}
+                  placeholder="Enter destination address"
+                  value={destinationInput}
+                  onChangeText={(text) => {
+                    setDestinationInput(text);
+                    if (debounceRef.current) clearTimeout(debounceRef.current);
+                    debounceRef.current = setTimeout(
+                      () => fetchSuggestions(text, "destination"),
+                      300
+                    );
+                  }}
+                  onFocus={() => setActiveSelection("destination")}
+                />
+                {destinationSuggestions.map((sug, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => handleSuggestionSelect(sug, "destination")}
+                  >
+                    <Text>{sug.place_name}</Text>
+                  </TouchableOpacity>
+                ))}
+
+                <View style={rideStyles.line}></View>
+
+                {/* Ride selection */}
+                <Text style={rideStyles.label}>Select Ride</Text>
+                <View style={rideStyles.rideCont}>
+                  <TouchableOpacity
+                    style={[
+                      rideStyles.rideButton,
+                      selectedRide === "solo" && rideStyles.selectedButton,
+                    ]}
+                    onPress={() => setSelectedRide("solo")}
+                  >
+                    <SoloIcon
+                      width={30}
+                      height={30}
+                      color={selectedRide === "solo" ? "#0D99FF" : "#CBCBCB"}
+                    />
+                    <Text
+                      style={[
+                        rideStyles.text,
+                        selectedRide === "solo" && { color: "#0D99FF" },
+                      ]}
+                    >
+                      Solo
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      rideStyles.rideButton,
+                      selectedRide === "group" && rideStyles.selectedButton,
+                    ]}
+                    onPress={() => setSelectedRide("group")}
+                  >
+                    <GroupIcon
+                      width={30}
+                      height={30}
+                      color={selectedRide === "group" ? "#0D99FF" : "#CBCBCB"}
+                    />
+                    <Text
+                      style={[
+                        rideStyles.text,
+                        selectedRide === "group" && { color: "#0D99FF" },
+                      ]}
+                    >
+                      Group
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={rideStyles.line}></View>
+
+                {/* Trip summary */}
+                <View style={rideStyles.iconCont}>
+                  <View style={rideStyles.iconWithText}>
+                    <KmIcon />
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
+                  </View>
+                  <View style={rideStyles.iconWithText}>
+                    <ETAIcon />
+                    <Text style={rideStyles.text2}>{eta} min</Text>
+                  </View>
+                  <View style={rideStyles.iconWithText}>
+                    <FareIcon />
+                    <Text style={rideStyles.text2}>₱{fare.toFixed(2)}</Text>
+                  </View>
+                </View>
+
+                <CustomButton
+                  title="Confirm Hailing"
+                  backgroundColor="#073051"
+                  onPress={handleConfirmHailing}
+                  style={{ marginTop: 30, alignSelf: "center" }}
+                />
               </View>
-
-              <View style={rideStyles.line}></View>
-
-              {/* Trip summary */}
-              <View style={rideStyles.iconCont}>
-                <View style={rideStyles.iconWithText}>
-                  <KmIcon />
-                  <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
-                </View>
-                <View style={rideStyles.iconWithText}>
-                  <ETAIcon />
-                  <Text style={rideStyles.text2}>{eta} min</Text>
-                </View>
-                <View style={rideStyles.iconWithText}>
-                  <FareIcon />
-                  <Text style={rideStyles.text2}>₱{fare.toFixed(2)}</Text>
-                </View>
-              </View>
-
-              <CustomButton
-                title="Confirm Hailing"
-                backgroundColor="#073051"
-                onPress={handleConfirmHailing}
-                style={{ marginTop: 30, alignSelf: "center" }}
-              />
-            </View>
-          )}
-        </Animated.View>
+            )}
+          </Animated.View>
+        </ScrollView>
       </BottomSheetContainer>
     </View>
   );

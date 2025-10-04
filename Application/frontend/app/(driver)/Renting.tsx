@@ -11,7 +11,6 @@ import BackButton from "@/components/Backbutton";
 import PostIcon from "../../assets/images/add.svg";
 import EmptyStateIcon from "../../assets/images/empty.svg";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import ContactIcon from "@/assets/images/contact.svg";
 import LocationIcon from "@/assets/images/location.svg";
 import VehicleIcon from "@/assets/images/vehicle type.svg";
@@ -38,7 +37,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
     openDropdownIndex: null,
   };
 
-  // Toggle dropdown for CRUD
   toggleDropdown = (index: number) => {
     this.setState((prev) => ({
       openDropdownIndex: prev.openDropdownIndex === index ? null : index,
@@ -77,7 +75,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
     this.fetchRentals();
   }
 
-  // Delete rental
   deleteRental = async (index: number) => {
     const rentals = this.state.rentals[index];
     try {
@@ -100,7 +97,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
     }
   };
 
-  // Edit rental
   updatedRental = async (index: number, updatedRental: Rental) => {
     const rentals = this.state.rentals[index];
     try {
@@ -261,7 +257,7 @@ const rentStyles = StyleSheet.create({
   crud: { alignItems: "flex-end", position: "relative" },
   dropdown: {
     position: "absolute",
-    bottom: 30, // position above the button (button height + some spacing)
+    bottom: 30,
     right: 0,
     backgroundColor: "#fff",
     borderWidth: 1,
