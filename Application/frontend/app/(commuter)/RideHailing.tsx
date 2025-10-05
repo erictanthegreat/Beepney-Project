@@ -357,7 +357,6 @@ export default function RideHailing() {
     }
 
     if (data?.status === "accepted" && data.driver_id) {
-      // Fetch driver details
       const { data: driverData, error: driverError } = await supabase
         .from("profiles")
         .select("full_name, phone")

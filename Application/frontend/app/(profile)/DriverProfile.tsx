@@ -151,7 +151,10 @@ export default function DriverProfile() {
         <Text style={profStyles.header}>Profile</Text>
 
         {/* Switch back to Commuter */}
-        <TouchableOpacity onPress={handleSwitchToCommuter} style={profStyles.icon}>
+        <TouchableOpacity
+          onPress={handleSwitchToCommuter}
+          style={profStyles.icon}
+        >
           <CommuterIcon />
         </TouchableOpacity>
       </View>
@@ -212,7 +215,10 @@ export default function DriverProfile() {
             <TouchableOpacity
               style={[credStyles.card, { justifyContent: "center" }]}
               onPress={() =>
-                Alert.alert("Driver License Approved", "You can view your driver license images here.")
+                Alert.alert(
+                  "Driver License Approved",
+                  "You can view your driver license images here."
+                )
               }
             >
               <Image
@@ -223,7 +229,10 @@ export default function DriverProfile() {
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
-              style={[credStyles.card, { justifyContent: "center", alignItems: "center" }]}
+              style={[
+                credStyles.card,
+                { justifyContent: "center", alignItems: "center" },
+              ]}
               onPress={() => {
                 if (submission?.status === "pending") {
                   Alert.alert(

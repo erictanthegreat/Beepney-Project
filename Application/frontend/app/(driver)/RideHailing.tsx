@@ -32,7 +32,8 @@ export default function RideHailingDriver() {
         .from("tricycall")
         .select(
           "id, pick_up, destination, fare_price, user_id, payment_method, status"
-        );
+        )
+        .eq("status", "Pending");
 
       if (ridesError) throw ridesError;
 
@@ -92,6 +93,30 @@ export default function RideHailingDriver() {
     fetchRidesWithUsers();
   }, [fetchRidesWithUsers]);
 
+  // ✅ Real-time updates: auto-remove accepted rides
+  useEffect(() => {
+    const channel = supabase
+      .channel("tricycall-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "tricycall",
+        },
+        (payload) => {
+          if (payload.new.status === "Accepted") {
+            setRides((prev) => prev.filter((r) => r.id !== payload.new.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchRidesWithUsers();
@@ -111,16 +136,13 @@ export default function RideHailingDriver() {
           try {
             const { error } = await supabase
               .from("tricycall")
-              .update({ status: "accepted" })
+              .update({ status: "Accepted" })
               .eq("id", ride.id);
 
             if (error) throw error;
 
-            setRides((prev) =>
-              prev.map((r) =>
-                r.id === ride.id ? { ...r, status: "accepted" } : r
-              )
-            );
+            // ✅ Remove accepted ride from your list
+            setRides((prev) => prev.filter((r) => r.id !== ride.id));
 
             setModalVisible(false);
           } catch (err) {
