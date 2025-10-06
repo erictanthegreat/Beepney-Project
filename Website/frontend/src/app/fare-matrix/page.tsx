@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import Header from '../../components/ui/header';
-import { PlusIcon } from '@heroicons/react/24/outline';
-import Overlay3 from '../../components/ui/overlay3';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Header from "../../components/ui/header";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import Overlay3 from "../../components/ui/overlay3";
 
 interface FareMatrix {
   id: string;
@@ -18,16 +18,18 @@ interface FareMatrix {
 }
 
 const fareSections = [
-  { key: 'PUB', label: 'PUB City & Provincial' },
-  { key: 'PUJ', label: 'PUJ' },
-  { key: 'Others', label: 'Others' },
+  { key: "PUB", label: "PUB City & Provincial" },
+  { key: "PUJ", label: "PUJ" },
+  { key: "Tricycle", label: "Tricyle" },
+  { key: "Taxi", label: "Taxi" },
+  { key: "UV Express", label: "UV Express" },
 ];
 
 const FareMatrixPage = () => {
   const [matrices, setMatrices] = useState<FareMatrix[]>([]);
-  const [role, setRole] = useState<'commuter' | 'admin'>('commuter');
+  const [role, setRole] = useState<"commuter" | "admin">("commuter");
   const [overlayOpen, setOverlayOpen] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedSection, setSelectedSection] = useState("");
   const [selectedMatrix, setSelectedMatrix] = useState<FareMatrix | null>(null);
 
   useEffect(() => {
@@ -37,9 +39,9 @@ const FareMatrixPage = () => {
 
   const fetchMatrices = async () => {
     const { data, error } = await supabase
-      .from('fare_matrix')
-      .select('*')
-      .order('created_at', { ascending: true });
+      .from("fare_matrix")
+      .select("*")
+      .order("created_at", { ascending: true });
     if (!error && data) setMatrices(data);
   };
 
@@ -49,9 +51,9 @@ const FareMatrixPage = () => {
     } = await supabase.auth.getUser();
     if (user) {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
         .single();
       if (!error && data) setRole(data.role);
     }
@@ -76,16 +78,16 @@ const FareMatrixPage = () => {
         const timestamp = Date.now();
         const filePath = `fare-matrix/${selectedSection}/${timestamp}-${file.name}`;
         const { error: uploadError } = await supabase.storage
-          .from('beepney-bucket')
+          .from("beepney-bucket")
           .upload(filePath, file, { upsert: true });
 
         if (uploadError) {
-          alert('Error uploading file: ' + uploadError.message);
+          alert("Error uploading file: " + uploadError.message);
           return;
         }
 
         const { data: publicUrlData } = supabase.storage
-          .from('beepney-bucket')
+          .from("beepney-bucket")
           .getPublicUrl(filePath);
 
         fileUrl = publicUrlData.publicUrl;
@@ -94,14 +96,14 @@ const FareMatrixPage = () => {
 
       if (id) {
         const { error: updateError } = await supabase
-          .from('fare_matrix')
+          .from("fare_matrix")
           .update({
             title,
             description,
             ...(fileUrl && { file_url: fileUrl }),
             ...(fileName && { file_name: fileName }),
           })
-          .eq('id', id);
+          .eq("id", id);
 
         if (updateError) throw updateError;
       } else {
@@ -109,36 +111,38 @@ const FareMatrixPage = () => {
           data: { user },
         } = await supabase.auth.getUser();
 
-        const { error: insertError } = await supabase.from('fare_matrix').insert([
-          {
-            section: selectedSection,
-            title,
-            description,
-            file_url: fileUrl,
-            file_name: fileName,
-            uploaded_by: user?.id,
-          },
-        ]);
+        const { error: insertError } = await supabase
+          .from("fare_matrix")
+          .insert([
+            {
+              section: selectedSection,
+              title,
+              description,
+              file_url: fileUrl,
+              file_name: fileName,
+              uploaded_by: user?.id,
+            },
+          ]);
 
         if (insertError) throw insertError;
       }
 
       fetchMatrices();
     } catch (err) {
-      console.error('Unexpected error:', err);
-      alert('Something went wrong.');
+      console.error("Unexpected error:", err);
+      alert("Something went wrong.");
     }
 
     setOverlayOpen(false);
-    setSelectedSection('');
+    setSelectedSection("");
     setSelectedMatrix(null);
   };
 
   const handleDeleteFare = async (id: string) => {
-    const { error } = await supabase.from('fare_matrix').delete().eq('id', id);
+    const { error } = await supabase.from("fare_matrix").delete().eq("id", id);
 
     if (error) {
-      alert('Error deleting: ' + error.message);
+      alert("Error deleting: " + error.message);
     } else {
       fetchMatrices();
     }
@@ -162,7 +166,7 @@ const FareMatrixPage = () => {
   return (
     <>
       <Header />
-      <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
+      <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px] overflow-y-auto max-h-[calc(100vh-200px)] scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {fareSections.map(({ key, label }) => (
           <div key={key}>
             <h2 className="text-[32px] sm:text-[40px] font-bold text-[#073051] mb-6">
@@ -182,12 +186,14 @@ const FareMatrixPage = () => {
 
                     <div className="flex flex-col flex-1 min-w-0">
                       <p className="font-semibold text-[#073051] text-lg truncate">
-                        {key} Fare {idx + 1}{' '}
+                        {key} Fare {idx + 1}{" "}
                         <span className="text-[#595959] font-normal truncate">
                           ({m.title})
                         </span>
                       </p>
-                      <p className="text-sm text-gray-500 truncate">{m.file_name}</p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {m.file_name}
+                      </p>
                       <p className="text-xs text-gray-400 mt-2">
                         {new Date(m.created_at).toLocaleDateString()}
                       </p>
@@ -204,7 +210,7 @@ const FareMatrixPage = () => {
                   </div>
                 ))}
 
-              {role === 'admin' && (
+              {role === "admin" && (
                 <div
                   className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
                   onClick={() => handleAddFare(key)}

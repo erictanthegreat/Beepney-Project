@@ -141,7 +141,6 @@ export default function RideHailingDriver() {
 
             if (error) throw error;
 
-            // ✅ Remove accepted ride from your list
             setRides((prev) => prev.filter((r) => r.id !== ride.id));
 
             setModalVisible(false);
