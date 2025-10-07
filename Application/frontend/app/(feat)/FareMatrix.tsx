@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Linking,
+  Platform,
+} from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import { supabase } from "@/scripts/supabase";
@@ -18,7 +26,9 @@ interface FareMatrix {
 const fareSections = [
   { key: "PUB", label: "PUB City & Provincial" },
   { key: "PUJ", label: "PUJ" },
-  { key: "Others", label: "Others" },
+  { key: "Tricycle", label: "Tricyle" },
+  { key: "Taxi", label: "Taxi" },
+  { key: "UV Express", label: "UV Express" },
 ];
 
 export default function FareMatrix() {
@@ -59,9 +69,11 @@ export default function FareMatrix() {
       </View>
 
       {/* Scrollable Content */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 200 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
         {fareSections.map((section) => {
-          const sectionMatrices = matrices.filter((m) => m.section === section.key);
+          const sectionMatrices = matrices.filter(
+            (m) => m.section === section.key
+          );
           return (
             <View key={section.key}>
               <Text style={fmStyles.label}>{section.label}</Text>
@@ -77,7 +89,11 @@ export default function FareMatrix() {
                       {section.label} Fare {idx + 1} ({m.title})
                     </Text>
                     <Text style={fmStyles.cardFileName}>{m.file_name}</Text>
-                    {m.description ? <Text style={fmStyles.cardDescription}>{m.description}</Text> : null}
+                    {m.description ? (
+                      <Text style={fmStyles.cardDescription}>
+                        {m.description}
+                      </Text>
+                    ) : null}
                     <Text style={fmStyles.cardDate}>
                       {new Date(m.created_at).toLocaleDateString()}
                     </Text>
