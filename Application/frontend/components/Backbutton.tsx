@@ -1,9 +1,9 @@
-// components/BackButton.tsx
+
 import React from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import BackButtonIcon from "../assets/images/backbutton.svg";
-// or your SVGR-converted component
+
 
 export default function BackButton() {
   const router = useRouter();

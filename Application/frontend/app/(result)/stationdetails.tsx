@@ -14,6 +14,7 @@ interface StationDestination {
   count: number;
 }
 
+
 interface Vehicle {
   type: string;
   destination: string;
@@ -21,7 +22,7 @@ interface Vehicle {
 }
 
 export default function StationDetails() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams(); 
   const [station, setStation] = useState<any>(null);
   const [vehicleData, setVehicleData] = useState<Vehicle[]>([]);
 
@@ -32,6 +33,7 @@ export default function StationDetails() {
   }, [id]);
 
   const fetchStationDetails = async (stationId: string) => {
+ 
     const { data: stationData, error: stationError } = await supabase
       .from("stations")
       .select("*")
