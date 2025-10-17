@@ -1,4 +1,5 @@
 import React from "react";
+import { SendDirectSms } from "react-native-send-direct-sms";
 import {
   View,
   Text,
@@ -6,7 +7,10 @@ import {
   TouchableOpacity,
   Platform,
   Linking,
+  Alert,
+  PermissionsAndroid,
 } from "react-native";
+import * as Location from "expo-location";
 import { useLocalSearchParams } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
@@ -29,6 +33,47 @@ export default function SOS() {
     }
   };
 
+  // Function to request location and send SMS automatically
+  const sendHelpMessage = async () => {
+    try {
+      // Ask for location permission
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Location access is required to send your current location."
+        );
+        return;
+      }
+
+      // Get location
+      const location = await Location.getCurrentPositionAsync({});
+      const latitude = location.coords.latitude;
+      const longitude = location.coords.longitude;
+
+      // Construct message
+      const message = `🚨 HELP REQUEST 🚨\n\nI need assistance. Please send help to my current location:\nhttps://www.google.com/maps?q=${latitude},${longitude}`;
+
+      // Encode for URL
+      const smsBody = encodeURIComponent(message);
+
+      // Create SMS URL
+      const smsURL = Platform.select({
+        ios: `sms:${number}&body=${smsBody}`,
+        android: `sms:${number}?body=${smsBody}`,
+      });
+
+      // Open SMS app
+      await Linking.openURL(smsURL);
+    } catch (error) {
+      console.error("Error preparing SMS:", error);
+      Alert.alert(
+        "Error",
+        "Something went wrong while preparing the help message."
+      );
+    }
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <BackButton />
@@ -40,6 +85,7 @@ export default function SOS() {
         <Text style={styles.hotlineName}>{name}</Text>
         <Text style={styles.hotlineType}>({type})</Text>
         <Text style={styles.hotlineNumber}>{number}</Text>
+
         {/* Call or Report */}
         <View style={styles.actionsContainer}>
           {/* Call Button */}
@@ -55,7 +101,10 @@ export default function SOS() {
 
           {/* Report Button */}
           <View style={styles.actionItem}>
-            <TouchableOpacity style={styles.NotifButton}>
+            <TouchableOpacity
+              style={styles.NotifButton}
+              onPress={() => sendHelpMessage()}
+            >
               <ReportIcon />
             </TouchableOpacity>
             <Text style={styles.notifyText}>Report</Text>

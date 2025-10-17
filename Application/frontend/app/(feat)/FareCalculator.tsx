@@ -34,7 +34,7 @@ const baseFares: Record<string, number> = {
 
 const discounts: Record<string, number> = {
   Regular: 0,
-  Student: 0,
+  Student: 20,
   "Senior Citizen": 20,
   "Solo Parent": 20,
   PWD: 20,

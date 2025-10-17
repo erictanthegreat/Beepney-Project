@@ -1,9 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { Text, View, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking } from "react-native";
+import React, { useState, useCallback } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
+} from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import { supabase } from "@/scripts/supabase";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 interface Hotline {
   id: string;
@@ -34,25 +42,45 @@ const formatPHNumber = (num: string): string => {
 
 export default function SOS() {
   const [hotlines, setHotlines] = useState<Hotline[]>([]);
-
-  useEffect(() => {
-    fetchHotlines();
-  }, []);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchHotlines = async () => {
-    const { data, error } = await supabase
-      .from<"hotlines", Hotline>("hotlines")
-      .select("*");
+    try {
+      if (!refreshing) setLoading(true);
 
-    if (error) {
-      console.error("Error fetching hotlines:", error.message);
-    } else {
+      const { data, error } = await supabase
+        .from<"hotlines", Hotline>("hotlines")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching hotlines:", error.message);
+        return;
+      }
+
       setHotlines(data || []);
+    } catch (e) {
+      console.error("Unexpected error fetching hotlines:", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  // Refetch when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchHotlines();
+    }, [])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchHotlines();
+  }, []);
+
   const handlePressHotline = (hotline: Hotline) => {
-    // Navigate to (feat)/SOS with hotline details
     router.push({
       pathname: "/(feat)/SOS",
       params: {
@@ -63,7 +91,9 @@ export default function SOS() {
       },
     });
   };
-  
+
+  const isEmpty = !loading && hotlines.length === 0;
+
   return (
     <View style={{ flex: 1 }}>
       {/* Static Header */}
@@ -75,31 +105,73 @@ export default function SOS() {
         </Text>
       </View>
 
-      {/* Scrollable Content */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {contactSections.map((section) => {
-          const sectionHotlines = hotlines.filter((h) => h.section === section.key);
-          return (
-            <View key={section.key}>
-              <Text style={soStyles.label}>{section.label}</Text>
-              {sectionHotlines.map((h) => (
-                <TouchableOpacity
-                  key={h.id}
-                  style={soStyles.cardContainer}
-                  onPress={() => handlePressHotline(h)}
-                >
-                  <View style={soStyles.dot} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={soStyles.cardTitle}>{h.name}</Text>
-                    <Text style={soStyles.cardNumber}>{formatPHNumber(h.number)}</Text>
-                    {h.address ? <Text style={soStyles.cardAddress}>{h.address}</Text> : null}
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          );
-        })}
-      </ScrollView>
+      {loading ? (
+        <ActivityIndicator
+          size="large"
+          color="#073051"
+          style={{ marginTop: 20 }}
+        />
+      ) : isEmpty ? (
+        <ScrollView
+          contentContainerStyle={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 100,
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
+        >
+          <Text style={{ fontSize: 15, color: "#595959" }}>
+            No available hotlines.
+          </Text>
+        </ScrollView>
+      ) : (
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 100 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
+        >
+          {contactSections.map((section) => {
+            const sectionHotlines = hotlines.filter(
+              (h) => h.section === section.key
+            );
+            return (
+              <View key={section.key}>
+                <Text style={soStyles.label}>{section.label}</Text>
+                {sectionHotlines.map((h) => (
+                  <TouchableOpacity
+                    key={h.id}
+                    style={soStyles.cardContainer}
+                    onPress={() => handlePressHotline(h)}
+                  >
+                    <View style={soStyles.dot} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={soStyles.cardTitle}>{h.name}</Text>
+                      <Text style={soStyles.cardNumber}>
+                        {formatPHNumber(h.number)}
+                      </Text>
+                      {h.address ? (
+                        <Text style={soStyles.cardAddress}>{h.address}</Text>
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 }
