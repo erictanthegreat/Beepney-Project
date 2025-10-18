@@ -33,10 +33,8 @@ export default function SOS() {
     }
   };
 
-  // Function to request location and send SMS automatically
   const sendHelpMessage = async () => {
     try {
-      // Ask for location permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
@@ -46,24 +44,19 @@ export default function SOS() {
         return;
       }
 
-      // Get location
       const location = await Location.getCurrentPositionAsync({});
       const latitude = location.coords.latitude;
       const longitude = location.coords.longitude;
 
-      // Construct message
       const message = `🚨 HELP REQUEST 🚨\n\nI need assistance. Please send help to my current location:\nhttps://www.google.com/maps?q=${latitude},${longitude}`;
 
-      // Encode for URL
       const smsBody = encodeURIComponent(message);
 
-      // Create SMS URL
       const smsURL = Platform.select({
         ios: `sms:${number}&body=${smsBody}`,
         android: `sms:${number}?body=${smsBody}`,
       });
 
-      // Open SMS app
       await Linking.openURL(smsURL);
     } catch (error) {
       console.error("Error preparing SMS:", error);
@@ -176,13 +169,13 @@ const styles = StyleSheet.create({
   },
   callText: {
     marginTop: 8,
-    color: "red",
+    color: "#0FD150",
     fontWeight: "bold",
     fontFamily: "Poppins",
   },
   notifyText: {
     marginTop: 8,
-    color: "#1E86DA",
+    color: "#E53935",
     fontWeight: "bold",
     fontFamily: "Poppins",
   },

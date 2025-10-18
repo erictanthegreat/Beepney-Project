@@ -1,11 +1,22 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, Dimensions } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+  TouchableWithoutFeedback,
+} from "react-native";
 import { router } from "expo-router";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
 import BackButton from "@/components/Backbutton";
 import LocationIcon from "../../assets/images/filter.svg";
 import { supabase } from "@/scripts/supabase";
+import FindIcon from "../../assets/images/find.svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -23,30 +34,59 @@ export interface Station {
 
 const VEHICLE_COLORS: { [key: string]: string } = {
   TRICYCLE: "#FF8C00",
-  JEEPNEY: "#4169E1",
-  VAN: "#32CD32",
+  JEEPNEY: "#FFD54F",
+  VAN: "#B8ADAD",
   ALL: "#0D99FF",
 };
 
 export default class Stations extends Component {
   state = {
     stations: [] as Station[],
+    filteredStations: [] as Station[],
     mapReady: false,
+    searchQuery: "",
   };
 
   async componentDidMount() {
     const stations = await this.fetchStationsMobile();
-    this.setState({ stations });
+    this.setState({ stations, filteredStations: stations });
   }
 
   fetchStationsMobile = async (): Promise<Station[]> => {
-    const { data, error } = await supabase.from("stations").select("*");
-    if (error) {
-      console.error("Error fetching stations:", error);
+    const { data: allDestinations, error: destError } = await supabase
+      .from("station_destinations")
+      .select("station_id, destination");
+
+    if (destError) {
+      console.error("Error fetching destinations:", destError);
       return [];
     }
 
-    return (data || [])
+    const uniqueStationIds = Array.from(
+      new Set(allDestinations.map((d) => d.station_id))
+    );
+
+    const { data: stationsData, error: stationsError } = await supabase
+      .from("stations")
+      .select("*")
+      .in("id", uniqueStationIds);
+
+    if (stationsError) {
+      console.error("Error fetching stations:", stationsError);
+      return [];
+    }
+
+    const destinationsMap: { [key: string]: string[] } = {};
+    (allDestinations || []).forEach((dest: any) => {
+      if (!destinationsMap[dest.station_id]) {
+        destinationsMap[dest.station_id] = [];
+      }
+      if (dest.destination) {
+        destinationsMap[dest.station_id].push(dest.destination);
+      }
+    });
+
+    return (stationsData || [])
       .filter((s: any) => s.coordinates && s.coordinates.length === 2)
       .map((s: any) => ({
         id: s.id,
@@ -54,7 +94,56 @@ export default class Stations extends Component {
         location: s.location,
         coordinates: s.coordinates as [number, number],
         vehicleTypes: s.vehicle_types || [],
+        destinations: destinationsMap[s.id] || [],
       }));
+  };
+
+  handleSearch = async (text: string) => {
+    this.setState({ searchQuery: text });
+
+    if (text.trim() === "") {
+      const allStations = await this.fetchStationsMobile();
+      this.setState({ filteredStations: allStations });
+      return;
+    }
+
+    const { data: matchingDestinations, error } = await supabase
+      .from("station_destinations")
+      .select("station_id, destination")
+      .ilike("destination", `%${text}%`);
+
+    if (error) {
+      console.error("Error searching destinations:", error);
+      return;
+    }
+
+    const matchedStationIds = matchingDestinations.map((d) => d.station_id);
+
+    const { data: matchedStations } = await supabase
+      .from("stations")
+      .select("*")
+      .in("id", matchedStationIds);
+
+    const destinationsMap: { [key: string]: string[] } = {};
+    (matchingDestinations || []).forEach((dest: any) => {
+      if (!destinationsMap[dest.station_id]) {
+        destinationsMap[dest.station_id] = [];
+      }
+      destinationsMap[dest.station_id].push(dest.destination);
+    });
+
+    const finalStations = (matchedStations || [])
+      .filter((s: any) => s.coordinates && s.coordinates.length === 2)
+      .map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        location: s.location,
+        coordinates: s.coordinates as [number, number],
+        vehicleTypes: s.vehicle_types || [],
+        destinations: destinationsMap[s.id] || [],
+      }));
+
+    this.setState({ filteredStations: finalStations });
   };
 
   handleMapReady = () => {
@@ -87,7 +176,7 @@ export default class Stations extends Component {
   };
 
   render() {
-    const { stations } = this.state;
+    const { filteredStations } = this.state;
 
     return (
       <View style={statStyles.container}>
@@ -103,7 +192,7 @@ export default class Stations extends Component {
             />
           )}
 
-          {stations.map((station) => (
+          {filteredStations.map((station) => (
             <React.Fragment key={station.id}>
               <Mapbox.PointAnnotation
                 id={station.id}
@@ -149,6 +238,18 @@ export default class Stations extends Component {
             </View>
           ))}
         </View>
+
+        <View style={statStyles.search}>
+          <FindIcon />
+          <TextInput
+            style={statStyles.text}
+            placeholder="Where to go?"
+            value={this.state.searchQuery}
+            onChangeText={this.handleSearch}
+            returnKeyType="search"
+            blurOnSubmit={true}
+          />
+        </View>
       </View>
     );
   }
@@ -171,14 +272,14 @@ const statStyles = StyleSheet.create({
     paddingHorizontal: 13,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 70,
   },
   title: {
     fontWeight: "bold",
     fontSize: 25,
     color: "#073051",
     paddingTop: 50,
-    textAlign: "center",
+    alignItems: "center",
     flex: 1,
   },
   labelContainer: {
@@ -215,7 +316,7 @@ const statStyles = StyleSheet.create({
   },
   legendContainer: {
     position: "absolute",
-    top: 150,
+    top: 200,
     right: 15,
     backgroundColor: "white",
     borderRadius: 8,
@@ -248,5 +349,25 @@ const statStyles = StyleSheet.create({
   legendText: {
     fontSize: 12,
     color: "#073051",
+  },
+  search: {
+    borderWidth: 1,
+    backgroundColor: "white",
+    borderColor: "#CBCBCB",
+    elevation: 5,
+    borderRadius: 15,
+    width: "90%",
+    alignSelf: "center",
+    position: "absolute",
+    top: 120,
+    height: 50,
+    paddingHorizontal: 15,
+    gap: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  text: {
+    fontFamily: "Poppins",
+    width: "90%",
   },
 });

@@ -67,7 +67,7 @@ const calculateTricycleFare = (
 
 export default function RideHailing() {
   const navigation = useNavigation();
-
+  const contentAnim = useRef(new Animated.Value(0)).current;
   const bottomSheetRef = useRef<any>(null);
   const mapCameraRef = useRef<any>(null);
 
@@ -84,7 +84,6 @@ export default function RideHailing() {
   const [selectedRide, setSelectedRide] = useState<"solo" | "group" | null>(
     null
   );
-  const contentAnim = useRef(new Animated.Value(0)).current;
 
   const [pickupAddress, setPickupAddress] = useState<string>("");
   const [destinationAddress, setDestinationAddress] = useState<string>("");
