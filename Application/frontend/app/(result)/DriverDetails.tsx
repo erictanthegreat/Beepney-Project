@@ -4,8 +4,9 @@ import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import ProfileIcon from "../../assets/images/prof.svg";
 import DriverDetails from "@/components/DriverDetailsCard";
+import CustomButton from "@/components/ui/CustomButton";
 import { supabase } from "@/scripts/supabase";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
 interface DriverProfile {
   contact_number: string;
@@ -217,6 +218,12 @@ export default function DriverDets() {
               operatorAddress={driver.operator_address}
               eligible={driver.eligible}
             />
+
+            <CustomButton
+              title="Report this Driver"
+              style={rentStyles.report}
+              onPress={() => router.push("/(feat)/Complaints")}
+            ></CustomButton>
           </>
         ) : (
           <View style={rentStyles.errorContainer}>
@@ -290,5 +297,8 @@ const rentStyles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginTop: 10,
+  },
+  report: {
+    backgroundColor: "#E53935",
   },
 });
