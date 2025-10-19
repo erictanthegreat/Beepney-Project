@@ -19,6 +19,7 @@ interface Hotline {
   name: string;
   number: string;
   address?: string;
+  aor: string;
   created_at: string;
 }
 
@@ -52,7 +53,7 @@ export default function SOS() {
       const { data, error } = await supabase
         .from<"hotlines", Hotline>("hotlines")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) {
         console.error("Error fetching hotlines:", error.message);
@@ -87,6 +88,7 @@ export default function SOS() {
         name: hotline.name,
         type: hotline.section,
         number: hotline.number,
+        aor: hotline.aor,
         address: hotline.address || "",
       },
     });
@@ -164,6 +166,10 @@ export default function SOS() {
                       {h.address ? (
                         <Text style={soStyles.cardAddress}>{h.address}</Text>
                       ) : null}
+
+                      {h.aor ? (
+                        <Text style={soStyles.cardAOR}>AOR: {h.aor}</Text>
+                      ) : null}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -232,5 +238,12 @@ const soStyles = StyleSheet.create({
     fontSize: 12,
     color: "#9A9A9A",
     marginTop: 2,
+  },
+
+  cardAOR: {
+    fontSize: 12,
+    color: "#9A9A9A",
+    marginTop: 2,
+    fontWeight: "bold",
   },
 });

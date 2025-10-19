@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import Header from '../../components/ui/header';
-import Overlay from '../../components/ui/overlay';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Header from "../../components/ui/header";
+import Overlay from "../../components/ui/overlay";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface Hotline {
   id: string;
@@ -12,28 +12,30 @@ interface Hotline {
   name: string;
   number: string;
   address?: string;
+  aor: string;
   created_at: string;
 }
 
 type NewHotline = {
   name: string;
   number: string;
+  aor: string;
   address?: string;
 };
 
 const contactSections = [
-  { key: 'Ambulance', label: 'Ambulance' },
-  { key: 'Police', label: 'Police Station' },
-  { key: 'LTFRB', label: 'LTFRB' },
+  { key: "Ambulance", label: "Ambulance" },
+  { key: "Police", label: "Police Station" },
+  { key: "LTFRB", label: "LTFRB" },
 ];
 
 // Format Philippine numbers to +63XXX-XXX-YYYY
 const formatPHNumber = (num: string): string => {
-  const digits = num.replace(/\D/g, '');
-  if (digits.startsWith('63') && digits.length === 12) {
+  const digits = num.replace(/\D/g, "");
+  if (digits.startsWith("63") && digits.length === 12) {
     return `+63${digits.slice(2, 5)}-${digits.slice(5, 8)}-${digits.slice(8)}`;
   }
-  if (digits.length === 10 && digits.startsWith('9')) {
+  if (digits.length === 12 && digits.startsWith("9")) {
     return `+63${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   }
   return num;
@@ -42,9 +44,9 @@ const formatPHNumber = (num: string): string => {
 const ContactsPage: React.FC = () => {
   const [hotlines, setHotlines] = useState<Hotline[]>([]);
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('');
+  const [selectedSection, setSelectedSection] = useState("");
   const [editingHotline, setEditingHotline] = useState<Hotline | null>(null);
-  const [role, setRole] = useState<string>('commuter'); // track user role
+  const [role, setRole] = useState<string>("commuter"); // track user role
 
   useEffect(() => {
     fetchHotlines();
@@ -52,18 +54,22 @@ const ContactsPage: React.FC = () => {
   }, []);
 
   const fetchHotlines = async () => {
-    const { data, error } = await supabase.from<'hotlines', Hotline>('hotlines').select('*');
-    if (error) console.error('Error fetching hotlines:', error.message);
+    const { data, error } = await supabase
+      .from<"hotlines", Hotline>("hotlines")
+      .select("*");
+    if (error) console.error("Error fetching hotlines:", error.message);
     else setHotlines(data || []);
   };
 
   const fetchUserRole = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
         .single();
 
       if (!error && data?.role) {
@@ -85,23 +91,26 @@ const ContactsPage: React.FC = () => {
   };
 
   const handleSaveHotline = async (hotlineData: NewHotline) => {
-    if (role !== 'admin') return; // safeguard
+    if (role !== "admin") return; // safeguard
     if (editingHotline) {
       const { data, error } = await supabase
-        .from('hotlines')
+        .from("hotlines")
         .update(hotlineData)
-        .eq('id', editingHotline.id)
+        .eq("id", editingHotline.id)
         .select();
 
-      if (error) console.error('Error updating hotline:', error.message);
-      else setHotlines((prev) => prev.map(h => h.id === editingHotline.id ? data![0] : h));
+      if (error) console.error("Error updating hotline:", error.message);
+      else
+        setHotlines((prev) =>
+          prev.map((h) => (h.id === editingHotline.id ? data![0] : h))
+        );
     } else {
       const { data, error } = await supabase
-        .from('hotlines')
+        .from("hotlines")
         .insert([{ section: selectedSection, ...hotlineData }])
         .select();
 
-      if (error) console.error('Error adding hotline:', error.message);
+      if (error) console.error("Error adding hotline:", error.message);
       else setHotlines((prev) => [...prev, ...(data || [])]);
     }
 
@@ -110,13 +119,13 @@ const ContactsPage: React.FC = () => {
   };
 
   const handleDeleteHotline = async (id: string) => {
-    if (role !== 'admin') return; // safeguard
-    const { error } = await supabase.from('hotlines').delete().eq('id', id);
+    if (role !== "admin") return; // safeguard
+    const { error } = await supabase.from("hotlines").delete().eq("id", id);
 
     if (error) {
-      console.error('Error deleting hotline:', error.message);
+      console.error("Error deleting hotline:", error.message);
     } else {
-      setHotlines((prev) => prev.filter(h => h.id !== id));
+      setHotlines((prev) => prev.filter((h) => h.id !== id));
     }
 
     setIsOverlayOpen(false);
@@ -138,7 +147,7 @@ const ContactsPage: React.FC = () => {
 
               <div
                 className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
-                style={{ gridAutoRows: '1fr' }}
+                style={{ gridAutoRows: "1fr" }}
               >
                 {sectionHotlines.map((h, idx) => (
                   <div
@@ -150,18 +159,30 @@ const ContactsPage: React.FC = () => {
 
                     <div className="flex flex-col">
                       <h3 className="font-semibold text-[#000000] text-lg">
-                        {key} Hotline {idx + 1}{' '}
-                        <span className="text-[#595959] font-normal">({h.name})</span>
+                        {key} Hotline {idx + 1}{" "}
+                        <span className="text-[#595959] font-normal">
+                          ({h.name})
+                        </span>
                       </h3>
 
-                      <p className="text-[#0F76C2] text-sm">{formatPHNumber(h.number)}</p>
+                      <p className="text-[#0F76C2] text-sm">
+                        {formatPHNumber(h.number)}
+                      </p>
 
-                      {h.address && <p className="text-[#9A9A9A] text-sm">{h.address}</p>}
+                      {h.address && (
+                        <p className="text-[#9A9A9A] text-sm">{h.address}</p>
+                      )}
+
+                      {h.aor && (
+                        <p className="text-[#9A9A9A] text-sm">
+                          <strong>AOR:</strong> {h.aor}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
 
-                {role === 'admin' && ( // add button only for admins
+                {role === "admin" && ( // add button only for admins
                   <div
                     className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
                     onClick={() => openOverlay(key)}

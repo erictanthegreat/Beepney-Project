@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from "react";
 
 /**
  * @typedef {Object} OverlayProps
  * @property {boolean} isOpen
  * @property {() => void} onClose
  * @property {string} sectionName
- * @property {(hotline: { name: string; number: string; address?: string }) => void} onSave
- * @property {{ id?: string; name: string; number: string; address?: string }} [initialData]
+ * @property {(hotline: { name: string; number: string; aor: string; address?: string }) => void} onSave
+ * @property {{ id?: string; name: string; number: string; address?: string; aor?: string }} [initialData]
  * @property {(hotlineId: string) => void} [onDelete]
  * @property {string} role
  */
@@ -14,60 +14,78 @@ import React, { useState, useEffect } from 'react'
 /**
  * @param {OverlayProps} props
  */
-export default function Overlay({ isOpen, onClose, sectionName, onSave, initialData, onDelete, role }) {
-  const [name, setName] = useState('')
-  const [number, setNumber] = useState('')
-  const [address, setAddress] = useState('')
-  const [countryCode, setCountryCode] = useState('+63')
+export default function Overlay({
+  isOpen,
+  onClose,
+  sectionName,
+  onSave,
+  initialData,
+  onDelete,
+  role,
+}) {
+  const [name, setName] = useState("");
+  const [number, setNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [countryCode, setCountryCode] = useState("+63");
+  const [areaofRange, setAreaofrange] = useState("");
 
   useEffect(() => {
     if (initialData) {
-      setName(initialData.name || '')
-      const digits = initialData.number.replace(/\D/g, '')
-      if (digits.startsWith('63')) {
-        setCountryCode('+63')
-        setNumber(digits.slice(2))
+      setName(initialData.name || "");
+      const digits = (initialData.number || "").replace(/\D/g, "");
+      if (digits.startsWith("63")) {
+        setCountryCode("+63");
+        setNumber(digits.slice(2));
       } else {
-        setNumber(digits)
+        setNumber(digits);
       }
-      setAddress(initialData.address || '')
+      setAreaofrange(initialData.aor || "");
+      setAddress(initialData.address || "");
     } else {
-      setName('')
-      setNumber('')
-      setAddress('')
-      setCountryCode('+63')
+      setName("");
+      setNumber("");
+      setAddress("");
+      setCountryCode("+63");
+      setAreaofrange("");
     }
-  }, [initialData, isOpen])
+  }, [initialData, isOpen]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleSave = () => {
-    if (!name || !number) return
-    const fullNumber = `${countryCode}${number.replace(/\D/g, '')}`
-    onSave({ name, number: fullNumber, address })
-  }
+    if (!name || !number) return;
+    const fullNumber = `${countryCode}${number.replace(/\D/g, "")}`;
+    onSave({ name, number: fullNumber, address, aor: areaofRange });
+  };
 
   const handleDelete = () => {
     if (initialData?.id && onDelete) {
-      if (confirm('Are you sure you want to delete this hotline?')) {
-        onDelete(initialData.id)
+      if (confirm("Are you sure you want to delete this hotline?")) {
+        onDelete(initialData.id);
       }
     }
-  }
+  };
 
-  const isAdmin = role === 'admin'
+  const isAdmin = role === "admin";
 
   return (
     <div className="overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="overlayContent bg-white p-6 rounded-[30px] shadow-lg w-[400px]">
         <h2 className="text-[#073051] text-[32px] sm:text-[36px] font-bold mb-6">
-          {initialData ? (isAdmin ? 'Edit Hotline' : 'Hotline Details') : 'Add Hotline'} – {sectionName}
+          {initialData
+            ? isAdmin
+              ? "Edit Hotline"
+              : "Hotline Details"
+            : "Add Hotline"}{" "}
+          – {sectionName}
         </h2>
 
         {/* Form */}
         <div className="space-y-4">
           <div>
-            <label className="block text-[18px] font-medium text-[#073051] mb-2">Hotline Name</label>
+            <label className="block text-[18px] font-medium text-[#073051] mb-2">
+              Hotline Name
+            </label>
             <input
               type="text"
               placeholder="Enter hotline name"
@@ -79,7 +97,9 @@ export default function Overlay({ isOpen, onClose, sectionName, onSave, initialD
           </div>
 
           <div>
-            <label className="block text-[18px] font-medium text-[#073051] mb-2">Hotline Number</label>
+            <label className="block text-[18px] font-medium text-[#073051] mb-2">
+              Hotline Number
+            </label>
             <div className="flex space-x-2">
               <select
                 value={countryCode}
@@ -105,12 +125,28 @@ export default function Overlay({ isOpen, onClose, sectionName, onSave, initialD
           </div>
 
           <div>
-            <label className="block text-[18px] font-medium text-[#073051] mb-2">Address</label>
+            <label className="block text-[18px] font-medium text-[#073051] mb-2">
+              Address
+            </label>
             <input
               type="text"
-              placeholder="Enter address (optional)"
+              placeholder="Enter address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
+              disabled={!isAdmin}
+            />
+          </div>
+
+          <div>
+            <label className="block text-[18px] font-medium text-[#073051] mb-2">
+              Area of Range
+            </label>
+            <input
+              type="text"
+              placeholder="Enter Area of Range (FOR POLICE STATIONS ONLY)"
+              value={areaofRange}
+              onChange={(e) => setAreaofrange(e.target.value)}
               className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
               disabled={!isAdmin}
             />
@@ -135,7 +171,7 @@ export default function Overlay({ isOpen, onClose, sectionName, onSave, initialD
               onClick={onClose}
               className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
             >
-              {isAdmin ? 'Cancel' : 'Close'}
+              {isAdmin ? "Cancel" : "Close"}
             </button>
             {isAdmin && (
               <button
@@ -150,5 +186,5 @@ export default function Overlay({ isOpen, onClose, sectionName, onSave, initialD
         </div>
       </div>
     </div>
-  )
+  );
 }
