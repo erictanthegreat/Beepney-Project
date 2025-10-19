@@ -1,5 +1,8 @@
 {
-  "plugins": [
-    "expo-router"
-  ]
+  "expo": {
+    "plugins": ["expo-router"],
+    "android": {
+      "package": "com.BEEPNEY.Beepney"
+    }
+  }
 }
