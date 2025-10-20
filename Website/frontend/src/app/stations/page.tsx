@@ -2,9 +2,9 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import Header from "../../components/ui/header";
-import { ArrowLeftIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, MapPinIcon, MagnifyingGlassIcon, FunnelIcon } from "@heroicons/react/24/outline";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
@@ -237,6 +237,12 @@ const StationsPage = () => {
 
   // NEW: user role
   const [role, setRole] = useState<"commuter" | "admin">("commuter");
+  
+  const [showFilter, setShowFilter] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+
 
   const resetStationData = () => {
     setIsAddingStation(false);
@@ -333,11 +339,51 @@ const StationsPage = () => {
     stationMarkersRef.current.forEach((m) => m.remove());
     stationMarkersRef.current.clear();
 
-    stationLandmarks.forEach((station: Station) => {
+    const getColor = (types: string[], activeFilters: string[]) => {
+      const isAll = activeFilters.includes("All");
+
+      if (isAll) {
+        if (types.length > 1) return "#6F42C1"; // purple for multi-type
+        if (types.includes("TRICYCLE")) return "#FFA500";
+        if (types.includes("JEEPNEY")) return "#007BFF";
+        if (types.includes("VAN")) return "#28A745";
+        return "#9A9A9A";
+      }
+
+      const filteredType = activeFilters.find((t) => types.includes(t));
+      if (filteredType === "TRICYCLE") return "#FFA500";
+      if (filteredType === "JEEPNEY") return "#007BFF";
+      if (filteredType === "VAN") return "#28A745";
+
+      return "#9A9A9A";
+    };
+
+    // 🔹 Apply search term filtering
+    const filteredStations = stationLandmarks.filter((station) => {
+      const term = searchTerm.toLowerCase();
+      return (
+        station.name.toLowerCase().includes(term) ||
+        station.location.toLowerCase().includes(term) ||
+        station.destinations.some((d) =>
+          d.destination.toLowerCase().includes(term)
+        )
+      );
+    });
+
+    filteredStations.forEach((station: Station) => {
       if (!station?.coordinates || station.coordinates.length !== 2) return;
 
+      // Filter logic
+      const showStation =
+        activeFilters.includes("All") ||
+        station.vehicleTypes.some((t) => activeFilters.includes(t));
+
+      if (!showStation) return;
+
       const id = station.id as string | number;
-      const marker = new mapboxgl.Marker({ color: "#1E86DA" })
+      const color = getColor(station.vehicleTypes, activeFilters);
+
+      const marker = new mapboxgl.Marker({ color })
         .setLngLat(station.coordinates)
         .addTo(map);
 
@@ -346,12 +392,11 @@ const StationsPage = () => {
 
         if (markerRef.current) markerRef.current.remove();
 
-        const draggable = role !== "commuter"; // only admin draggable
+        const draggable = role !== "commuter";
 
-        // only create marker if coordinates exist
         if (station.coordinates) {
           markerRef.current = new mapboxgl.Marker({
-            color: "#1E86DA",
+            color,
             draggable,
           })
             .setLngLat(station.coordinates)
@@ -384,7 +429,7 @@ const StationsPage = () => {
 
       stationMarkersRef.current.set(id, marker);
     });
-  }, [stationLandmarks, role]);
+  }, [stationLandmarks, role, activeFilters, searchTerm]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -805,12 +850,86 @@ const StationsPage = () => {
           )}
         </aside>
 
-        {/* Map */}
+        {/* Map Container with Overlay */}
         <div
-          className="ml-[425px] flex-1 h-full"
-          ref={mapContainerRef}
+          className="relative ml-[425px] flex-1 h-full"
           style={{ height: `calc(100vh - ${headerHeight}px)` }}
-        />
+        >
+          {/* 🔍 Search + Filter Overlay */}
+          <div className="absolute top-4 left-4 z-50 flex flex-col items-start gap-2">
+            {/* Search Bar */}
+            <div className="relative w-full max-w-md md:w-[320px] min-w-0 bg-white rounded-[15px] shadow-md">
+              <input
+                type="text"
+                placeholder="Search here"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full border border-[#D1D1D1] rounded-[15px] px-4 py-2 pr-10 text-black placeholder-[#9A9A9A] outline-none"
+              />
+              <button className="absolute inset-y-0 right-2 flex items-center justify-center text-[#073051]">
+                <MagnifyingGlassIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Filter Button */}
+            <div className="relative">
+              <button
+                className="group flex items-center space-x-2 border border-[#D1D1D1] bg-white px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
+                onClick={() => setShowFilter((prev) => !prev)}
+              >
+                <FunnelIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
+              </button>
+
+              {showFilter && (
+                <div className="absolute left-0 mt-2 w-48 bg-white shadow-lg rounded-lg p-3 space-y-3 text-sm text-gray-700">
+                  {["All", "TRICYCLE", "JEEPNEY", "VAN"].map((type) => (
+                    <label key={type} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={activeFilters.includes(type)}
+                        onChange={() => {
+                          if (type === "All") {
+                            setActiveFilters(["All"]);
+                          } else {
+                            setActiveFilters((prev) => {
+                              const newFilters = prev.includes(type)
+                                ? prev.filter((f) => f !== type)
+                                : [...prev.filter((f) => f !== "All"), type];
+                              return newFilters.length === 0 ? ["All"] : newFilters;
+                            });
+                          }
+                        }}
+                      />
+                      <span
+                        className={`flex items-center gap-2 ${
+                          activeFilters.includes(type)
+                        }`}
+                      >
+                        <span
+                          className={`w-3 h-3 rounded-full ${
+                            type === "All"
+                              ? "bg-[#6F42C1]"
+                              : type === "TRICYCLE"
+                              ? "bg-[#FFA500]"
+                              : type === "JEEPNEY"
+                              ? "bg-[#007BFF]"
+                              : type === "VAN"
+                              ? "bg-[#28A745]"
+                              : "bg-gray-400"
+                          }`}
+                        />
+                        {type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actual Map */}
+          <div ref={mapContainerRef} className="w-full h-full" />
+        </div>
       </main>
     </>
   );
