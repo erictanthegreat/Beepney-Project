@@ -7,6 +7,7 @@ import { supabase } from "@/scripts/supabase";
 
 interface DriverInfo {
   id: string;
+  user_name: string;
   operator_name: string;
   plate_number: string;
   phone_number?: string;
@@ -35,7 +36,14 @@ export default function DriverQR() {
         return;
       }
 
-      // fetch the driver's profile
+      const userName =
+        user.user_metadata?.name ||
+        user.user_metadata?.full_name ||
+        user.user_metadata?.display_name ||
+        user.email ||
+        "Unknown User";
+
+      // Fetch driver profile data
       const { data, error } = await supabase
         .from("driverprofiles")
         .select("id, operator_name, plate_number, phone_number, full_address")
@@ -45,13 +53,16 @@ export default function DriverQR() {
       if (error) {
         Alert.alert("Error", "Failed to load driver information");
       } else if (data) {
-        setDriverInfo(data);
+        setDriverInfo({
+          ...data,
+          user_name: userName, // ✅ store user name in state
+        });
 
-        // QR data (include more fields if you want commuters to see them)
+        // ✅ Include user's name in QR data
         const qrData = {
           screen: "DriverQR",
           id: data.id,
-          operatorName: data.operator_name,
+          userName,
           plateNumber: data.plate_number,
           phoneNumber: data.phone_number,
           fullAddress: data.full_address,
@@ -104,9 +115,7 @@ export default function DriverQR() {
             />
             {driverInfo && (
               <View style={styles.driverInfoContainer}>
-                <Text style={styles.driverName}>
-                  {driverInfo.operator_name}
-                </Text>
+                <Text style={styles.driverName}>{driverInfo.user_name}</Text>
                 <Text style={styles.plateNumber}>
                   Plate: {driverInfo.plate_number}
                 </Text>
@@ -118,6 +127,11 @@ export default function DriverQR() {
                 {driverInfo.full_address && (
                   <Text style={styles.subInfo}>
                     Address: {driverInfo.full_address}
+                  </Text>
+                )}
+                {driverInfo.operator_name && (
+                  <Text style={styles.subInfo}>
+                    Operator: {driverInfo.operator_name}
                   </Text>
                 )}
               </View>

@@ -163,6 +163,7 @@ export default function PostRental() {
             containerStyle={{ width: "90%" }}
             value={location}
             onChangeText={setLocation}
+            editable={!id}
           />
 
           {services.map((service, index) => (
