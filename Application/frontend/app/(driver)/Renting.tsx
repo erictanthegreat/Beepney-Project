@@ -15,6 +15,7 @@ import ContactIcon from "@/assets/images/contact.svg";
 import LocationIcon from "@/assets/images/location.svg";
 import VehicleIcon from "@/assets/images/vehicle type.svg";
 import CRUD from "@/assets/images/crud.svg";
+import Messages from "../../assets/images/receive.svg";
 import { supabase } from "@/scripts/supabase";
 
 type Rental = {
@@ -71,6 +72,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
       console.error("Unexpected error fetching rentals", e);
     }
   }
+
   componentDidMount() {
     this.fetchRentals();
   }
@@ -88,7 +90,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
         console.error("Error deleting rentals:", error.message);
         return;
       }
-      56;
+
       const newRentals = [...this.state.rentals];
       newRentals.splice(index, 1);
       this.setState({ rentals: newRentals, openDropdownIndex: null });
@@ -125,6 +127,10 @@ export default class Renting extends Component<{}, DriverRentingState> {
     }
   };
 
+  openInbox = () => {
+    router.push("/(feat)/Inbox");
+  };
+
   render() {
     const { rentals, openDropdownIndex } = this.state;
     const isEmpty = rentals.length === 0;
@@ -133,11 +139,15 @@ export default class Renting extends Component<{}, DriverRentingState> {
       <View style={{ flex: 1 }}>
         {/* Header & Post Rental Button */}
         <View>
-          <BackButton />
+          <View style={rentStyles.topButtons}>
+            <BackButton />
+            <TouchableOpacity onPress={this.openInbox}>
+              <Messages style={rentStyles.icon} />
+            </TouchableOpacity>
+          </View>
+
           <Text style={rentStyles.header}>Jeepney/Van Rental</Text>
-          <Text
-            style={{ marginLeft: 25, color: "#595959", fontFamily: "Poppins" }}
-          >
+          <Text style={rentStyles.subheader}>
             Book Your Barkada Trip with Beepney
           </Text>
           <TouchableOpacity
@@ -254,7 +264,14 @@ export default class Renting extends Component<{}, DriverRentingState> {
 }
 
 const rentStyles = StyleSheet.create({
-  crud: { alignItems: "flex-end", position: "relative" },
+  topButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  crud: {
+    alignItems: "flex-end",
+    position: "relative",
+  },
   dropdown: {
     position: "absolute",
     bottom: 30,
@@ -281,6 +298,15 @@ const rentStyles = StyleSheet.create({
     marginTop: 10,
     color: "#073051",
   },
+  subheader: {
+    marginLeft: 25,
+    color: "#595959",
+    fontFamily: "Poppins",
+  },
+  icon: {
+    marginTop: 58,
+    marginRight: 20,
+  },
   label: {
     color: "#073051",
     fontSize: 17,
@@ -299,7 +325,6 @@ const rentStyles = StyleSheet.create({
     marginLeft: 20,
     borderRadius: 15,
     height: 40,
-
     alignItems: "center",
     maxWidth: "50%",
     borderColor: "#073051",

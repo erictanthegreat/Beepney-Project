@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Text,
   View,
@@ -19,10 +19,11 @@ import LocationIcon from "@/assets/images/location.svg";
 import VehicleIcon from "@/assets/images/vehicle type.svg";
 import Call from "@/assets/images/call-rental.svg";
 import Chat from "@/assets/images/chat.svg";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "@/scripts/supabase";
 
 type Rental = {
+  id: string; // Added ID for chat navigation
   name: string;
   contact: string;
   location: string;
@@ -36,6 +37,20 @@ export default function Renting() {
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+      }
+    };
+    getCurrentUser();
+  }, []);
 
   const fetchRentals = async () => {
     try {
@@ -53,6 +68,7 @@ export default function Renting() {
 
       if (data) {
         const rentals: Rental[] = data.map((row: any) => ({
+          id: row.id, // Include the rental ID
           name: row.station_name,
           contact: row.contact_number,
           location: row.location,
@@ -93,6 +109,25 @@ export default function Renting() {
     Linking.openURL(url).catch((err) =>
       console.error("Error making call:", err)
     );
+  };
+
+  const openChat = (rental: Rental) => {
+    if (!userId) {
+      console.error("User not logged in");
+      // Optional: Show an alert to the user
+      // Alert.alert("Error", "Please log in to start a chat");
+      return;
+    }
+
+    // Navigate to chat screen with rental info
+    router.push({
+      pathname: "/(feat)/Chat",
+      params: {
+        rentalId: rental.id,
+        rentalName: rental.name,
+        userId: userId,
+      },
+    });
   };
 
   const isEmpty = !loading && rentals.length === 0;
@@ -197,7 +232,7 @@ export default function Renting() {
                 <TouchableOpacity onPress={() => makeaPhonecall(item.contact)}>
                   <Call />
                 </TouchableOpacity>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => openChat(item)}>
                   <Chat />
                 </TouchableOpacity>
               </View>

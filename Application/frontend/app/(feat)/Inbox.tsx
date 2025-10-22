@@ -1,0 +1,358 @@
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native";
+import { router, useFocusEffect } from "expo-router";
+import BackButton from "@/components/Backbutton";
+import EmptyStateIcon from "../../assets/images/empty.svg";
+import { supabase } from "@/scripts/supabase";
+
+type Conversation = {
+  userId: string;
+  userName: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unreadCount: number;
+  rentalId: string;
+  rentalName: string;
+};
+
+export default function Inbox() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCurrentUser();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (currentUserId) {
+        fetchConversations();
+      }
+    }, [currentUserId])
+  );
+
+  const getCurrentUser = async () => {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error("Error getting user:", error);
+      return;
+    }
+
+    if (user) {
+      console.log("Current user ID:", user.id);
+      setCurrentUserId(user.id);
+    }
+  };
+
+  const fetchConversations = async () => {
+    if (!currentUserId) return;
+
+    try {
+      if (!refreshing) setLoading(true);
+
+      // ✅ Fetch all messages where user is sender OR receiver
+      const { data: messages, error } = await supabase
+        .from("messages")
+        .select("*")
+        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+        .order("created_at", { ascending: false });
+
+      console.log("Fetched messages:", messages);
+      if (error) {
+        console.error("Error fetching messages:", error);
+        return;
+      }
+
+      if (!messages || messages.length === 0) {
+        console.log("No messages found for user:", currentUserId);
+        setConversations([]);
+        return;
+      }
+
+      // ✅ Group messages by the other participant
+      const conversationMap = new Map<string, Conversation>();
+
+      for (const msg of messages) {
+        const isSender = msg.sender_id === currentUserId;
+        const otherUserId = isSender ? msg.receiver_id : msg.sender_id;
+
+        // If we already added this user, skip unless this message is newer
+        const existing = conversationMap.get(otherUserId);
+        if (
+          !existing ||
+          new Date(msg.created_at) > new Date(existing.lastMessageTime)
+        ) {
+          // Count unread messages from this user
+          const { count } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("sender_id", otherUserId)
+            .eq("receiver_id", currentUserId)
+            .eq("is_read", false);
+
+          conversationMap.set(otherUserId, {
+            userId: otherUserId,
+            userName: `User ${otherUserId.slice(0, 6)}`,
+            lastMessage: msg.message,
+            lastMessageTime: msg.created_at,
+            unreadCount: count || 0,
+            rentalId: msg.rental_id || "",
+            rentalName: msg.rental_name || "Rental",
+          });
+        }
+      }
+
+      const conversationList = Array.from(conversationMap.values());
+      setConversations(conversationList);
+    } catch (e) {
+      console.error("Unexpected error fetching conversations:", e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchConversations();
+  }, [currentUserId]);
+
+  const openChat = (conversation: Conversation) => {
+    router.push({
+      pathname: "/(feat)/Chat",
+      params: {
+        rentalId: conversation.userId,
+        rentalName: conversation.userName,
+        userId: currentUserId,
+      },
+    });
+  };
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  };
+
+  const renderConversation = ({ item }: { item: Conversation }) => (
+    <TouchableOpacity
+      style={styles.conversationCard}
+      onPress={() => openChat(item)}
+    >
+      <View style={styles.avatarContainer}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {item.userName.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.conversationContent}>
+        <View style={styles.conversationHeader}>
+          <Text style={styles.userName}>{item.userName}</Text>
+          <Text style={styles.timeText}>
+            {formatTime(item.lastMessageTime)}
+          </Text>
+        </View>
+        <View style={styles.messageRow}>
+          <Text
+            style={[
+              styles.lastMessage,
+              item.unreadCount > 0 && styles.unreadMessage,
+            ]}
+            numberOfLines={1}
+          >
+            {item.lastMessage}
+          </Text>
+          {item.unreadCount > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>{item.unreadCount}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <BackButton />
+        <Text style={styles.header}>Messages</Text>
+        <Text style={styles.subheader}>Your customer conversations</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#073051" />
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <BackButton />
+      <Text style={styles.header}>Messages</Text>
+      <Text style={styles.subheader}>Your customer conversations</Text>
+
+      {conversations.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <EmptyStateIcon />
+          <Text style={styles.emptyText}>
+            No messages yet{"\n"}Customers will appear here when they message
+            you
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={conversations}
+          renderItem={renderConversation}
+          keyExtractor={(item) => item.userId}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#073051"]}
+            />
+          }
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
+  },
+  header: {
+    fontWeight: "bold",
+    fontSize: 25,
+    marginLeft: 20,
+    marginTop: 10,
+    color: "#073051",
+  },
+  subheader: {
+    marginLeft: 25,
+    marginBottom: 15,
+    color: "#595959",
+    fontFamily: "Poppins",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 100,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 15,
+    marginTop: 15,
+    color: "#666",
+  },
+  listContainer: {
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+  },
+  conversationCard: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  avatarContainer: {
+    marginRight: 15,
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#0D99FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  conversationContent: {
+    flex: 1,
+  },
+  conversationHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  userName: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#073051",
+  },
+  timeText: {
+    fontSize: 12,
+    color: "#999",
+  },
+  messageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  lastMessage: {
+    fontSize: 15,
+    color: "#666",
+    flex: 1,
+  },
+  unreadMessage: {
+    fontWeight: "600",
+    color: "#000",
+  },
+  unreadBadge: {
+    backgroundColor: "#0D99FF",
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    marginLeft: 10,
+  },
+  unreadCount: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+});
