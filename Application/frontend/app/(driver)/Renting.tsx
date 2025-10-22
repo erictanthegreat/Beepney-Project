@@ -46,10 +46,24 @@ export default class Renting extends Component<{}, DriverRentingState> {
 
   async fetchRentals() {
     try {
+      // Get the current logged-in user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("No logged-in user found:", userError?.message);
+        return;
+      }
+
+      // Only fetch rentals created by this user
       const { data, error } = await supabase
         .from("rental")
         .select("*")
+        .eq("user_id", user.id) // ✅ Only rentals made by this user
         .order("created_at", { ascending: false });
+
       if (error) {
         console.error("Error fetching rentals:", error.message);
         return;
@@ -67,6 +81,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
             : [],
         vehicleType: row.types_of_vehicles,
       }));
+
       this.setState({ rentals });
     } catch (e) {
       console.error("Unexpected error fetching rentals", e);

@@ -73,7 +73,18 @@ export default function PostRental() {
 
   const saveRental = async () => {
     try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error("Error fetching user:", userError.message);
+        return;
+      }
+
       if (id) {
+        // Update existing rental
         const { error } = await supabase
           .from("rental")
           .update({
@@ -90,8 +101,10 @@ export default function PostRental() {
           return;
         }
       } else {
+        // Insert new rental
         const { error } = await supabase.from("rental").insert([
           {
+            user_id: user?.id,
             station_name: name,
             contact_number: contact,
             location,
