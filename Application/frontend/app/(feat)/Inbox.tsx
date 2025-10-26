@@ -14,13 +14,12 @@ import EmptyStateIcon from "../../assets/images/empty.svg";
 import { supabase } from "@/scripts/supabase";
 
 type Conversation = {
+  id: string;
   userId: string;
   userName: string;
   lastMessage: string;
   lastMessageTime: string;
   unreadCount: number;
-  rentalId: string;
-  rentalName: string;
 };
 
 export default function Inbox() {
@@ -42,19 +41,16 @@ export default function Inbox() {
   );
 
   const getCurrentUser = async () => {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
 
     if (error) {
       console.error("Error getting user:", error);
       return;
     }
 
-    if (user) {
-      console.log("Current user ID:", user.id);
-      setCurrentUserId(user.id);
+    if (data?.user) {
+      console.log("Current user ID:", data.user.id);
+      setCurrentUserId(data.user.id);
     }
   };
 
@@ -64,59 +60,63 @@ export default function Inbox() {
     try {
       if (!refreshing) setLoading(true);
 
-      // ✅ Fetch all messages where user is sender OR receiver
-      const { data: messages, error } = await supabase
-        .from("messages")
+      // Fetch all conversations where user is either driver or commuter
+      const { data: convos, error } = await supabase
+        .from("conversations")
         .select("*")
-        .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+        .or(`driver_id.eq.${currentUserId},commuter_id.eq.${currentUserId}`)
         .order("created_at", { ascending: false });
 
-      console.log("Fetched messages:", messages);
       if (error) {
-        console.error("Error fetching messages:", error);
+        console.error("Error fetching conversations:", error);
         return;
       }
 
-      if (!messages || messages.length === 0) {
-        console.log("No messages found for user:", currentUserId);
+      if (!convos || convos.length === 0) {
         setConversations([]);
         return;
       }
 
-      // ✅ Group messages by the other participant
-      const conversationMap = new Map<string, Conversation>();
+      const conversationList: Conversation[] = [];
 
-      for (const msg of messages) {
-        const isSender = msg.sender_id === currentUserId;
-        const otherUserId = isSender ? msg.receiver_id : msg.sender_id;
+      for (const convo of convos) {
+        // Determine the other participant
+        let otherUserId =
+          convo.driver_id === currentUserId
+            ? convo.commuter_id
+            : convo.driver_id;
 
-        // If we already added this user, skip unless this message is newer
-        const existing = conversationMap.get(otherUserId);
-        if (
-          !existing ||
-          new Date(msg.created_at) > new Date(existing.lastMessageTime)
-        ) {
-          // Count unread messages from this user
-          const { count } = await supabase
-            .from("messages")
-            .select("*", { count: "exact", head: true })
-            .eq("sender_id", otherUserId)
-            .eq("receiver_id", currentUserId)
-            .eq("is_read", false);
+        // Fetch latest message
+        const { data: latestMsg, error: latestError } = await supabase
+          .from("Messages")
+          .select("*")
+          .eq("conversation_id", convo.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
 
-          conversationMap.set(otherUserId, {
-            userId: otherUserId,
-            userName: `User ${otherUserId.slice(0, 6)}`,
-            lastMessage: msg.message,
-            lastMessageTime: msg.created_at,
-            unreadCount: count || 0,
-            rentalId: msg.rental_id || "",
-            rentalName: msg.rental_name || "Rental",
-          });
+        if (latestError && latestError.code !== "PGRST116") {
+          console.error("Error fetching latest message:", latestError);
         }
+
+        // Count unread messages from other participant
+        const { count: unreadCount } = await supabase
+          .from("Messages")
+          .select("*", { count: "exact", head: true })
+          .eq("conversation_id", convo.id)
+          .eq("sender_id", otherUserId)
+          .eq("is_read", false);
+
+        conversationList.push({
+          id: convo.id,
+          userId: otherUserId,
+          userName: `User ${otherUserId?.slice(0, 6) || "Unknown"}`,
+          lastMessage: latestMsg?.message || "(No messages yet)",
+          lastMessageTime: latestMsg?.created_at || convo.created_at,
+          unreadCount: unreadCount || 0,
+        });
       }
 
-      const conversationList = Array.from(conversationMap.values());
       setConversations(conversationList);
     } catch (e) {
       console.error("Unexpected error fetching conversations:", e);
@@ -135,7 +135,7 @@ export default function Inbox() {
     router.push({
       pathname: "/(feat)/Chat",
       params: {
-        rentalId: conversation.userId,
+        rentalId: conversation.id, // ✅ pass rentalId for Chat
         rentalName: conversation.userName,
         userId: currentUserId,
       },
@@ -228,7 +228,7 @@ export default function Inbox() {
         <FlatList
           data={conversations}
           renderItem={renderConversation}
-          keyExtractor={(item) => item.userId}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
           refreshControl={
             <RefreshControl
