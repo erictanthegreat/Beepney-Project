@@ -93,7 +93,6 @@ export default function RideHailingDriver() {
     fetchRidesWithUsers();
   }, [fetchRidesWithUsers]);
 
-  // ✅ Real-time updates: auto-remove accepted rides
   useEffect(() => {
     const channel = supabase
       .channel("tricycall-updates")
@@ -169,7 +168,7 @@ export default function RideHailingDriver() {
         />
       ) : rides.length === 0 ? (
         <FlatList
-          data={[]} // Empty data still enables refresh
+          data={[]} 
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
