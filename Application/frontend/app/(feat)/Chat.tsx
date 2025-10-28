@@ -28,12 +28,22 @@ type Message = {
 };
 
 export default function Chat() {
-  const { rentalId, rentalName, userId } = useLocalSearchParams<{
-    rentalId: string;
+  const {
+    conversationId: paramConversationId,
+    rentalId,
+    rentalName,
+    userId,
+  } = useLocalSearchParams<{
+    conversationId?: string;
+    rentalId?: string;
     rentalName: string;
     userId: string;
   }>();
 
+  // Handle both commuter (rentalId) & driver (conversationId)
+  const [conversationId, setConversationId] = useState<string | null>(
+    paramConversationId ?? rentalId ?? null
+  );
   const [driverId, setDriverId] = useState<string | null>(null);
   const [commuterId, setCommuterId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,63 +51,107 @@ export default function Chat() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Initialize chat participants (driver & commuter)
+  // Init chat logic
   useEffect(() => {
     if (!userId) return;
-    initChatParticipants();
-  }, [userId, rentalId]);
+    initChat();
+  }, [userId]);
 
-  const initChatParticipants = async () => {
+  const initChat = async () => {
     try {
-      let actualDriverId: string | null = null;
-      let actualCommuterId: string | null = null;
+      let finalConvId = paramConversationId ?? null;
 
-      if (rentalId) {
-        // commuter view
-        const { data, error } = await supabase
+      // Commuter case (comes with rentalId)
+      if (!finalConvId && rentalId) {
+        const { data: rentalData, error: rentalError } = await supabase
           .from("rental")
           .select("user_id")
           .eq("id", rentalId)
-          .maybeSingle(); // avoids PGRST116
-
-        if (error) console.error("Error fetching driver_id:", error);
-        if (data?.user_id) {
-          actualDriverId = data.user_id;
-          actualCommuterId = userId;
-        }
-      } else {
-        // driver view
-        actualDriverId = userId;
-
-        // find commuter from existing conversation
-        const { data: conv } = await supabase
-          .from("conversations")
-          .select("commuter_id, driver_id")
-          .or(`driver_id.eq.${userId},commuter_id.eq.${userId}`)
           .maybeSingle();
 
-        if (conv) {
-          actualCommuterId = conv.commuter_id === userId ? conv.driver_id : conv.commuter_id;
+        if (rentalError) {
+          console.error("Error fetching rental:", rentalError);
+          return;
+        }
+
+        if (!rentalData?.user_id) {
+          console.error("No matching driver found for this rental");
+          return;
+        }
+
+        // check existing conversation
+        const { data: existingConv } = await supabase
+          .from("conversations")
+          .select("id")
+          .eq("driver_id", rentalData.user_id)
+          .eq("commuter_id", userId)
+          .maybeSingle();
+
+        if (existingConv) {
+          finalConvId = existingConv.id;
+        } else {
+          // create conversation
+          const { data: newConv, error: createError } = await supabase
+            .from("conversations")
+            .insert({
+              driver_id: rentalData.user_id,
+              commuter_id: userId,
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error("Error creating conversation:", createError);
+            return;
+          }
+
+          finalConvId = newConv.id;
         }
       }
 
-      if (actualDriverId && actualCommuterId) {
-        setDriverId(actualDriverId);
-        setCommuterId(actualCommuterId);
-        initConversation(actualDriverId, actualCommuterId);
-        checkOnlineStatus(actualDriverId);
-        const interval = setInterval(() => checkOnlineStatus(actualDriverId), 30000);
+      // Driver case (comes with conversationId)
+      if (!finalConvId && paramConversationId) {
+        finalConvId = paramConversationId;
+      }
+
+      if (!finalConvId) {
+        console.error("No valid conversation or rental ID found");
+        return;
+      }
+
+      setConversationId(finalConvId);
+
+      // fetch participants
+      const { data: conv, error } = await supabase
+        .from("conversations")
+        .select("driver_id, commuter_id")
+        .eq("id", finalConvId)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching conversation:", error);
+        return;
+      }
+
+      if (conv) {
+        setDriverId(conv.driver_id);
+        setCommuterId(conv.commuter_id);
+        fetchMessages(finalConvId);
+        checkOnlineStatus(conv.driver_id);
+        const interval = setInterval(
+          () => checkOnlineStatus(conv.driver_id),
+          30000
+        );
         return () => clearInterval(interval);
       }
-    } catch (e) {
-      console.error("Error initializing chat participants:", e);
+    } catch (err) {
+      console.error("Error initializing chat:", err);
     }
   };
 
-  // Subscribe to messages
+  // Subscribe to new messages
   useEffect(() => {
     if (!conversationId) return;
 
@@ -128,45 +182,6 @@ export default function Chat() {
       supabase.removeChannel(subscription);
     };
   }, [conversationId, userId]);
-
-  // Initialize or find conversation
-  const initConversation = async (driver_id: string, commuter_id: string) => {
-    try {
-      const { data: existing, error: findError } = await supabase
-        .from("conversations")
-        .select("id")
-        .or(
-          `and(driver_id.eq.${driver_id},commuter_id.eq.${commuter_id}),and(driver_id.eq.${commuter_id},commuter_id.eq.${driver_id})`
-        )
-        .maybeSingle();
-
-      if (findError) {
-        console.error("Error finding conversation:", findError);
-        return;
-      }
-
-      if (existing) {
-        setConversationId(existing.id);
-        fetchMessages(existing.id);
-      } else {
-        const { data: newConv, error: createError } = await supabase
-          .from("conversations")
-          .insert([{ driver_id, commuter_id }])
-          .select("id")
-          .single();
-
-        if (createError) {
-          console.error("Error creating conversation:", createError);
-          return;
-        }
-
-        setConversationId(newConv.id);
-        fetchMessages(newConv.id);
-      }
-    } catch (e) {
-      console.error("Error initializing conversation:", e);
-    }
-  };
 
   const fetchMessages = async (convId: string) => {
     try {
@@ -216,6 +231,7 @@ export default function Chat() {
     setIsOnline((data && data.length > 0) || false);
   };
 
+  // Send Message (works for both roles)
   const sendMessage = async () => {
     if (!newMessage.trim() || sending || !conversationId || !driverId || !commuterId) return;
 
@@ -224,12 +240,14 @@ export default function Chat() {
     setSending(true);
 
     try {
+      const receiverId = userId === driverId ? commuterId : driverId;
+
       const { data, error } = await supabase
         .from("Messages")
         .insert({
           conversation_id: conversationId,
           sender_id: userId,
-          receiver_id: userId === driverId ? commuterId : driverId,
+          receiver_id: receiverId,
           message: messageText,
           is_read: false,
         })

@@ -135,7 +135,7 @@ export default function Inbox() {
     router.push({
       pathname: "/(feat)/Chat",
       params: {
-        rentalId: conversation.id, // ✅ pass rentalId for Chat
+        conversationId: conversation.id, // pass rentalId for Chat
         rentalName: conversation.userName,
         userId: currentUserId,
       },
