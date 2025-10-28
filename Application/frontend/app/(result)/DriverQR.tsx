@@ -43,7 +43,7 @@ export default function DriverQR() {
         user.email ||
         "Unknown User";
 
-      // Fetch driver profile data
+    
       const { data, error } = await supabase
         .from("driverprofiles")
         .select("id, operator_name, plate_number, phone_number, full_address")
@@ -58,7 +58,6 @@ export default function DriverQR() {
           user_name: userName, // ✅ store user name in state
         });
 
-        // ✅ Include user's name in QR data
         const qrData = {
           screen: "DriverQR",
           id: data.id,

@@ -49,9 +49,7 @@ export default function DriverDets() {
         // Fetch from driverprofiles
         const { data, error } = await supabase
           .from("driverprofiles")
-          .select(
-            "phone_number, plate_number, operator_name, operator_address, status"
-          )
+          .select("phone_number, plate_number, operator_name, operator_address, status")
           .eq("id", driverId)
           .maybeSingle();
 
@@ -99,9 +97,7 @@ export default function DriverDets() {
 
   useEffect(() => {
     if (error) {
-      Alert.alert("Error", error, [
-        { text: "OK", onPress: () => setError(null) },
-      ]);
+      Alert.alert("Error", error, [{ text: "OK", onPress: () => setError(null) }]);
     }
   }, [error]);
 
@@ -172,22 +168,13 @@ const styles = StyleSheet.create({
   },
   loadingContainer: { alignItems: "center", marginTop: 20 },
   loadingText: { marginTop: 10, color: "#073051", fontSize: 16 },
-  errorContainer: {
-    alignItems: "center",
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
+  errorContainer: { alignItems: "center", marginTop: 20, paddingHorizontal: 20 },
   errorText: {
     color: "red",
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
   },
-  errorSubText: {
-    color: "#666",
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 10,
-  },
+  errorSubText: { color: "#666", fontSize: 14, textAlign: "center", marginTop: 10 },
   report: { backgroundColor: "#E53935" },
 });
