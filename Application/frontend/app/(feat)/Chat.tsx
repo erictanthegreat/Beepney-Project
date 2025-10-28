@@ -19,6 +19,7 @@ import { supabase } from "@/scripts/supabase";
 
 type Message = {
   id: string;
+  conversation_id: string;
   sender_id: string;
   receiver_id: string;
   message: string;
@@ -33,70 +34,146 @@ export default function Chat() {
     userId: string;
   }>();
 
+  const [driverId, setDriverId] = useState<string | null>(null);
+  const [commuterId, setCommuterId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  // Initialize chat participants (driver & commuter)
   useEffect(() => {
-    if (!userId || !rentalId) return;
+    if (!userId) return;
+    initChatParticipants();
+  }, [userId, rentalId]);
 
-    fetchMessages();
-    checkOnlineStatus();
+  const initChatParticipants = async () => {
+    try {
+      let actualDriverId: string | null = null;
+      let actualCommuterId: string | null = null;
 
-    // ✅ Listen for only INSERT events related to this chat
+      if (rentalId) {
+        // commuter view
+        const { data, error } = await supabase
+          .from("rental")
+          .select("user_id")
+          .eq("id", rentalId)
+          .maybeSingle(); // avoids PGRST116
+
+        if (error) console.error("Error fetching driver_id:", error);
+        if (data?.user_id) {
+          actualDriverId = data.user_id;
+          actualCommuterId = userId;
+        }
+      } else {
+        // driver view
+        actualDriverId = userId;
+
+        // find commuter from existing conversation
+        const { data: conv } = await supabase
+          .from("conversations")
+          .select("commuter_id, driver_id")
+          .or(`driver_id.eq.${userId},commuter_id.eq.${userId}`)
+          .maybeSingle();
+
+        if (conv) {
+          actualCommuterId = conv.commuter_id === userId ? conv.driver_id : conv.commuter_id;
+        }
+      }
+
+      if (actualDriverId && actualCommuterId) {
+        setDriverId(actualDriverId);
+        setCommuterId(actualCommuterId);
+        initConversation(actualDriverId, actualCommuterId);
+        checkOnlineStatus(actualDriverId);
+        const interval = setInterval(() => checkOnlineStatus(actualDriverId), 30000);
+        return () => clearInterval(interval);
+      }
+    } catch (e) {
+      console.error("Error initializing chat participants:", e);
+    }
+  };
+
+  // Subscribe to messages
+  useEffect(() => {
+    if (!conversationId) return;
+
     const subscription = supabase
-      .channel("messages")
+      .channel(`Messages-${conversationId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
-          table: "messages",
+          table: "Messages",
+          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
           const msg = payload.new as Message;
+          setMessages((prev) => {
+            const exists = prev.some((m) => m.id === msg.id);
+            return exists ? prev : [...prev, msg];
+          });
 
-          // Filter messages that belong to this conversation
-          const isRelevant =
-            (msg.sender_id === userId && msg.receiver_id === rentalId) ||
-            (msg.sender_id === rentalId && msg.receiver_id === userId);
-
-          if (isRelevant) {
-            setMessages((prev) => {
-              const exists = prev.some((m) => m.id === msg.id);
-              return exists ? prev : [...prev, msg];
-            });
-
-            // Auto-mark messages received by me as read
-            if (msg.receiver_id === userId) {
-              markMessageAsRead(msg.id);
-            }
-
-            scrollToBottom();
-          }
+          if (msg.receiver_id === userId) markMessageAsRead(msg.id);
+          scrollToBottom();
         }
       )
       .subscribe();
 
-    const interval = setInterval(checkOnlineStatus, 30000);
-
     return () => {
       supabase.removeChannel(subscription);
-      clearInterval(interval);
     };
-  }, [userId, rentalId]);
+  }, [conversationId, userId]);
 
-  const fetchMessages = async () => {
+  // Initialize or find conversation
+  const initConversation = async (driver_id: string, commuter_id: string) => {
+    try {
+      const { data: existing, error: findError } = await supabase
+        .from("conversations")
+        .select("id")
+        .or(
+          `and(driver_id.eq.${driver_id},commuter_id.eq.${commuter_id}),and(driver_id.eq.${commuter_id},commuter_id.eq.${driver_id})`
+        )
+        .maybeSingle();
+
+      if (findError) {
+        console.error("Error finding conversation:", findError);
+        return;
+      }
+
+      if (existing) {
+        setConversationId(existing.id);
+        fetchMessages(existing.id);
+      } else {
+        const { data: newConv, error: createError } = await supabase
+          .from("conversations")
+          .insert([{ driver_id, commuter_id }])
+          .select("id")
+          .single();
+
+        if (createError) {
+          console.error("Error creating conversation:", createError);
+          return;
+        }
+
+        setConversationId(newConv.id);
+        fetchMessages(newConv.id);
+      }
+    } catch (e) {
+      console.error("Error initializing conversation:", e);
+    }
+  };
+
+  const fetchMessages = async (convId: string) => {
     try {
       const { data, error } = await supabase
-        .from("messages")
+        .from("Messages")
         .select("*")
-        .or(
-          `and(sender_id.eq.${userId},receiver_id.eq.${rentalId}),and(sender_id.eq.${rentalId},receiver_id.eq.${userId})`
-        )
+        .eq("conversation_id", convId)
         .order("created_at", { ascending: true });
 
       if (error) {
@@ -105,7 +182,7 @@ export default function Chat() {
       }
 
       setMessages(data || []);
-      await markMessagesAsRead();
+      await markMessagesAsRead(convId);
     } catch (e) {
       console.error("Error:", e);
     } finally {
@@ -113,29 +190,26 @@ export default function Chat() {
     }
   };
 
-  const markMessagesAsRead = async () => {
+  const markMessagesAsRead = async (convId: string) => {
     await supabase
-      .from("messages")
+      .from("Messages")
       .update({ is_read: true })
+      .eq("conversation_id", convId)
       .eq("receiver_id", userId)
-      .eq("sender_id", rentalId)
       .eq("is_read", false);
   };
 
   const markMessageAsRead = async (messageId: string) => {
-    await supabase
-      .from("messages")
-      .update({ is_read: true })
-      .eq("id", messageId);
+    await supabase.from("Messages").update({ is_read: true }).eq("id", messageId);
   };
 
-  const checkOnlineStatus = async () => {
+  const checkOnlineStatus = async (driver_id: string) => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
     const { data } = await supabase
-      .from("messages")
+      .from("Messages")
       .select("created_at")
-      .eq("sender_id", rentalId)
+      .eq("sender_id", driver_id)
       .gte("created_at", fiveMinutesAgo)
       .limit(1);
 
@@ -143,19 +217,24 @@ export default function Chat() {
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if (!newMessage.trim() || sending || !conversationId || !driverId || !commuterId) return;
 
-    setSending(true);
     const messageText = newMessage.trim();
     setNewMessage("");
+    setSending(true);
 
     try {
-      const { error } = await supabase.from("messages").insert({
-        sender_id: userId,
-        receiver_id: rentalId,
-        message: messageText,
-        is_read: false,
-      });
+      const { data, error } = await supabase
+        .from("Messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: userId,
+          receiver_id: userId === driverId ? commuterId : driverId,
+          message: messageText,
+          is_read: false,
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error("Error sending message:", error);
@@ -163,6 +242,7 @@ export default function Chat() {
         return;
       }
 
+      setMessages((prev) => [...prev, data]);
       scrollToBottom();
     } catch (e) {
       console.error("Unexpected error:", e);
@@ -208,11 +288,7 @@ export default function Chat() {
         </View>
 
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#073051"
-            style={{ marginTop: 50 }}
-          />
+          <ActivityIndicator size="large" color="#073051" style={{ marginTop: 50 }} />
         ) : (
           <View style={{ paddingHorizontal: 15, marginTop: 20 }}>
             {messages.map((msg) => {
@@ -231,9 +307,7 @@ export default function Chat() {
                     borderTopRightRadius: isMyMessage ? 0 : 15,
                   }}
                 >
-                  <Text style={{ fontSize: 16, color: "#fff" }}>
-                    {msg.message}
-                  </Text>
+                  <Text style={{ fontSize: 16, color: "#fff" }}>{msg.message}</Text>
                   <Text
                     style={{
                       fontSize: 11,
