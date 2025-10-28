@@ -5,8 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Platform,
-  Linking,
 } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";

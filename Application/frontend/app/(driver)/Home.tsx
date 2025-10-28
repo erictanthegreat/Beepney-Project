@@ -192,7 +192,7 @@ export default function DriverHome() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/GenerateQr")}
+            onPress={() => router.push("/(feat)/GenerateQR")}
             style={featStyles.featureButton}
           >
             <DDIcon style={featStyles.icon} />
