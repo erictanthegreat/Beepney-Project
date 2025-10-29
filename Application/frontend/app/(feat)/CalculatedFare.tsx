@@ -19,7 +19,6 @@ import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 import FareIcon from "@/assets/images/fare icon.svg";
 import { useLocalSearchParams } from "expo-router";
-import PaymentModal from "@/components/PaymentModal";
 
 const { width, height } = Dimensions.get("window");
 
@@ -98,78 +97,9 @@ export default function CalculatedFare() {
 
   const [fare, setFare] = useState<number>(0);
 
-  // PayMongo integration states
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-
   // Debounce timer
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Constants
-  const PAYMONGO_MIN_AMOUNT = 20;
-
-  const getPaymentAmount = () => {
-    return Math.max(totalFare, PAYMONGO_MIN_AMOUNT);
-  };
-
-  // Helper function to get display amounts
-  const getDisplayAmounts = () => {
-    const isUnderMinimum = totalFare < PAYMONGO_MIN_AMOUNT;
-    return {
-      originalFare: totalFare,
-      paymentAmount: isUnderMinimum ? PAYMONGO_MIN_AMOUNT : totalFare,
-      isUnderMinimum,
-    };
-  };
-
-  // --- PayMongo Payment Handlers ---
-  const handlePaymentSuccess = (result: any) => {
-    Alert.alert(
-      "Payment Successful! 🎉",
-      `Your fare payment of ₱${totalFare.toFixed(2)} has been processed successfully.\n\nPayment ID: ${result.sourceId}`,
-      [
-        {
-          text: "Continue to Ride",
-          onPress: () => {
-            setShowPaymentModal(false);
-            // You can navigate to ride tracking or booking confirmation
-            // router.push("/(feat)/ride-confirmed");
-            console.log("Payment successful, proceeding to ride...");
-          },
-        },
-      ]
-    );
-  };
-
-  const handlePaymentError = (error: string) => {
-    Alert.alert("Payment Failed", error, [
-      {
-        text: "Try Again",
-        onPress: () => setShowPaymentModal(false),
-      },
-    ]);
-  };
-
-  const handlePayCashless = () => {
-    // Check if total fare is calculated
-    if (totalFare <= 0) {
-      Alert.alert("Invalid Amount", "Please calculate a valid fare first.");
-      return;
-    }
-
-    // Check if locations are selected
-    if (!params.origin || !params.destination) {
-      Alert.alert(
-        "Missing Information",
-        "Please select both pickup and destination locations."
-      );
-      return;
-    }
-
-    setShowPaymentModal(true);
-  };
-
-  // --- Fetch route from Mapbox Directions API ---
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
     try {
       const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
@@ -317,27 +247,46 @@ export default function CalculatedFare() {
     return () => clearTimeout(handler);
   }, [destinationInput]);
 
-  // --- Handle marker drag event ---
-  const handleDragEnd = (
+  const handleDragEnd = async (
     coords: [number, number],
     marker: "pickup" | "destination"
   ) => {
-    if (marker === "pickup") {
-      setPickup(coords);
-      fetchAddress(coords, "pickup");
-    } else {
-      setDestination(coords);
-      fetchAddress(coords, "destination");
+    try {
+      // Fetch the address for the new coordinates
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.features && data.features.length > 0) {
+        const placeName = data.features[0].place_name;
+
+        if (marker === "pickup") {
+          setPickup(coords);
+          setPickupAddress(placeName);
+          setPickupInput(placeName); // Update the text input
+        } else {
+          setDestination(coords);
+          setDestinationAddress(placeName);
+          setDestinationInput(placeName); // Update the text input
+        }
+      }
+    } catch (err) {
+      console.log("Error fetching address on drag:", err);
+      // Fallback: still update coordinates even if geocoding fails
+      if (marker === "pickup") {
+        setPickup(coords);
+      } else {
+        setDestination(coords);
+      }
     }
 
-    // Update route after dragging marker
+    // Update the route
     fetchRoute(
       marker === "pickup" ? coords : pickup,
       marker === "destination" ? coords : destination
     );
   };
 
-  // --- Focus map camera on selected marker ---
   const focusOnMarker = (marker: "pickup" | "destination") => {
     const coords = marker === "pickup" ? pickup : destination;
     mapCameraRef.current?.setCamera({
@@ -346,7 +295,7 @@ export default function CalculatedFare() {
       animationDuration: 500,
     });
     setActiveSelection(marker);
-    bottomSheetRef.current?.close(); // Close bottom sheet after selection
+    bottomSheetRef.current?.close();
   };
 
   return (
@@ -548,9 +497,9 @@ export default function CalculatedFare() {
           </View>
 
           <CustomButton
-            title="Pay Cashless"
+            title="Save Fare Calculation"
             backgroundColor="#1E86DA"
-            onPress={handlePayCashless}
+            onPress={() => router.push("/")}
             style={{
               width: "95%",
               alignItems: "center",
@@ -570,16 +519,6 @@ export default function CalculatedFare() {
           />
         </View>
       </BottomSheetContainer>
-
-      {/* PayMongo Payment Modal */}
-      <PaymentModal
-        visible={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        amount={getPaymentAmount()}
-        description={`${params.origin || pickupAddress || "Selected location"} - ${params.destination || destinationAddress || "Selected destination"}${totalFare < PAYMONGO_MIN_AMOUNT ? ` (Minimum payment: ₱${PAYMONGO_MIN_AMOUNT.toFixed(2)})` : ""}`}
-        onSuccess={handlePaymentSuccess}
-        onError={handlePaymentError}
-      />
     </View>
   );
 }

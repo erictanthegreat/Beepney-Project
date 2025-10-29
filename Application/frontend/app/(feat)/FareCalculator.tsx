@@ -235,7 +235,6 @@ export default class FareCalculator extends Component {
                   />
                 )}
 
-                {/* FIRST DROPDOWN (Discount Types) */}
                 <DropDown
                   data={this.state.discountTypes}
                   onSelect={(value) => this.setState({ IdType: value })}
@@ -244,7 +243,6 @@ export default class FareCalculator extends Component {
                   value={this.state.IdType}
                 />
 
-                {/* SECOND DROPDOWN (Vehicle Types) */}
                 <DropDown
                   data={[
                     "E-Tricycles",
@@ -263,7 +261,6 @@ export default class FareCalculator extends Component {
                   value={this.state.vehicleType || undefined}
                 />
 
-                {/* CALCULATE FARE BUTTON */}
                 <TouchableOpacity
                   style={fareStyles.button}
                   onPress={() =>
@@ -306,9 +303,8 @@ export default class FareCalculator extends Component {
                 </TouchableOpacity>
               </View>
 
-              {/* RIDE HISTORY */}
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={fareStyles.fareText}>Ride History</Text>
+                <Text style={fareStyles.fareText}>Saved Calculated Fare</Text>
                 <TouchableOpacity
                   onPress={() => router.push("/RideHistory")}
                   style={fareStyles.fareButton2}
@@ -404,7 +400,7 @@ const fareStyles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 30,
-    marginLeft: 120,
+    marginLeft: 30,
     borderRadius: 15,
   },
   fareButtonText: {

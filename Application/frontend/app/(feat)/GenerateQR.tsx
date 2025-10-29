@@ -11,13 +11,16 @@ export default function GenerateQr() {
     <View>
       <BackButton />
       <Text style={genStyles.header}> Generate QR Code </Text>
-      <Text style={{ marginLeft: 25, color: "#595959" }}>
+      <Text style={genStyles.subheader}>
         Generate a QR Code to receive fare payments or view {"\n"}driver
         information.
       </Text>
 
       <View style={genStyles.container}>
-        <TouchableOpacity style={genStyles.iconButton}>
+        <TouchableOpacity
+          style={genStyles.iconButton}
+          onPress={() => router.push("/(result)/Payment")}
+        >
           <GeneratePaymentIcon />
           <Text style={genStyles.genHeader}>
             Receive Fare Payment via QR Code
@@ -69,6 +72,10 @@ const genStyles = StyleSheet.create({
     marginTop: 10,
     color: "#073051",
     fontFamily: "Poppins",
+  },
+  subheader: {
+    marginLeft: 25,
+    color: "#595959",
   },
   iconButton: {
     paddingVertical: 23,
