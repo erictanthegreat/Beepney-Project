@@ -263,16 +263,16 @@ export default function CalculatedFare() {
         if (marker === "pickup") {
           setPickup(coords);
           setPickupAddress(placeName);
-          setPickupInput(placeName); // Update the text input
+          setPickupInput(placeName);
         } else {
           setDestination(coords);
           setDestinationAddress(placeName);
-          setDestinationInput(placeName); // Update the text input
+          setDestinationInput(placeName);
         }
       }
     } catch (err) {
       console.log("Error fetching address on drag:", err);
-      // Fallback: still update coordinates even if geocoding fails
+
       if (marker === "pickup") {
         setPickup(coords);
       } else {
