@@ -55,9 +55,7 @@ const ContactsPage: React.FC = () => {
   }, []);
 
   const fetchHotlines = async () => {
-    const { data, error } = await supabase
-      .from<"hotlines", Hotline>("hotlines")
-      .select("*");
+    const { data, error } = await supabase.from("hotlines").select("*");
     if (error) console.error("Error fetching hotlines:", error.message);
     else setHotlines(data || []);
   };
@@ -120,9 +118,8 @@ const ContactsPage: React.FC = () => {
     setEditingHotline(null);
   };
 
-  // Line 137 - Update handleDeleteHotline check
   const handleDeleteHotline = async (id: string) => {
-    if (!canEdit()) return; // change from role !== "admin"
+    if (!canEdit()) return;
     const { error } = await supabase.from("hotlines").delete().eq("id", id);
 
     if (error) {
@@ -137,8 +134,20 @@ const ContactsPage: React.FC = () => {
 
   return (
     <>
-      <Header />
-      <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
+      {/* ✅ Sticky header that stays visible during scroll */}
+      <div className="sticky top-0 z-50 bg-white shadow-sm">
+        <Header />
+      </div>
+
+      {/* ✅ Scrollable main area (like FareMatrix) */}
+      <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px] 
+        overflow-y-auto 
+        max-h-[calc(100vh-200px)] 
+        scroll-smooth 
+        [&::-webkit-scrollbar]:hidden 
+        [-ms-overflow-style:none] 
+        [scrollbar-width:none]"
+      >
         {contactSections.map(({ key, label }) => {
           const sectionHotlines = hotlines.filter((h) => h.section === key);
 
@@ -155,8 +164,8 @@ const ContactsPage: React.FC = () => {
                 {sectionHotlines.map((h, idx) => (
                   <div
                     key={h.id}
-                    className={`border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 w-full h-full min-h-[100px] cursor-pointer hover:bg-gray-100 transition`}
-                    onClick={() => handleEditHotline(h)} // everyone can click, but overlay shows readonly if not admin
+                    className="border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 w-full h-full min-h-[100px] cursor-pointer hover:bg-gray-100 transition"
+                    onClick={() => handleEditHotline(h)}
                   >
                     <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
 
@@ -185,7 +194,7 @@ const ContactsPage: React.FC = () => {
                   </div>
                 ))}
 
-                {canEdit() && ( // change from role === "admin"
+                {canEdit() && (
                   <div
                     className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
                     onClick={() => openOverlay(key)}
@@ -211,7 +220,7 @@ const ContactsPage: React.FC = () => {
         onSave={handleSaveHotline}
         onDelete={handleDeleteHotline}
         initialData={editingHotline || undefined}
-        role={role} // pass role
+        role={role}
       />
     </>
   );
