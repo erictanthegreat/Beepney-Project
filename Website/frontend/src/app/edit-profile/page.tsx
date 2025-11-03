@@ -17,7 +17,7 @@ interface Profile {
 const EditProfilePage = () => {
   const [user, setUser] = useState<Profile | null>(null);
   const [username, setUsername] = useState<string>("");
-  const [role, setRole] = useState<string>("commuter");
+  const [role, setRole] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -41,7 +41,7 @@ const EditProfilePage = () => {
           setUser(data);
           setUsername(data.username ?? "");
           setAvatarUrl(data.avatar_url ?? "");
-          setRole(data.role ?? "commuter");
+          setRole(data.role ?? "");
         }
       }
     };
@@ -84,7 +84,7 @@ const EditProfilePage = () => {
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ username, avatar_url: updatedAvatarUrl, role })
+      .update({ username, avatar_url: updatedAvatarUrl, role: role.trim() })
       .eq("id", user?.id);
 
     if (updateError) {
@@ -179,14 +179,17 @@ const EditProfilePage = () => {
                 >
                   Role
                 </label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="mt-1 p-2 w-full border border-gray-300 rounded-md"
-                >
-                  <option value="commuter">None</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <input
+                  type="text"
+                  value={
+                    role.toLowerCase() === "admin"
+                      ? "Super Admin"
+                      : role.toUpperCase()
+                  }
+                  readOnly
+                  className="mt-1 p-2 w-full border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
+                  placeholder="N/A"
+                />
               </div>
             </div>
 
