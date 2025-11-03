@@ -29,6 +29,9 @@ export default function Overlay({
   const [countryCode, setCountryCode] = useState("+63");
   const [areaofRange, setAreaofrange] = useState("");
 
+  // Define canEdit helper
+  const canEdit = role === "admin" || role === "pso";
+
   useEffect(() => {
     if (initialData) {
       setName(initialData.name || "");
@@ -66,14 +69,12 @@ export default function Overlay({
     }
   };
 
-  const isAdmin = role === "admin";
-
   return (
     <div className="overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="overlayContent bg-white p-6 rounded-[30px] shadow-lg w-[400px]">
         <h2 className="text-[#073051] text-[32px] sm:text-[36px] font-bold mb-6">
           {initialData
-            ? isAdmin
+            ? canEdit
               ? "Edit Hotline"
               : "Hotline Details"
             : "Add Hotline"}{" "}
@@ -92,7 +93,7 @@ export default function Overlay({
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
-              disabled={!isAdmin}
+              disabled={!canEdit}
             />
           </div>
 
@@ -105,7 +106,7 @@ export default function Overlay({
                 value={countryCode}
                 onChange={(e) => setCountryCode(e.target.value)}
                 className="px-3 py-2 border border-[#D1D1D1] rounded-lg focus:outline-none appearance-none"
-                disabled={!isAdmin}
+                disabled={!canEdit}
               >
                 <option value="+63">+63</option>
               </select>
@@ -116,7 +117,7 @@ export default function Overlay({
                 onChange={(e) => setNumber(e.target.value)}
                 maxLength={10}
                 className="flex-1 px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
-                disabled={!isAdmin}
+                disabled={!canEdit}
               />
             </div>
             <p className="text-sm text-gray-400 mt-1">
@@ -134,7 +135,7 @@ export default function Overlay({
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
-              disabled={!isAdmin}
+              disabled={!canEdit}
             />
           </div>
 
@@ -148,14 +149,14 @@ export default function Overlay({
               value={areaofRange}
               onChange={(e) => setAreaofrange(e.target.value)}
               className="w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px]"
-              disabled={!isAdmin}
+              disabled={!canEdit}
             />
           </div>
         </div>
 
         {/* Buttons */}
         <div className="flex justify-between items-center mt-6">
-          {isAdmin && initialData && (
+          {canEdit && initialData && (
             <button
               type="button"
               onClick={handleDelete}
@@ -171,9 +172,9 @@ export default function Overlay({
               onClick={onClose}
               className="px-4 py-2 border border-[#D1D1D1] rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
             >
-              {isAdmin ? "Cancel" : "Close"}
+              {canEdit ? "Cancel" : "Close"}
             </button>
-            {isAdmin && (
+            {canEdit && (
               <button
                 type="button"
                 onClick={handleSave}

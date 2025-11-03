@@ -46,7 +46,8 @@ const ContactsPage: React.FC = () => {
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState("");
   const [editingHotline, setEditingHotline] = useState<Hotline | null>(null);
-  const [role, setRole] = useState<string>("commuter"); // track user role
+  const [role, setRole] = useState<string>("commuter");
+  const canEdit = () => role === "admin" || role === "pso";
 
   useEffect(() => {
     fetchHotlines();
@@ -79,6 +80,7 @@ const ContactsPage: React.FC = () => {
   };
 
   const openOverlay = (section: string) => {
+    if (!canEdit()) return;
     setSelectedSection(section);
     setEditingHotline(null);
     setIsOverlayOpen(true);
@@ -91,7 +93,7 @@ const ContactsPage: React.FC = () => {
   };
 
   const handleSaveHotline = async (hotlineData: NewHotline) => {
-    if (role !== "admin") return; // safeguard
+    if (!canEdit()) return;
     if (editingHotline) {
       const { data, error } = await supabase
         .from("hotlines")
@@ -118,8 +120,9 @@ const ContactsPage: React.FC = () => {
     setEditingHotline(null);
   };
 
+  // Line 137 - Update handleDeleteHotline check
   const handleDeleteHotline = async (id: string) => {
-    if (role !== "admin") return; // safeguard
+    if (!canEdit()) return; // change from role !== "admin"
     const { error } = await supabase.from("hotlines").delete().eq("id", id);
 
     if (error) {
@@ -182,7 +185,7 @@ const ContactsPage: React.FC = () => {
                   </div>
                 ))}
 
-                {role === "admin" && ( // add button only for admins
+                {canEdit() && ( // change from role === "admin"
                   <div
                     className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
                     onClick={() => openOverlay(key)}

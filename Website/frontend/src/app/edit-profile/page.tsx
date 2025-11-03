@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { PencilIcon } from '@heroicons/react/24/outline';
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import Header from '../../components/ui/header';
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { PencilIcon } from "@heroicons/react/24/outline";
+import React, { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import Header from "../../components/ui/header";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface Profile {
   id: string;
@@ -16,11 +16,11 @@ interface Profile {
 
 const EditProfilePage = () => {
   const [user, setUser] = useState<Profile | null>(null);
-  const [username, setUsername] = useState<string>('');
-  const [role, setRole] = useState<string>('commuter');
-  const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [username, setUsername] = useState<string>("");
+  const [role, setRole] = useState<string>("commuter");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const router = useRouter();
 
@@ -32,16 +32,16 @@ const EditProfilePage = () => {
 
       if (user) {
         const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
           .single<Profile>();
 
         if (data) {
           setUser(data);
-          setUsername(data.username ?? '');
-          setAvatarUrl(data.avatar_url ?? '');
-          setRole(data.role ?? 'commuter');
+          setUsername(data.username ?? "");
+          setAvatarUrl(data.avatar_url ?? "");
+          setRole(data.role ?? "commuter");
         }
       }
     };
@@ -52,13 +52,13 @@ const EditProfilePage = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (username.trim() === '') {
-      alert('Username cannot be empty');
+    if (username.trim() === "") {
+      alert("Username cannot be empty");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      alert("Passwords do not match");
       return;
     }
 
@@ -67,40 +67,40 @@ const EditProfilePage = () => {
     if (selectedImage && user) {
       const filePath = `pics/${user.id}/${selectedImage.name}`;
       const { error: uploadError } = await supabase.storage
-        .from('beepney-bucket')
+        .from("beepney-bucket")
         .upload(filePath, selectedImage, { upsert: true });
 
       if (uploadError) {
-        alert('Error uploading image: ' + uploadError.message);
+        alert("Error uploading image: " + uploadError.message);
         return;
       }
 
       const { data: publicUrlData } = supabase.storage
-        .from('beepney-bucket')
+        .from("beepney-bucket")
         .getPublicUrl(filePath);
 
       updatedAvatarUrl = publicUrlData.publicUrl ?? avatarUrl;
     }
 
     const { error: updateError } = await supabase
-      .from('profiles')
+      .from("profiles")
       .update({ username, avatar_url: updatedAvatarUrl, role })
-      .eq('id', user?.id);
+      .eq("id", user?.id);
 
     if (updateError) {
-      alert('Error updating profile: ' + updateError.message);
+      alert("Error updating profile: " + updateError.message);
     } else {
-      if (password.trim() !== '') {
+      if (password.trim() !== "") {
         const { error: passwordError } = await supabase.auth.updateUser({
           password,
         });
         if (passwordError) {
-          alert('Error updating password: ' + passwordError.message);
+          alert("Error updating password: " + passwordError.message);
           return;
         }
       }
-      alert('Profile updated successfully!');
-      router.push('/dashboard');
+      alert("Profile updated successfully!");
+      router.push("/dashboard");
     }
   };
 
@@ -113,7 +113,7 @@ const EditProfilePage = () => {
   };
 
   const handleCancel = () => {
-    router.push('/dashboard');
+    router.push("/dashboard");
   };
 
   return (
@@ -130,7 +130,7 @@ const EditProfilePage = () => {
             <div className="flex flex-col items-center">
               <div className="w-24 h-24 mb-4 relative">
                 <Image
-                  src={avatarUrl || '/Default Profile.svg'}
+                  src={avatarUrl || "/Default Profile.svg"}
                   alt="Avatar"
                   fill
                   className="rounded-full object-cover"
@@ -159,7 +159,7 @@ const EditProfilePage = () => {
               <div className="w-2/3">
                 <label
                   className="block text-sm font-medium"
-                  style={{ color: '#737F83' }}
+                  style={{ color: "#737F83" }}
                 >
                   Username
                 </label>
@@ -175,7 +175,7 @@ const EditProfilePage = () => {
               <div className="w-1/3">
                 <label
                   className="block text-sm font-medium"
-                  style={{ color: '#737F83' }}
+                  style={{ color: "#737F83" }}
                 >
                   Role
                 </label>
@@ -194,7 +194,7 @@ const EditProfilePage = () => {
             <div>
               <label
                 className="block text-sm font-medium"
-                style={{ color: '#737F83' }}
+                style={{ color: "#737F83" }}
               >
                 New Password
               </label>
@@ -211,7 +211,7 @@ const EditProfilePage = () => {
             <div>
               <label
                 className="block text-sm font-medium"
-                style={{ color: '#737F83' }}
+                style={{ color: "#737F83" }}
               >
                 Confirm Password
               </label>
