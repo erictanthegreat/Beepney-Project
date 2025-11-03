@@ -27,10 +27,12 @@ const fareSections = [
 
 const FareMatrixPage = () => {
   const [matrices, setMatrices] = useState<FareMatrix[]>([]);
-  const [role, setRole] = useState<"commuter" | "admin">("commuter");
+  const [role, setRole] = useState<string>("commuter");
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState("");
   const [selectedMatrix, setSelectedMatrix] = useState<FareMatrix | null>(null);
+
+  const canEdit = () => role === "admin" || role === "ltfrb";
 
   useEffect(() => {
     fetchMatrices();
@@ -70,6 +72,8 @@ const FareMatrixPage = () => {
     title: string;
     description?: string | null;
   }) => {
+    if (!canEdit()) return;
+
     try {
       let fileUrl: string | null = null;
       let fileName: string | null = null;
@@ -139,6 +143,8 @@ const FareMatrixPage = () => {
   };
 
   const handleDeleteFare = async (id: string) => {
+    if (!canEdit()) return;
+
     const { error } = await supabase.from("fare_matrix").delete().eq("id", id);
 
     if (error) {
@@ -152,6 +158,7 @@ const FareMatrixPage = () => {
   };
 
   const handleAddFare = (key: string) => {
+    if (!canEdit()) return;
     setSelectedMatrix(null);
     setSelectedSection(key);
     setOverlayOpen(true);
@@ -210,7 +217,7 @@ const FareMatrixPage = () => {
                   </div>
                 ))}
 
-              {role === "admin" && (
+              {canEdit() && (
                 <div
                   className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
                   onClick={() => handleAddFare(key)}

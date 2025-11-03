@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
 
 /**
  * @typedef {Object} Overlay3Props
@@ -17,11 +17,21 @@ import Image from 'next/image';
 /**
  * @param {Overlay3Props} props
  */
-export default function Overlay3({ isOpen, onClose, sectionName, onSave, initialData, onDelete, role }) {
+export default function Overlay3({
+  isOpen,
+  onClose,
+  sectionName,
+  onSave,
+  initialData,
+  onDelete,
+  role,
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
+
+  const canEdit = role === "admin" || role === "ltfrb";
 
   useEffect(() => {
     if (isOpen && initialData) {
@@ -83,7 +93,7 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave, initial
       <div className="bg-white p-6 rounded-[30px] shadow-lg w-[90%] max-w-[1500px] max-h-[95vh] overflow-y-auto">
         <h2 className="text-[#073051] text-[28px] sm:text-[32px] font-bold mb-6">
           {initialData
-            ? role === "admin"
+            ? canEdit
               ? "Edit Fare Matrix"
               : "Preview Fare Matrix"
             : "Upload Fare Matrix"}{" "}
@@ -123,7 +133,7 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave, initial
               />
             </div>
 
-            {role === "admin" && (
+            {canEdit && (
               <div>
                 <label className="block text-[18px] font-medium text-[#073051] mb-2">
                   File
@@ -150,7 +160,8 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave, initial
 
           <div className="w-[60%] border rounded-lg p-2 h-[600px] flex items-center justify-center bg-gray-50">
             {previewUrl ? (
-              previewUrl.endsWith(".pdf") || file?.type === "application/pdf" ? (
+              previewUrl.endsWith(".pdf") ||
+              file?.type === "application/pdf" ? (
                 <iframe
                   src={previewUrl}
                   className="w-full h-full rounded"
@@ -172,7 +183,7 @@ export default function Overlay3({ isOpen, onClose, sectionName, onSave, initial
           </div>
         </div>
 
-        {role === "admin" ? (
+        {canEdit ? (
           <div className="flex justify-between items-center mt-6">
             {initialData && (
               <button

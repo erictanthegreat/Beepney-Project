@@ -2,9 +2,14 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import Header from "../../components/ui/header";
-import { ArrowLeftIcon, MapPinIcon, MagnifyingGlassIcon, FunnelIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowLeftIcon,
+  MapPinIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+} from "@heroicons/react/24/outline";
 import mapboxgl from "mapbox-gl";
-import 'mapbox-gl/dist/mapbox-gl.css';
+import "mapbox-gl/dist/mapbox-gl.css";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
@@ -93,7 +98,7 @@ const updateStation = async (station: Station): Promise<Station | null> => {
       location: station.location,
       operation_time_am: station.operationTimeAM,
       operation_time_pm: station.operationTimePM,
-      vehicle_types: station.vehicleTypes, // save directly as text[]
+      vehicle_types: station.vehicleTypes,
       coordinates: station.coordinates,
     })
     .eq("id", station.id)
@@ -155,7 +160,7 @@ const fetchStations = async (): Promise<Station[]> => {
 
   return stations.map((s) => ({
     ...s,
-    vehicleTypes: s.vehicle_types ?? [], // map to frontend field
+    vehicleTypes: s.vehicle_types ?? [],
     destinations: (dests || [])
       .filter((d) => d.station_id === s.id)
       .map((d) => ({
@@ -235,14 +240,15 @@ const StationsPage = () => {
   const [stationData, setStationData] = useState<Station>(defaultStation);
   const [stationLandmarks, setStationLandmarks] = useState<Station[]>([]);
 
-  // NEW: user role
-  const [role, setRole] = useState<"commuter" | "admin">("commuter");
-  
+  const [role, setRole] = useState<string>("commuter");
+
   const [showFilter, setShowFilter] = useState(false);
   const [activeFilters, setActiveFilters] = useState<string[]>(["All"]);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Helper function to check if user can edit
+  const canEdit = () => role === "admin" || role === "ltfrb";
 
   const resetStationData = () => {
     setIsAddingStation(false);
@@ -298,9 +304,9 @@ const StationsPage = () => {
     map.addControl(new mapboxgl.NavigationControl());
     mapRef.current = map;
 
-    // Map click handler
+    // Map click handler - only allow editing for admin/ltfrb
     map.on("click", (e) => {
-      if (role === "commuter") return; // commuters cannot add
+      if (!canEdit()) return;
 
       const { lng, lat } = e.lngLat;
       if (markerRef.current) {
@@ -343,7 +349,7 @@ const StationsPage = () => {
       const isAll = activeFilters.includes("All");
 
       if (isAll) {
-        if (types.length > 1) return "#6F42C1"; // purple for multi-type
+        if (types.length > 1) return "#6F42C1";
         if (types.includes("TRICYCLE")) return "#FFA500";
         if (types.includes("JEEPNEY")) return "#007BFF";
         if (types.includes("VAN")) return "#28A745";
@@ -358,7 +364,6 @@ const StationsPage = () => {
       return "#9A9A9A";
     };
 
-    // 🔹 Apply search term filtering
     const filteredStations = stationLandmarks.filter((station) => {
       const term = searchTerm.toLowerCase();
       return (
@@ -373,7 +378,6 @@ const StationsPage = () => {
     filteredStations.forEach((station: Station) => {
       if (!station?.coordinates || station.coordinates.length !== 2) return;
 
-      // Filter logic
       const showStation =
         activeFilters.includes("All") ||
         station.vehicleTypes.some((t) => activeFilters.includes(t));
@@ -392,7 +396,7 @@ const StationsPage = () => {
 
         if (markerRef.current) markerRef.current.remove();
 
-        const draggable = role !== "commuter";
+        const draggable = canEdit();
 
         if (station.coordinates) {
           markerRef.current = new mapboxgl.Marker({
@@ -441,7 +445,7 @@ const StationsPage = () => {
       alert("Please select a location on the map.");
       return;
     }
-    if (role === "commuter") return; // commuters cannot save
+    if (!canEdit()) return;
 
     if (stationData.id) {
       const updated = await updateStation(stationData);
@@ -461,7 +465,7 @@ const StationsPage = () => {
   };
 
   const handleDelete = async () => {
-    if (!stationData.id || role === "commuter") return;
+    if (!stationData.id || !canEdit()) return;
     const ok = confirm("Delete this station?");
     if (!ok) return;
 
@@ -492,8 +496,9 @@ const StationsPage = () => {
             <div className="flex flex-col items-center justify-center h-full">
               <MapPinIcon className="h-[150px] w-[150px] text-[#1E86DA] mb-4" />
               <p className="text-center text-lg text-[#737F83]">
-                Click anywhere to put a station location or click a station to
-                edit.
+                {canEdit()
+                  ? "Click anywhere to put a station location or click a station to edit."
+                  : "Click on any station marker to view its details."}
               </p>
             </div>
           ) : (
@@ -519,7 +524,7 @@ const StationsPage = () => {
                 value={stationData.name}
                 onChange={handleChange}
                 placeholder="Type station name here"
-                disabled={role !== "admin"} // disabled for non-admin
+                disabled={!canEdit()}
               />
               <LabeledInput
                 label="Location Name"
@@ -527,13 +532,13 @@ const StationsPage = () => {
                 value={stationData.location}
                 onChange={handleChange}
                 placeholder="Type location name here"
-                disabled={role !== "admin"}
+                disabled={!canEdit()}
               />
               <TimeRangeInput
                 valueAM={stationData.operationTimeAM}
                 valuePM={stationData.operationTimePM}
                 onChange={handleChange}
-                disabled={role !== "admin"}
+                disabled={!canEdit()}
               />
 
               {/* Vehicle Type Toggle */}
@@ -552,13 +557,13 @@ const StationsPage = () => {
                   }
                   variant="outline"
                   className="mt-2 flex w-full h-11"
-                  disabled={role !== "admin"}
+                  disabled={!canEdit()}
                 >
                   {["JEEPNEY", "TRICYCLE", "VAN"].map((type) => {
                     const isActive = stationData.vehicleTypes.includes(type);
                     const fileName = isActive
-                      ? `/${type.toLowerCase().replace("-", "")}_w.svg` // white icons
-                      : `/${type.toLowerCase().replace("-", "")}.svg`; // grey icons
+                      ? `/${type.toLowerCase().replace("-", "")}_w.svg`
+                      : `/${type.toLowerCase().replace("-", "")}.svg`;
 
                     return (
                       <ToggleGroupItem
@@ -599,7 +604,7 @@ const StationsPage = () => {
                           Destinations
                         </th>
                         <th className="p-2 text-center font-medium">Count</th>
-                        {role === "admin" && (
+                        {canEdit() && (
                           <th className="p-2 text-center font-medium">
                             Delete
                           </th>
@@ -610,7 +615,7 @@ const StationsPage = () => {
                       {stationData.destinations.map((d, index) => (
                         <tr key={d.id} className="border-t text-center">
                           <td className="p-2">
-                            {role === "admin" ? (
+                            {canEdit() ? (
                               <Select
                                 value={d.vehicleType}
                                 onValueChange={(value: string) => {
@@ -621,7 +626,7 @@ const StationsPage = () => {
                                     destinations: newDest,
                                   }));
                                 }}
-                                disabled={role !== "admin"} // non-admin cannot edit
+                                disabled={!canEdit()}
                               >
                                 <SelectTrigger className="w-[70px] justify-center">
                                   <SelectValue>
@@ -728,12 +733,12 @@ const StationsPage = () => {
                                 }));
                               }}
                               className="border rounded px-2 py-1 w-[100px] text-center"
-                              disabled={role !== "admin"}
+                              disabled={!canEdit()}
                             />
                           </td>
                           <td className="p-2">
                             <div className="flex items-center justify-center gap-2">
-                              {role === "admin" && (
+                              {canEdit() && (
                                 <>
                                   <button
                                     onClick={() => {
@@ -773,7 +778,7 @@ const StationsPage = () => {
                               <span>{d.count}</span>
                             </div>
                           </td>
-                          {role === "admin" && (
+                          {canEdit() && (
                             <td className="p-2">
                               <button
                                 onClick={() => {
@@ -794,7 +799,7 @@ const StationsPage = () => {
                           )}
                         </tr>
                       ))}
-                      {role === "admin" && (
+                      {canEdit() && (
                         <tr>
                           <td colSpan={4} className="text-center p-2">
                             <button
@@ -826,7 +831,7 @@ const StationsPage = () => {
 
               {/* Actions */}
               <div className="mt-auto space-y-2">
-                {role === "admin" && (
+                {canEdit() && (
                   <>
                     <button
                       onClick={handleDone}
@@ -855,7 +860,7 @@ const StationsPage = () => {
           className="relative ml-[425px] flex-1 h-full"
           style={{ height: `calc(100vh - ${headerHeight}px)` }}
         >
-          {/* 🔍 Search + Filter Overlay */}
+          {/* Search + Filter Overlay */}
           <div className="absolute top-4 left-4 z-50 flex flex-col items-start gap-2">
             {/* Search Bar */}
             <div className="relative w-full max-w-md md:w-[320px] min-w-0 bg-white rounded-[15px] shadow-md">
@@ -883,7 +888,10 @@ const StationsPage = () => {
               {showFilter && (
                 <div className="absolute left-0 mt-2 w-48 bg-white shadow-lg rounded-lg p-3 space-y-3 text-sm text-gray-700">
                   {["All", "TRICYCLE", "JEEPNEY", "VAN"].map((type) => (
-                    <label key={type} className="flex items-center space-x-2 cursor-pointer">
+                    <label
+                      key={type}
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={activeFilters.includes(type)}
@@ -895,15 +903,17 @@ const StationsPage = () => {
                               const newFilters = prev.includes(type)
                                 ? prev.filter((f) => f !== type)
                                 : [...prev.filter((f) => f !== "All"), type];
-                              return newFilters.length === 0 ? ["All"] : newFilters;
+                              return newFilters.length === 0
+                                ? ["All"]
+                                : newFilters;
                             });
                           }
                         }}
                       />
                       <span
-                        className={`flex items-center gap-2 ${
-                          activeFilters.includes(type)
-                        }`}
+                        className={`flex items-center gap-2 ${activeFilters.includes(
+                          type
+                        )}`}
                       >
                         <span
                           className={`w-3 h-3 rounded-full ${
@@ -918,7 +928,8 @@ const StationsPage = () => {
                               : "bg-gray-400"
                           }`}
                         />
-                        {type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
+                        {type.charAt(0).toUpperCase() +
+                          type.slice(1).toLowerCase()}
                       </span>
                     </label>
                   ))}
