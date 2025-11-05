@@ -121,7 +121,7 @@ export default function Renting() {
 
     // Navigate to chat screen with rental info
     router.push({
-      pathname: "/(feat)/Chat",
+      pathname: "/(feat)/chat",
       params: {
         rentalId: rental.id,
         rentalName: rental.name,

@@ -33,7 +33,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="Home"
+        name="home"
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
@@ -42,7 +42,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="RideHailing"
+        name="ridehailing"
         options={{
           title: "TricyCall",
           tabBarIcon: ({ color }) => (
@@ -51,7 +51,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="SOS"
+        name="sos"
         options={{
           title: " ",
 
@@ -61,7 +61,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="Stations"
+        name="stations"
         options={{
           title: "Stations",
           tabBarIcon: ({ color }) => (
@@ -70,7 +70,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="Renting"
+        name="renting"
         options={{
           title: "Renting",
           tabBarIcon: ({ color }) => (

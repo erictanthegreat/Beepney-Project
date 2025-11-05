@@ -30,7 +30,9 @@ export default function CreateProfile() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"driver" | "commuter">("commuter");
+  const [selectedRole, setSelectedRole] = useState<"driver" | "commuter">(
+    "commuter"
+  );
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Loading state
@@ -74,11 +76,11 @@ export default function CreateProfile() {
         email,
         password,
         options: {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/confirm`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/confirm`,
           data: {
             name: `${firstName} ${lastName}`,
-            role: selectedRole,      // <-- send role here
-            avatar_url: avatarUrl,   // <-- optional avatar
+            role: selectedRole, // <-- send role here
+            avatar_url: avatarUrl, // <-- optional avatar
           },
         },
       });
@@ -104,8 +106,7 @@ export default function CreateProfile() {
       );
 
       // Navigate to login
-      router.push("/(auth)/Login");
-
+      router.push("/(auth)/login");
     } catch (err: any) {
       console.error("handleSignUp error:", err);
       Alert.alert("Error", err?.message ?? "Something went wrong");
@@ -130,7 +131,10 @@ export default function CreateProfile() {
           <View>
             <Image
               source={require("@/assets/images/Beepney LOGO.png")}
-              style={[imageStyles.logo, { width: width * 0.7, height: height * 0.18 }]}
+              style={[
+                imageStyles.logo,
+                { width: width * 0.7, height: height * 0.18 },
+              ]}
             />
             <Text style={[textStyles.header, { fontSize: width * 0.08 }]}>
               Welcome to Beepney!
@@ -143,7 +147,9 @@ export default function CreateProfile() {
           {/* BASIC INFO */}
           <View style={styleName.rowContainer}>
             <View style={[inputName.inputGroup, { width: "45%" }]}>
-              <Text style={[inputName.label, { fontSize: width * 0.04 }]}>First Name</Text>
+              <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
+                First Name
+              </Text>
               <TextInput
                 style={[inputName.input, { fontSize: width * 0.035 }]}
                 placeholder="E.g Juan"
@@ -154,7 +160,9 @@ export default function CreateProfile() {
             </View>
 
             <View style={[inputName.inputGroup, { width: "45%" }]}>
-              <Text style={[inputName.label, { fontSize: width * 0.04 }]}>Last Name</Text>
+              <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
+                Last Name
+              </Text>
               <TextInput
                 style={[inputName.input, { fontSize: width * 0.035 }]}
                 placeholder="E.g Dela Cruz"
@@ -166,7 +174,9 @@ export default function CreateProfile() {
           </View>
 
           <View style={inputStyles.inputGroup}>
-            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>Email</Text>
+            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+              Email
+            </Text>
             <TextInput
               style={[inputStyles.input, { fontSize: width * 0.035 }]}
               placeholder="Enter your email"
@@ -179,7 +189,9 @@ export default function CreateProfile() {
           </View>
 
           <View style={inputStyles.inputGroup}>
-            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>Password</Text>
+            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+              Password
+            </Text>
             <TextInput
               style={[inputStyles.input, { fontSize: width * 0.035 }]}
               placeholder="Enter your password"
@@ -191,7 +203,9 @@ export default function CreateProfile() {
           </View>
 
           <View style={inputStyles.inputGroup}>
-            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>Confirm Password</Text>
+            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+              Confirm Password
+            </Text>
             <TextInput
               style={[inputStyles.input, { fontSize: width * 0.035 }]}
               placeholder="Confirm password"
@@ -204,14 +218,19 @@ export default function CreateProfile() {
 
           {/* BUTTON */}
           <TouchableOpacity
-            style={[styles.button, { width: width * 0.8, marginTop: height * 0.05 }]}
+            style={[
+              styles.button,
+              { width: width * 0.8, marginTop: height * 0.05 },
+            ]}
             onPress={handleSignUp}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>Sign Up</Text>
+              <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
+                Sign Up
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -220,7 +239,7 @@ export default function CreateProfile() {
             Already have an account?{" "}
             <Text
               style={{ color: "#073051", fontWeight: "bold" }}
-              onPress={() => router.push("/(auth)/Login")}
+              onPress={() => router.push("/(auth)/login")}
             >
               Sign-In
             </Text>

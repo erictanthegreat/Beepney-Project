@@ -96,7 +96,7 @@ export default function ProfileSubmission() {
       } = await supabase.auth.getSession();
       if (!session?.user) {
         Alert.alert("Error", "User not authenticated");
-        router.replace("/(auth)/Login");
+        router.replace("/(auth)/login");
         return;
       }
       setCurrentUserId(session.user.id);
@@ -208,11 +208,11 @@ export default function ProfileSubmission() {
     } else {
       console.log("Navigating, userType =", userType);
       if (userType === "driver") {
-        router.push("/(driver)/Home");
+        router.push("/(driver)/home");
       } else if (userType === "commuter") {
-        router.push("/(commuter)/Home");
+        router.push("/(commuter)/home");
       } else {
-        router.push("/Home");
+        router.push("/home");
       }
     }
   };

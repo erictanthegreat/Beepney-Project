@@ -29,7 +29,7 @@ export default function Onboarding() {
     if (currentPage < 3) {
       pagerRef.current?.setPage(currentPage + 1);
     } else {
-      router.push("/(auth)/Login");
+      router.push("/(auth)/login");
     }
   };
 

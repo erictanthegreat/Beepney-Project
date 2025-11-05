@@ -19,9 +19,9 @@ export default function ForApproval() {
 
   const handleConfirm = () => {
     if (role === "driver") {
-      router.push("/(driver)/Home");
+      router.push("/(driver)/home");
     } else {
-      router.push("/(commuter)/Home");
+      router.push("/(commuter)/home");
     }
   };
 

@@ -142,7 +142,7 @@ export default class Stations extends Component {
 
   handleMarkerPress = (station: Station) => {
     router.push({
-      pathname: "/(result)/StationDetails",
+      pathname: "/(result)/stationdetails",
       params: { id: station.id },
     });
   };

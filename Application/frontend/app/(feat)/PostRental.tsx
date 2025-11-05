@@ -119,7 +119,7 @@ export default function PostRental() {
         }
       }
 
-      router.push("/(driver)/Renting");
+      router.push("/(driver)/renting");
     } catch (e) {
       console.error("Unexpected error saving rental:", e);
     }

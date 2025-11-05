@@ -265,7 +265,7 @@ export default class FareCalculator extends Component {
                   style={fareStyles.button}
                   onPress={() =>
                     router.push({
-                      pathname: "/(feat)/CalculatedFare",
+                      pathname: "/(feat)/calculatedfare",
                       params: {
                         origin: this.state.origin,
                         originCoords: JSON.stringify(this.state.originCoords),
@@ -297,7 +297,7 @@ export default class FareCalculator extends Component {
                 <Text style={fareStyles.fareText}>Detailed Fare Matrices</Text>
                 <TouchableOpacity style={fareStyles.fareButton}>
                   <FareIcon
-                    onPress={() => router.push("/FareMatrix")}
+                    onPress={() => router.push("/farematrix")}
                     style={fareStyles.fareIcon}
                   />
                 </TouchableOpacity>
@@ -306,7 +306,7 @@ export default class FareCalculator extends Component {
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text style={fareStyles.fareText}>Saved Calculated Fare</Text>
                 <TouchableOpacity
-                  onPress={() => router.push("/RideHistory")}
+                  onPress={() => router.push("/ridehistory")}
                   style={fareStyles.fareButton2}
                 >
                   <Text style={fareStyles.fareButtonText}>See all</Text>

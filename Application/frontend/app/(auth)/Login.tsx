@@ -25,14 +25,14 @@ export default function Login() {
 
     if (error || !profile) {
       console.error("Error fetching role:", error);
-      router.replace("/(commuter)/Home"); // fallback
+      router.replace("/(commuter)/home"); // fallback
       return;
     }
 
     if (profile.role === "driver") {
-      router.replace("/(driver)/Home");
+      router.replace("/(driver)/home");
     } else {
-      router.replace("/(commuter)/Home");
+      router.replace("/(commuter)/home");
     }
   };
 
@@ -106,7 +106,7 @@ export default function Login() {
         Don&apos;t have an Account?{" "}
         <Text
           style={{ color: "#073051", fontFamily: "Poppins" }}
-          onPress={() => router.push("/(auth)/CreateProfile")}
+          onPress={() => router.push("/(auth)/createprofile")}
         >
           Sign-up
         </Text>

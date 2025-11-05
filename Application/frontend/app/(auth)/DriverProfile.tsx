@@ -233,7 +233,7 @@ export default function DriverProfile() {
             }
             handleSubmit();
           } else if (step === 3) {
-            router.push("/(commuter)/Home");
+            router.push("/(commuter)/home");
           }
         }}
       >

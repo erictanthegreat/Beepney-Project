@@ -30,7 +30,7 @@ export default function ScanDriverdets() {
     try {
       const parsed = JSON.parse(data);
       if (parsed.screen && parsed.id) {
-        router.push(`/(result)/DriverDetails?id=${parsed.id}`);
+        router.push(`/(result)/driverdetails?id=${parsed.id}`);
       } else {
         Alert.alert("Invalid QR", "This QR code is not valid for navigation.");
         setScanned(false); // reset so user can try again
@@ -58,7 +58,10 @@ export default function ScanDriverdets() {
         <Text style={{ textAlign: "center", marginTop: 50 }}>
           Camera access is required to scan QR codes
         </Text>
-        <Text style={{ color: "blue", textAlign: "center" }} onPress={requestPermission}>
+        <Text
+          style={{ color: "blue", textAlign: "center" }}
+          onPress={requestPermission}
+        >
           Grant Permission
         </Text>
       </View>

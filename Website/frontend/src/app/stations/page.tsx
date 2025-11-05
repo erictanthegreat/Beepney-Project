@@ -152,18 +152,18 @@ const fetchStations = async (): Promise<Station[]> => {
 
   if (!stations || stations.length === 0) return [];
 
-  const stationIds = stations.map((s) => s.id);
+  const stationIds = stations.map((s: any) => s.id);
   const { data: dests } = await supabase
     .from("station_destinations")
     .select("*")
     .in("station_id", stationIds);
 
-  return stations.map((s) => ({
+  return stations.map((s: any) => ({
     ...s,
     vehicleTypes: s.vehicle_types ?? [],
     destinations: (dests || [])
-      .filter((d) => d.station_id === s.id)
-      .map((d) => ({
+      .filter((d: any) => d.station_id === s.id)
+      .map((d: any) => ({
         id: d.id,
         vehicleType: d.vehicle_type,
         destination: d.destination,
@@ -502,7 +502,7 @@ const StationsPage = () => {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col flex-grow gap-4">
+            <div className="flex flex-col grow gap-4">
               {/* Back button */}
               <div className="flex items-center gap-3 mb-4">
                 <button

@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import "@fontsource/poppins";
@@ -19,6 +20,7 @@ import CustomButton from "@/components/ui/CustomButton";
 import Input from "@/components/Input";
 import IssueDropdown from "@/components/DropdownComplaints";
 import { supabase } from "@/scripts/supabase";
+import * as FileSystem from "expo-file-system";
 
 interface Attachment {
   id: number;
@@ -37,7 +39,9 @@ interface State {
   description: string;
   selectedIssue: string;
   complaints: any[];
-  role: "commuter" | "driver"; // store role
+  role: "commuter" | "driver";
+  isUploading: boolean;
+  currentUserId: string | null;
 }
 
 export default class Complaints extends Component<{}, State> {
@@ -53,6 +57,8 @@ export default class Complaints extends Component<{}, State> {
     selectedIssue: "",
     complaints: [],
     role: "commuter",
+    isUploading: false,
+    currentUserId: null,
   };
 
   componentDidMount() {
@@ -70,6 +76,8 @@ export default class Complaints extends Component<{}, State> {
       if (!session?.user) return;
 
       const userId = session.user.id;
+      this.setState({ currentUserId: userId });
+
       const { data: profile, error } = await supabase
         .from("profiles")
         .select("username, role")
@@ -125,6 +133,58 @@ export default class Complaints extends Component<{}, State> {
     this.setState({ selectedIssue: issue });
   };
 
+  uploadFileToStorage = async (
+    uri: string,
+    type: "image" | "video",
+    userId: string
+  ): Promise<string | null> => {
+    try {
+      // Get file extension from URI
+      const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
+      const timestamp = Date.now();
+      const fileName = `proof_${timestamp}_${Math.random()
+        .toString(36)
+        .substring(7)}.${ext}`;
+      const path = `public/complaints/${userId}/${fileName}`;
+
+      // Read file as base64
+      const fileBase64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Convert base64 to Uint8Array
+      const fileData = Uint8Array.from(atob(fileBase64), (c) =>
+        c.charCodeAt(0)
+      );
+
+      // Determine content type
+      const contentType =
+        type === "image"
+          ? `image/${ext === "jpg" ? "jpeg" : ext}`
+          : `video/${ext}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("beepney-bucket")
+        .upload(path, fileData, {
+          upsert: true,
+          contentType,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from("beepney-bucket")
+        .getPublicUrl(path);
+
+      return data.publicUrl;
+    } catch (err) {
+      console.error("Error uploading file:", err);
+      throw err;
+    }
+  };
+
   handleSubmit = async () => {
     const {
       name,
@@ -136,6 +196,7 @@ export default class Complaints extends Component<{}, State> {
       description,
       attachments,
       role,
+      currentUserId,
     } = this.state;
 
     if (
@@ -151,12 +212,41 @@ export default class Complaints extends Component<{}, State> {
       return;
     }
 
-    try {
-      const proofs = attachments
-        .filter((att) => att.uri)
-        .map((att) => att.uri) as string[];
+    if (!currentUserId) {
+      Alert.alert("Error", "User not authenticated.");
+      return;
+    }
 
-      const { data, error } = await supabase.from("complaints").insert([
+    this.setState({ isUploading: true });
+
+    try {
+      // Filter attachments that have both URI and type
+      const validAttachments = attachments.filter((att) => att.uri && att.type);
+
+      // Upload all valid attachments to Supabase Storage
+      const uploadPromises = validAttachments.map((att) =>
+        this.uploadFileToStorage(att.uri!, att.type!, currentUserId)
+      );
+
+      let proofs: string[] = [];
+
+      if (uploadPromises.length > 0) {
+        const uploadedUrls = await Promise.all(uploadPromises);
+        // Filter out null values (failed uploads)
+        proofs = uploadedUrls.filter((url) => url !== null) as string[];
+
+        if (uploadedUrls.length > 0 && proofs.length === 0) {
+          Alert.alert(
+            "Error",
+            "Failed to upload proof files. Please try again."
+          );
+          this.setState({ isUploading: false });
+          return;
+        }
+      }
+
+      // Insert complaint with uploaded file URLs
+      const { error } = await supabase.from("complaints").insert([
         {
           name,
           contact_information: contact,
@@ -171,6 +261,7 @@ export default class Complaints extends Component<{}, State> {
 
       if (error) throw error;
 
+      // Reset form
       this.setState({
         contact: "",
         location: "",
@@ -180,15 +271,19 @@ export default class Complaints extends Component<{}, State> {
         description: "",
         attachments: [{ id: 0 }],
         nextId: 1,
+        isUploading: false,
       });
 
+      Alert.alert("Success", "Complaint submitted successfully!");
+
       router.push({
-        pathname: "/(result)/Review (Commuter)",
+        pathname: "/(result)/review (Commuter)",
         params: { role },
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting complaint:", err);
-      Alert.alert("Error", "Failed to submit complaint.");
+      Alert.alert("Error", err?.message ?? "Failed to submit complaint.");
+      this.setState({ isUploading: false });
     }
   };
 
@@ -278,13 +373,26 @@ export default class Complaints extends Component<{}, State> {
             <CustomButton
               title=" + Add Another Photo/Video"
               style={rentStyles.addButton}
-              onPress={this.addAttachment}
+              onPress={this.state.isUploading ? () => {} : this.addAttachment}
             />
             <CustomButton
-              title="Submit Complaint"
-              style={rentStyles.submit}
-              onPress={this.handleSubmit}
+              title={
+                this.state.isUploading ? "Uploading..." : "Submit Complaint"
+              }
+              style={[
+                rentStyles.submit,
+                this.state.isUploading && { opacity: 0.5 },
+              ]}
+              onPress={this.state.isUploading ? () => {} : this.handleSubmit}
             />
+            {this.state.isUploading && (
+              <View style={rentStyles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0D99FF" />
+                <Text style={rentStyles.loadingText}>
+                  Uploading files, please wait...
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
@@ -364,5 +472,15 @@ const rentStyles = StyleSheet.create({
   proof: {
     alignItems: "center",
     marginTop: 10,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    marginTop: 15,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: "#073051",
+    fontFamily: "Poppins",
+    fontSize: 14,
   },
 });

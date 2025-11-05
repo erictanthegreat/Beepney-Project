@@ -181,7 +181,7 @@ export default function Home() {
         <View style={styles.rowBetween}>
           <Text style={fareStyle.fare}>Detailed Fare Matrices</Text>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/FareMatrix")}
+            onPress={() => router.push("/(feat)/farematrix")}
             style={fareStyle.button}
           >
             <FareIcon width={26} height={26} />
@@ -191,7 +191,7 @@ export default function Home() {
         {/* Other Features */}
         <View style={featStyles.container}>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/FareCalculator")}
+            onPress={() => router.push("/(feat)/farecalculator")}
             style={featStyles.featureButton}
           >
             <FCIcon style={featStyles.icon} />
@@ -199,7 +199,7 @@ export default function Home() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/ScanDriverDets")}
+            onPress={() => router.push("/(feat)/scandriverdets")}
             style={featStyles.featureButton}
           >
             <DDIcon style={featStyles.icon} />
@@ -207,7 +207,7 @@ export default function Home() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/RideHistory")}
+            onPress={() => router.push("/(feat)/ridehistory")}
             style={featStyles.featureButton}
           >
             <RHIcon style={featStyles.icon} />
@@ -215,7 +215,7 @@ export default function Home() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/Complaints")}
+            onPress={() => router.push("/(feat)/complaints")}
             style={featStyles.featureButton}
           >
             <ComplaintIcon style={featStyles.icon} />

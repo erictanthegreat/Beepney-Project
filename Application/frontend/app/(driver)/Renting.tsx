@@ -143,7 +143,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
   };
 
   openInbox = () => {
-    router.push("/(feat)/Inbox");
+    router.push("/(feat)/inbox");
   };
 
   render() {
@@ -166,7 +166,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
             Book Your Barkada Trip with Beepney
           </Text>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/PostRental")}
+            onPress={() => router.push("/(feat)/postrental")}
             style={rentStyles.Button}
           >
             <Text style={rentStyles.postHeader}>Post Rental Info</Text>
@@ -249,7 +249,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
                         style={rentStyles.dropdownItem}
                         onPress={() =>
                           router.push({
-                            pathname: "/(feat)/PostRental",
+                            pathname: "/(feat)/postrental",
                             params: { id: item.id },
                           })
                         }

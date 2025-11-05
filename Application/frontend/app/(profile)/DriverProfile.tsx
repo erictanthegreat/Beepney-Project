@@ -110,7 +110,7 @@ export default function DriverProfile() {
     try {
       await supabase.auth.signOut();
       await AsyncStorage.clear();
-      router.replace("/(auth)/Login");
+      router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -137,7 +137,7 @@ export default function DriverProfile() {
         return;
       }
 
-      router.replace("/(commuter)/Home");
+      router.replace("/(commuter)/home");
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Something went wrong while switching role.");

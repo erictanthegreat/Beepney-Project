@@ -34,7 +34,7 @@ export default function ForApproval() {
 
       <CustomButton
         title="Confirm"
-        onPress={() => router.push("/(driver)/Home")}
+        onPress={() => router.push("/(driver)/home")}
       ></CustomButton>
     </SafeAreaView>
   );

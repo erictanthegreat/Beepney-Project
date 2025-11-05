@@ -128,7 +128,7 @@ export default function CommuterProfile() {
     try {
       await supabase.auth.signOut();
       await AsyncStorage.clear();
-      router.replace("/(auth)/Login");
+      router.replace("/(auth)/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -203,7 +203,7 @@ export default function CommuterProfile() {
         return;
       }
 
-      router.replace("/(driver)/Home");
+      router.replace("/(driver)/home");
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Something went wrong while switching role.");
@@ -344,7 +344,7 @@ export default function CommuterProfile() {
 
         {/* Drive with Beepney */}
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/DriverProfile")}
+          onPress={() => router.push("/(auth)/driverprofile")}
           style={credStyles.driverRow}
         >
           <Text style={credStyles.driverText}>Drive with Beepney</Text>
