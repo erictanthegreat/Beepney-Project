@@ -6,6 +6,7 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
+
 // Helper functions for date/time formatting
 const formatDate = (isoString) => {
   if (!isoString || isoString === "N/A") return "N/A";
@@ -33,9 +34,7 @@ const formatTime = (timeString) => {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } catch (e) {
-      // Fall through
-    }
+    } catch (e) {}
   }
   const date = new Date(timeString);
   if (!isNaN(date.getTime())) {
@@ -94,276 +93,60 @@ const downloadPDF = (complaint, rowNumber) => {
         <title>Complaint Report #${rowNumber}</title>
         <meta charset="UTF-8">
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
           body {
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            padding: 2.5rem;
-            color: #1f2937;
-            line-height: 1.625;
-            background: white;
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
           }
-          
-          .container {
-            max-width: 56rem;
-            margin: 0 auto;
-          }
-          
-          .header {
-            border-bottom: 3px solid #073051;
-            padding-bottom: 1.25rem;
-            margin-bottom: 2rem;
-          }
-          
-          .header h1 {
-            color: #073051;
-            font-size: 1.875rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-          }
-          
-          .header .subtitle {
-            color: #6b7280;
-            font-size: 0.875rem;
-          }
-          
-          .section {
-            margin-bottom: 2rem;
-          }
-          
-          .section-title {
-            color: #073051;
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #e5e7eb;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-size: 0.875rem;
-          }
-          
-          .info-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.25rem;
-          }
-          
-          .info-item {
-            margin-bottom: 0.5rem;
-          }
-          
-          .info-label {
-            font-weight: 500;
-            color: #6b7280;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-          }
-          
-          .info-value {
-            color: #1f2937;
-            font-size: 0.875rem;
-            font-weight: 400;
-          }
-          
-          .status-badge {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            background: ${statusColor.bg};
-            color: ${statusColor.color};
-          }
-          
-          .description-box {
-            background: #f9fafb;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #073051;
-            color: #1f2937;
-            font-size: 0.875rem;
-            line-height: 1.625;
-          }
-          
-          .timeline {
-            background: #f9fafb;
-            padding: 1rem;
-            border-radius: 0.5rem;
-          }
-          
-          .timeline-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-          }
-          
-          .timeline-item:not(:last-child) {
-            border-bottom: 1px solid #e5e7eb;
-          }
-          
-          .timeline-label {
-            color: #6b7280;
-            font-size: 0.875rem;
-          }
-          
-          .timeline-value {
-            color: #1f2937;
-            font-size: 0.875rem;
-            font-weight: 500;
-          }
-          
-          .footer {
-            margin-top: 3rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-            font-size: 0.75rem;
-            color: #9ca3af;
-            text-align: center;
-          }
-          
-          .proof-section {
-            background: #eff6ff;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid #3b82f6;
-          }
-          
-          .proof-label {
-            color: #1e40af;
-            font-weight: 600;
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-          }
-          
-          .proof-value {
-            color: #1e3a8a;
-            font-size: 0.75rem;
-            word-break: break-all;
-          }
-          
-          @media print {
-            body {
-              padding: 1.5rem;
-            }
-          }
+          .proof-section { background: #eff6ff; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6; }
+          .proof-label { color: #1e40af; font-weight: 600; margin-bottom: 0.5rem; }
+          .proof-value { color: #1e3a8a; font-size: 0.75rem; word-break: break-all; }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <h1>Complaint Report #${rowNumber}</h1>
-            <div class="subtitle">Generated on ${new Date().toLocaleString()}</div>
-          </div>
+        <h1>Complaint Report #${rowNumber}</h1>
+        <p><strong>Status:</strong> ${complaint.status}</p>
+        <p><strong>Name:</strong> ${complaint.username}</p>
+        <p><strong>Issue:</strong> ${complaint.types_of_issues}</p>
 
-          <div class="section">
-            <div class="section-title">Current Status</div>
-            <span class="status-badge">${complaint.status}</span>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Complainant Information</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Name</div>
-                <div class="info-value">${complaint.username}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Contact</div>
-                <div class="info-value">${complaint.contact_information}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Role</div>
-                <div class="info-value">${complaint.role}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Incident Details</div>
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">Type of Issue</div>
-                <div class="info-value">${complaint.types_of_issues}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Location</div>
-                <div class="info-value">${complaint.location}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Date of Incident</div>
-                <div class="info-value">${formatDate(
-                  complaint.date_of_incident
-                )}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Time of Incident</div>
-                <div class="info-value">${formatTime(
-                  complaint.time_of_incident
-                )}</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Description</div>
-            <div class="description-box">
-              ${complaint.description || "N/A"}
-            </div>
-          </div>
-
-          ${
-            complaint.proofs
-              ? `
-          <div class="section">
-            <div class="section-title">Supporting Evidence</div>
-            <div class="proof-section">
-              <div class="proof-label">Proof Attached: Yes</div>
-              <div class="proof-value">${complaint.proofs}</div>
+        ${
+          complaint.proofs
+            ? `
+          <div class="proof-section">
+            <div class="proof-label">Proof(s) Attached</div>
+            <div class="proof-value">
+              ${
+                Array.isArray(complaint.proofs)
+                  ? complaint.proofs
+                      .map((url, i) => `<div>Proof ${i + 1}: ${url}</div>`)
+                      .join("")
+                  : String(complaint.proofs)
+                      .split(",")
+                      .map((url, i) => `<div>Proof ${i + 1}: ${url.trim()}</div>`)
+                      .join("")
+              }
             </div>
           </div>
           `
-              : ""
-          }
+            : ""
+        }
 
-          <div class="section">
-            <div class="section-title">Submission Timeline</div>
-            <div class="timeline">
-              <div class="timeline-item">
-                <span class="timeline-label">Submitted</span>
-                <span class="timeline-value">${formatDate(
-                  complaint.created_at
-                )} at ${formatTime(complaint.created_at)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="footer">
-            Complaint Management System - Confidential Document
-          </div>
-        </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-          }
-        </script>
+        <script>window.onload = function(){ window.print(); }</script>
       </body>
     </html>
   `;
-
   printWindow.document.write(html);
   printWindow.document.close();
 };
 
 // Main Overlay Component
 const ComplaintSummaryModal = ({ complaint, onClose, rowNumber }) => {
+  // Normalize proof list for display
+  const proofList = Array.isArray(complaint.proofs)
+    ? complaint.proofs
+    : typeof complaint.proofs === "string"
+    ? complaint.proofs.split(",").map((p) => p.trim())
+    : [];
+
   return ReactDOM.createPortal(
     <div className="overlay fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
@@ -482,19 +265,24 @@ const ComplaintSummaryModal = ({ complaint, onClose, rowNumber }) => {
             </div>
           </div>
 
-          {/* Proof */}
-          {complaint.proofs && (
+          {/* Proofs Section */}
+          {proofList.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                 Supporting Evidence
               </h3>
-              <button
-                onClick={() => window.open(complaint.proofs, "_blank")}
-                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
-              >
-                <EyeIcon className="h-5 w-5" />
-                <span>View Proof</span>
-              </button>
+              <div className="flex flex-col space-y-2">
+                {proofList.map((proof, i) => (
+                  <button
+                    key={i}
+                    onClick={() => window.open(proof, "_blank")}
+                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    <EyeIcon className="h-5 w-5" />
+                    <span>View Proof {i + 1}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
