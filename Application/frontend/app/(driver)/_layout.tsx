@@ -63,7 +63,7 @@ export default function DriverLayout() {
       <Tabs.Screen
         name="stations"
         options={{
-          title: "stations",
+          title: "Stations",
           tabBarIcon: ({ color }) => (
             <StationsIcon width={28} height={28} color={color} />
           ),
