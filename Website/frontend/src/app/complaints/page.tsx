@@ -16,6 +16,7 @@ import {
   MagnifyingGlassIcon,
   BarsArrowDownIcon,
   EllipsisVerticalIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import {
   Pagination,
@@ -26,6 +27,7 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { createClient } from "@supabase/supabase-js";
+import ComplaintSummaryModal from "../../components/ui/overlay4"; // ✅ Updated import name
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -35,7 +37,6 @@ const supabase = createClient(
 
 // --- HELPER FUNCTIONS ---
 
-// Helper function to format ISO date string
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
   const date = new Date(isoString);
@@ -47,11 +48,8 @@ const formatDate = (isoString: string | null) => {
   });
 };
 
-// Helper function for robust time formatting
 const formatTime = (timeString: string | null) => {
   if (!timeString || timeString === "N/A") return "N/A";
-
-  // 1. Try to parse as a simple time string (e.g., "14:30:00")
   if (timeString.includes(":")) {
     try {
       const [hours, minutes, seconds] = timeString.split(":");
@@ -65,12 +63,9 @@ const formatTime = (timeString: string | null) => {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } catch (e) {
-      // Fall through to timestamp parsing if simple time fails
-    }
+    } catch {}
   }
 
-  // 2. Try to parse as a full ISO timestamp
   const date = new Date(timeString);
   if (!isNaN(date.getTime())) {
     return date.toLocaleTimeString("en-US", {
@@ -78,12 +73,10 @@ const formatTime = (timeString: string | null) => {
       minute: "2-digit",
     });
   }
-
-  // Fallback if neither works
   return timeString;
 };
 
-// --- INTERFACE UPDATE ---
+// --- TYPES ---
 
 type ComplaintStatus =
   | "Pending"
@@ -103,7 +96,6 @@ interface Submission {
   created_at: string;
   status: ComplaintStatus;
   description?: string;
-
   date_of_incident: string;
   time_of_incident: string;
   location: string;
@@ -121,15 +113,18 @@ const DashboardPage = () => {
     left: number;
   } | null>(null);
 
+  // ✅ Modal state
+  const [viewingComplaint, setViewingComplaint] = useState<Submission | null>(
+    null
+  );
+
   const itemsPerPage = 10;
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
   // --- DATA FETCHING ---
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Step 1: fetch all data from complaints table
         const { data: complaints, error } = await supabase
           .from("complaints")
           .select("*")
@@ -138,33 +133,27 @@ const DashboardPage = () => {
         if (error) throw error;
         if (!complaints) return;
 
-        // Step 3: map data using exact column names from your schema
         const mapped = complaints.map((c: any) => ({
           id: c.id,
           user_id: c.user_id,
-          username: c.name || "N/A", // Fetching 'name' from complaints table
+          username: c.name || "N/A",
           submitted_info: c.contact_information || "N/A",
           contact_information: c.contact_information || "N/A",
           types_of_issues: c.type_of_issues || "N/A",
           location: c.location || "N/A",
-          // Using robust fallbacks for date/time
           date_of_incident: c.date_of_incident || c.created_at,
           time_of_incident: c.time_of_incident || c.created_at,
           proofs: c.proofs || null,
-
           role: c.user_type || "N/A",
           updated_at: c.updated_at,
           created_at: c.created_at,
-          status: (c.status as ComplaintStatus) || "Pending", // Ensure status is mapped
+          status: (c.status as ComplaintStatus) || "Pending",
           description: c.description || "N/A",
         }));
 
         setData(mapped as Submission[]);
       } catch (err) {
-        console.error(
-          "Supabase fetch error (Check RLS & Env Vars):",
-          JSON.stringify(err, null, 2)
-        );
+        console.error("Supabase fetch error:", err);
         toast.error("Failed to fetch complaints");
       }
     };
@@ -194,7 +183,6 @@ const DashboardPage = () => {
       `Submission #${displayNumber} status updated to: ${newStatus}`
     );
 
-    // Actual Supabase update
     const { error } = await supabase
       .from("complaints")
       .update({ status: newStatus })
@@ -206,8 +194,7 @@ const DashboardPage = () => {
           item.id === id ? { ...item, status: originalStatus } : item
         )
       );
-      console.error("Supabase update error:", JSON.stringify(error, null, 2));
-      toast.error(`Failed to update status to ${newStatus}. Rolled back.`);
+      toast.error(`Failed to update status. Rolled back.`);
     }
   };
 
@@ -241,7 +228,6 @@ const DashboardPage = () => {
         return "bg-purple-100 text-purple-700";
       case "Received":
         return "bg-yellow-100 text-yellow-700";
-      case "Pending":
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -253,7 +239,7 @@ const DashboardPage = () => {
       <Toaster />
 
       <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px]">
-        {/* Search + Sort + Filter (UI unchanged) */}
+        {/* Search + Sort */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="relative w-full max-w-md md:w-[320px] min-w-0">
             <input
@@ -266,15 +252,13 @@ const DashboardPage = () => {
             </button>
           </div>
 
-          <div className="flex flex-wrap md:flex-nowrap gap-4">
-            <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
-              <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
-              <span>Sort</span>
-            </button>
-          </div>
+          <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
+            <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
+            <span>Sort</span>
+          </button>
         </div>
 
-        {/* Header + Pagination (UI unchanged) */}
+        {/* Header + Pagination */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
           <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">
             Complaints
@@ -287,8 +271,8 @@ const DashboardPage = () => {
                   onClick={() =>
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
-                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
-                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
+                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] ${
+                    currentPage === 1 ? "opacity-50 pointer-events-none" : ""
                   }`}
                 />
               </PaginationItem>
@@ -298,9 +282,6 @@ const DashboardPage = () => {
                   <PaginationLink
                     isActive={currentPage === i + 1}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
-                      currentPage === i + 1 ? "bg-[#D1D1D1] text-[#6B6B6B]" : ""
-                    }`}
                   >
                     {i + 1}
                   </PaginationLink>
@@ -312,9 +293,9 @@ const DashboardPage = () => {
                   onClick={() =>
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                   }
-                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
+                  className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] ${
                     currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
+                      ? "opacity-50 pointer-events-none"
                       : ""
                   }`}
                 />
@@ -388,7 +369,17 @@ const DashboardPage = () => {
                       {item.status}
                     </span>
                   </TableCell>
-                  <TableCell className="relative">
+
+                  {/* ✅ Add View Button */}
+                  <TableCell className="flex space-x-2">
+                    <button
+                      onClick={() => setViewingComplaint(item)}
+                      className="text-[#073051] hover:text-blue-700"
+                    >
+                      <EyeIcon className="h-5 w-5" />
+                    </button>
+
+                    {/* Existing Dropdown */}
                     <button
                       className="dropdown-trigger flex items-center justify-center w-6 h-6 text-gray-500"
                       onClick={(e) => {
@@ -418,7 +409,6 @@ const DashboardPage = () => {
                             position: "absolute",
                           }}
                         >
-                          {/* New Status Options - 'Pending' is not included as a reset option */}
                           <button
                             onClick={() => handleDecision(item.id, "Received")}
                             className="flex items-center w-full px-3 py-2 text-yellow-600 hover:bg-gray-50 font-semibold"
@@ -457,6 +447,23 @@ const DashboardPage = () => {
           </TableBody>
         </Table>
       </main>
+
+      {/* ✅ Modal */}
+      {viewingComplaint && (
+        <ComplaintSummaryModal
+          complaint={viewingComplaint}
+          rowNumber={
+            [...data]
+              .sort(
+                (a, b) =>
+                  new Date(a.created_at).getTime() -
+                  new Date(b.created_at).getTime()
+              )
+              .findIndex((d) => d.id === viewingComplaint.id) + 1
+          }
+          onClose={() => setViewingComplaint(null)}
+        />
+      )}
     </>
   );
 };
