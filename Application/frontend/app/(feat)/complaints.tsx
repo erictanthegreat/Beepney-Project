@@ -145,7 +145,7 @@ export default class Complaints extends Component<{}, State> {
       const fileName = `proof_${timestamp}_${Math.random()
         .toString(36)
         .substring(7)}.${ext}`;
-      const path = `public/complaints/${userId}/${fileName}`;
+      const path = `proofs/${userId}/${fileName}`;
 
       // Read file as base64
       const fileBase64 = await FileSystem.readAsStringAsync(uri, {
