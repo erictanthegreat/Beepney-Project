@@ -68,72 +68,215 @@ const downloadPDF = (complaint, rowNumber) => {
   const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Solved":
-        return { bg: "#d1fae5", color: "#065f46" };
-      case "In-Action":
-        return { bg: "#dbeafe", color: "#1e40af" };
-      case "In-Review":
-        return { bg: "#e9d5ff", color: "#6b21a8" };
-      case "Received":
-        return { bg: "#fef3c7", color: "#92400e" };
-      case "Pending":
-      default:
-        return { bg: "#f3f4f6", color: "#6b7280" };
-    }
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const formattedTime = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const formatDate = (isoString) => {
+    if (!isoString || isoString === "N/A") return "N/A";
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  const statusColor = getStatusColor(complaint.status);
+  const formatTime = (timeString) => {
+    if (!timeString || timeString === "N/A") return "N/A";
+    if (timeString.includes(":")) {
+      try {
+        const [h, m, s] = timeString.split(":");
+        const d = new Date();
+        d.setHours(parseInt(h), parseInt(m), parseInt(s || "0"));
+        return d.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } catch {
+        return timeString;
+      }
+    }
+    const d = new Date(timeString);
+    return isNaN(d.getTime())
+      ? timeString
+      : d.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  };
+
+  const proofList = Array.isArray(complaint.proofs)
+    ? complaint.proofs
+    : typeof complaint.proofs === "string"
+    ? complaint.proofs.split(",").map((p) => p.trim())
+    : [];
 
   const html = `
     <!DOCTYPE html>
     <html>
       <head>
+        <meta charset="UTF-8" />
         <title>Complaint Report #${rowNumber}</title>
-        <meta charset="UTF-8">
         <style>
           body {
-            font-family: system-ui, sans-serif;
-            padding: 2rem;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: white;
+            color: #111827;
+            padding: 2rem 3rem;
+            line-height: 1.4;
           }
-          .proof-section { background: #eff6ff; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6; }
-          .proof-label { color: #1e40af; font-weight: 600; margin-bottom: 0.5rem; }
-          .proof-value { color: #1e3a8a; font-size: 0.75rem; word-break: break-all; }
+          h1 {
+            font-size: 1.8rem;
+            color: #073051;
+            margin-bottom: 0.25rem;
+          }
+          .generated {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+          }
+          h2 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #073051;
+            margin-top: 1.8rem;
+            margin-bottom: 0.6rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.25rem;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem 2rem;
+          }
+          .label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+          }
+          .value {
+            font-size: 0.9rem;
+            color: #111827;
+            font-weight: 500;
+          }
+          .desc {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            background: #f9fafb;
+            white-space: pre-wrap;
+          }
+          .proof {
+            font-size: 0.85rem;
+            color: #1e3a8a;
+            margin-top: 0.4rem;
+            word-break: break-all;
+          }
+          .footer {
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 0.5rem;
+          }
+          @media print {
+            body { background: white; margin: 0; padding: 1.5rem 2rem; }
+            .footer { position: fixed; bottom: 0; left: 0; right: 0; }
+          }
         </style>
       </head>
       <body>
         <h1>Complaint Report #${rowNumber}</h1>
-        <p><strong>Status:</strong> ${complaint.status}</p>
-        <p><strong>Name:</strong> ${complaint.username}</p>
-        <p><strong>Issue:</strong> ${complaint.types_of_issues}</p>
+        <p class="generated">Generated on ${formattedDate}, ${formattedTime}</p>
 
-        ${
-          complaint.proofs
-            ? `
-          <div class="proof-section">
-            <div class="proof-label">Proof(s) Attached</div>
-            <div class="proof-value">
-              ${
-                Array.isArray(complaint.proofs)
-                  ? complaint.proofs
-                      .map((url, i) => `<div>Proof ${i + 1}: ${url}</div>`)
-                      .join("")
-                  : String(complaint.proofs)
-                      .split(",")
-                      .map((url, i) => `<div>Proof ${i + 1}: ${url.trim()}</div>`)
-                      .join("")
-              }
-            </div>
+        <h2>Current Status</h2>
+        <p class="value">${complaint.status || "N/A"}</p>
+
+        <h2>Complainant Information</h2>
+        <div class="grid">
+          <div>
+            <div class="label">Name</div>
+            <div class="value">${complaint.username || "N/A"}</div>
           </div>
-          `
-            : ""
+          <div>
+            <div class="label">Contact</div>
+            <div class="value">${complaint.contact_information || "N/A"}</div>
+          </div>
+          <div>
+            <div class="label">Role</div>
+            <div class="value">${complaint.role || "N/A"}</div>
+          </div>
+        </div>
+
+        <h2>Incident Details</h2>
+        <div class="grid">
+          <div>
+            <div class="label">Type of Issue</div>
+            <div class="value">${complaint.types_of_issues || "N/A"}</div>
+          </div>
+          <div>
+            <div class="label">Location</div>
+            <div class="value">${complaint.location || "N/A"}</div>
+          </div>
+          <div>
+            <div class="label">Date of Incident</div>
+            <div class="value">${formatDate(complaint.date_of_incident)}</div>
+          </div>
+          <div>
+            <div class="label">Time of Incident</div>
+            <div class="value">${formatTime(complaint.time_of_incident)}</div>
+          </div>
+        </div>
+
+        <h2>Description</h2>
+        <div class="desc">${complaint.description || "N/A"}</div>
+
+        <h2>Supporting Evidence</h2>
+        ${
+          proofList.length > 0
+            ? `<p class="value">Proof Attached: </p>
+               ${proofList
+                 .map((url) => `<div class="proof">${url}</div>`)
+                 .join("")}`
+            : `<p class="value">Proof Attached: NONE</p>`
         }
+
+        <div style="page-break-before: always;"></div>
+        <h2>Submission Timeline</h2>
+        <div class="grid">
+          <div>
+            <div class="label">Submitted</div>
+            <div class="value">${formatDate(
+              complaint.created_at
+            )} at ${formatTime(complaint.created_at)}</div>
+          </div>
+          <div>
+        </div>
+
+        <div class="footer">
+        Beepney's Complaint Management System - Confidential Document
+        </div>
 
         <script>window.onload = function(){ window.print(); }</script>
       </body>
     </html>
   `;
+
   printWindow.document.write(html);
   printWindow.document.close();
 };
@@ -255,7 +398,7 @@ const ComplaintSummaryModal = ({ complaint, onClose, rowNumber }) => {
 
           {/* Description */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 max-w-10">
               Description
             </h3>
             <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-[#073051]">
@@ -288,7 +431,7 @@ const ComplaintSummaryModal = ({ complaint, onClose, rowNumber }) => {
 
           {/* Submission Timeline */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-10">
               Submission Timeline
             </h3>
             <div className="space-y-2">
