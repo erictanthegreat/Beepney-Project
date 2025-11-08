@@ -316,7 +316,6 @@ const DashboardPage = () => {
               <TableHead>Time</TableHead>
               <TableHead>Type of Issue</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Proof</TableHead>
               <TableHead>Submitted At</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
@@ -345,18 +344,7 @@ const DashboardPage = () => {
                   <TableCell className="max-w-xs truncate">
                     {item.description}
                   </TableCell>
-                  <TableCell>
-                    {item.proofs ? (
-                      <button
-                        className="text-blue-600 underline"
-                        onClick={() => window.open(item.proofs!, "_blank")}
-                      >
-                        View
-                      </button>
-                    ) : (
-                      "N/A"
-                    )}
-                  </TableCell>
+
                   <TableCell>
                     {formatDate(item.created_at)} {formatTime(item.created_at)}
                   </TableCell>

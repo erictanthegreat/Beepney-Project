@@ -186,6 +186,37 @@ const downloadPDF = (complaint, rowNumber) => {
             margin-top: 0.4rem;
             word-break: break-all;
           }
+          .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+          }
+          .image-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #f9fafb;
+          }
+          .image-container img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+          }
+          .image-error {
+            display: none;
+            padding: 1rem;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.8rem;
+          }
+          .image-url {
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            color: #1e3a8a;
+            word-break: break-all;
+          }
           .footer {
             margin-top: 3rem;
             text-align: center;
@@ -250,13 +281,24 @@ const downloadPDF = (complaint, rowNumber) => {
         ${
           proofList.length > 0
             ? `<p class="value">Proof Attached: </p>
+               <div class="image-grid">
                ${proofList
-                 .map((url) => `<div class="proof">${url}</div>`)
-                 .join("")}`
+                 .map(
+                   (url) => `
+                   <div class="image-container">
+                     <img src="${url}" alt="Evidence" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+                     <div class="image-error">
+                       <p>Unable to load image</p>
+                     </div>
+                   </div>
+                 `
+                 )
+                 .join("")}
+               </div>`
             : `<p class="value">Proof Attached: NONE</p>`
         }
 
-        <div style="page-break-before: always;"></div>
+      
         <h2>Submission Timeline</h2>
         <div class="grid">
           <div>
