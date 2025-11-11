@@ -25,7 +25,6 @@ export default function DriverProfile() {
 
   const handleSubmit = async () => {
     try {
-      // Get current user
       const {
         data: { user },
         error: userError,
@@ -36,12 +35,11 @@ export default function DriverProfile() {
         return;
       }
 
-      // Insert driver profile with profile_id
       const { error: insertError } = await supabase
         .from("driverprofiles")
         .insert([
           {
-            id: user.id, // 🔑 Required for RLS
+            id: user.id,
             phone_number: phoneNumber,
             full_address: fullAddress,
             operator_name: operatorName,
@@ -58,9 +56,6 @@ export default function DriverProfile() {
         return;
       }
 
-      // 🚫 Removed role update
-      // User stays "commuter" until admin approval
-
       setStep(3);
     } catch (err) {
       console.error("handleSubmit error:", err);
@@ -68,7 +63,6 @@ export default function DriverProfile() {
     }
   };
 
-  // BACK BUTTON
   useEffect(() => {
     const handleBackPress = () => {
       if (step > 1) {
@@ -88,7 +82,6 @@ export default function DriverProfile() {
 
   return (
     <View style={viewStyles.container}>
-      {/* Show Logo and Headers only for Step 1 & 2 */}
       {step !== 3 && (
         <View>
           <Image
@@ -99,7 +92,7 @@ export default function DriverProfile() {
           <Text style={textStyles.subheader}>Sign In to Continue</Text>
         </View>
       )}
-      {/* Step 1 */}
+
       {step === 1 && (
         <>
           <View style={inputStyles.inputGroup}>
@@ -138,7 +131,7 @@ export default function DriverProfile() {
           </View>
         </>
       )}
-      {/* Step 2 */}
+
       {step === 2 && (
         <>
           <View style={inputStyles.inputGroup}>
@@ -180,7 +173,7 @@ export default function DriverProfile() {
           </View>
         </>
       )}
-      {/* Step 3 */}
+
       {step === 3 && (
         <View style={{ alignItems: "center" }}>
           <Image
@@ -220,7 +213,6 @@ export default function DriverProfile() {
         style={styles.button}
         onPress={() => {
           if (step === 1) {
-            // Step 1 validation
             if (!phoneNumber || !fullAddress || !plateNumber) {
               Alert.alert("Error", "Please fill out all fields.");
               return;
@@ -233,7 +225,7 @@ export default function DriverProfile() {
             }
             handleSubmit();
           } else if (step === 3) {
-            router.push("/(commuter)/home");
+            router.push("/(commuter)/Home");
           }
         }}
       >

@@ -35,7 +35,6 @@ export default function CommuterProfile() {
 
   const [discountType, setDiscountType] = useState<string | null>(null);
 
-  // Fetch profile info and submission status on mount
   useEffect(() => {
     const fetchProfileAndStatus = async () => {
       try {
@@ -46,7 +45,6 @@ export default function CommuterProfile() {
 
         const userId = session.user.id;
 
-        // Fetch profile
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("username, email, avatar_url")
@@ -63,7 +61,6 @@ export default function CommuterProfile() {
           setProfileImage(profile.avatar_url);
         }
 
-        // Fetch latest submission
         const { data: latestSubmission, error: submissionError } =
           await supabase
             .from("submissions")
@@ -84,7 +81,6 @@ export default function CommuterProfile() {
             back_id_url: latestSubmission.back_id_url,
           });
 
-          // store discount type if allowed
           const allowedTypes = [
             "Student",
             "PWD",
@@ -106,7 +102,6 @@ export default function CommuterProfile() {
     fetchProfileAndStatus();
   }, []);
 
-  // Profile image picker
   const pickImage = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -123,18 +118,16 @@ export default function CommuterProfile() {
     if (!result.canceled) setProfileImage(result.assets[0].uri);
   };
 
-  // Logout
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
       await AsyncStorage.clear();
-      router.replace("/(auth)/login");
+      router.replace("/(auth)/Login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
 
-  // Redirect to submission screen
   const handleIdPress = () => {
     if (submission?.status === "pending") {
       Alert.alert(
@@ -152,7 +145,6 @@ export default function CommuterProfile() {
     router.push("/(profile)/ProfileSubmission");
   };
 
-  // Top-right button: check driver profile status before switching
   const handleSwitchToDriver = async () => {
     try {
       const {
@@ -162,7 +154,6 @@ export default function CommuterProfile() {
 
       const userId = session.user.id;
 
-      // Check driver profile
       const { data: driverProfile, error: driverError } = await supabase
         .from("driverprofiles")
         .select("status")
@@ -191,7 +182,6 @@ export default function CommuterProfile() {
         return;
       }
 
-      // Update role to driver
       const { error } = await supabase
         .from("profiles")
         .update({ role: "driver" })
@@ -203,7 +193,7 @@ export default function CommuterProfile() {
         return;
       }
 
-      router.replace("/(driver)/home");
+      router.replace("/(driver)/Home");
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Something went wrong while switching role.");
@@ -241,7 +231,6 @@ export default function CommuterProfile() {
       </View>
 
       <View style={credStyles.container}>
-        {/* Name */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Name</Text>
           <View style={credStyles.input}>
@@ -251,7 +240,6 @@ export default function CommuterProfile() {
           </View>
         </View>
 
-        {/* Email */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Email</Text>
           <View style={credStyles.input}>
@@ -261,7 +249,6 @@ export default function CommuterProfile() {
           </View>
         </View>
 
-        {/* Password */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Password</Text>
           <View style={credStyles.input}>
@@ -269,7 +256,6 @@ export default function CommuterProfile() {
           </View>
         </View>
 
-        {/* ID Discount Section */}
         <View style={credStyles.formGroup}>
           <View
             style={{
@@ -342,16 +328,14 @@ export default function CommuterProfile() {
           )}
         </View>
 
-        {/* Drive with Beepney */}
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/driverprofile")}
+          onPress={() => router.push("/(auth)/DriverProfile")}
           style={credStyles.driverRow}
         >
           <Text style={credStyles.driverText}>Drive with Beepney</Text>
           <DriverIcon />
         </TouchableOpacity>
 
-        {/* Logout */}
         <TouchableOpacity onPress={handleLogout} style={credStyles.logoutRow}>
           <Text style={credStyles.logoutText}>Logout</Text>
           <LogoutIcon />

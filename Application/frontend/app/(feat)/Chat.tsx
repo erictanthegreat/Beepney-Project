@@ -53,7 +53,6 @@ export default function Chat() {
   const [isOnline, setIsOnline] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // Init chat logic
   useEffect(() => {
     if (!userId) return;
     initChat();
@@ -63,7 +62,6 @@ export default function Chat() {
     try {
       let finalConvId = paramConversationId ?? null;
 
-      // Commuter case (comes with rentalId)
       if (!finalConvId && rentalId) {
         const { data: rentalData, error: rentalError } = await supabase
           .from("rental")
@@ -81,7 +79,6 @@ export default function Chat() {
           return;
         }
 
-        // check existing conversation
         const { data: existingConv } = await supabase
           .from("conversations")
           .select("id")
@@ -92,7 +89,6 @@ export default function Chat() {
         if (existingConv) {
           finalConvId = existingConv.id;
         } else {
-          // create conversation
           const { data: newConv, error: createError } = await supabase
             .from("conversations")
             .insert({
@@ -111,7 +107,6 @@ export default function Chat() {
         }
       }
 
-      // Driver case (comes with conversationId)
       if (!finalConvId && paramConversationId) {
         finalConvId = paramConversationId;
       }
@@ -123,7 +118,6 @@ export default function Chat() {
 
       setConversationId(finalConvId);
 
-      // fetch participants
       const { data: conv, error } = await supabase
         .from("conversations")
         .select("driver_id, commuter_id")
@@ -215,7 +209,10 @@ export default function Chat() {
   };
 
   const markMessageAsRead = async (messageId: string) => {
-    await supabase.from("Messages").update({ is_read: true }).eq("id", messageId);
+    await supabase
+      .from("Messages")
+      .update({ is_read: true })
+      .eq("id", messageId);
   };
 
   const checkOnlineStatus = async (driver_id: string) => {
@@ -231,9 +228,15 @@ export default function Chat() {
     setIsOnline((data && data.length > 0) || false);
   };
 
-  // Send Message (works for both roles)
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending || !conversationId || !driverId || !commuterId) return;
+    if (
+      !newMessage.trim() ||
+      sending ||
+      !conversationId ||
+      !driverId ||
+      !commuterId
+    )
+      return;
 
     const messageText = newMessage.trim();
     setNewMessage("");
@@ -306,7 +309,11 @@ export default function Chat() {
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#073051" style={{ marginTop: 50 }} />
+          <ActivityIndicator
+            size="large"
+            color="#073051"
+            style={{ marginTop: 50 }}
+          />
         ) : (
           <View style={{ paddingHorizontal: 15, marginTop: 20 }}>
             {messages.map((msg) => {
@@ -325,7 +332,9 @@ export default function Chat() {
                     borderTopRightRadius: isMyMessage ? 0 : 15,
                   }}
                 >
-                  <Text style={{ fontSize: 16, color: "#fff" }}>{msg.message}</Text>
+                  <Text style={{ fontSize: 16, color: "#fff" }}>
+                    {msg.message}
+                  </Text>
                   <Text
                     style={{
                       fontSize: 11,
@@ -391,9 +400,21 @@ const chatStyle = StyleSheet.create({
     fontFamily: "Poppins",
     marginLeft: 25,
   },
-  rentalname: { color: "#073051", fontFamily: "Poppins", fontSize: 18 },
-  status: { color: "#595959", fontFamily: "Poppins", fontSize: 15 },
-  statscont: { flexDirection: "row", alignItems: "center", gap: 5 },
+  rentalname: {
+    color: "#073051",
+    fontFamily: "Poppins",
+    fontSize: 18,
+  },
+  status: {
+    color: "#595959",
+    fontFamily: "Poppins",
+    fontSize: 15,
+  },
+  statscont: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   inputcontainer: {
     flexDirection: "row",
     alignItems: "flex-end",

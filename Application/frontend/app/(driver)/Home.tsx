@@ -33,7 +33,6 @@ export default function DriverHome() {
   const [firstName, setFirstName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
 
-  // Fetch user profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -96,7 +95,6 @@ export default function DriverHome() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Top bar */}
       <View style={styles.topBar}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity
@@ -125,7 +123,6 @@ export default function DriverHome() {
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tabs */}
         <View style={styles.headerRow}>
           <Text style={styles.text}>Overview</Text>
           <View style={styles.segmentContainer}>
@@ -164,17 +161,15 @@ export default function DriverHome() {
           </View>
         </View>
 
-        {/* Table */}
         <Table
           headers={tableData[activeTab - 1].headers}
           data={tableData[activeTab - 1].data}
         />
 
-        {/* Fare Matrix Shortcut */}
         <View style={styles.rowBetween}>
           <Text style={fareStyle.fare}>Detailed Fare Matrices</Text>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/farematrix")}
+            onPress={() => router.push("/(feat)/FareMatrix")}
             style={fareStyle.button}
           >
             <FareIcon width={26} height={26} />
@@ -184,7 +179,7 @@ export default function DriverHome() {
         {/* Other Features */}
         <View style={featStyles.container}>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/farecalculator")}
+            onPress={() => router.push("/(feat)/FareCalculator")}
             style={featStyles.featureButton}
           >
             <FCIcon style={featStyles.icon} />
@@ -192,7 +187,7 @@ export default function DriverHome() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/generateqr")}
+            onPress={() => router.push("/(feat)/GenerateQR")}
             style={featStyles.featureButton}
           >
             <DDIcon style={featStyles.icon} />
@@ -200,7 +195,7 @@ export default function DriverHome() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/ridehistory")}
+            onPress={() => router.push("/(feat)/RideHistory")}
             style={featStyles.featureButton}
           >
             <RHIcon style={featStyles.icon} />
@@ -208,7 +203,7 @@ export default function DriverHome() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/complaints")}
+            onPress={() => router.push("/(feat)/Complaints")}
             style={featStyles.featureButton}
           >
             <ComplaintIcon style={featStyles.icon} />

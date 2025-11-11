@@ -30,15 +30,19 @@ export default function ScanDriverdets() {
     try {
       const parsed = JSON.parse(data);
       if (parsed.screen && parsed.id) {
-        router.push(`/(result)/driverdetails?id=${parsed.id}`);
+        router.push(`/(result)/DriverDetails?id=${parsed.id}`);
+
+        setTimeout(() => setScanned(false), 5000);
       } else {
         Alert.alert("Invalid QR", "This QR code is not valid for navigation.");
-        setScanned(false); // reset so user can try again
+
+        setTimeout(() => setScanned(false), 5000);
       }
     } catch (err) {
       Alert.alert("Error", "Failed to read QR code.");
       console.error(err);
-      setScanned(false);
+
+      setTimeout(() => setScanned(false), 2000);
     }
   };
 
@@ -80,7 +84,7 @@ export default function ScanDriverdets() {
         <View style={scanStyles.overlay}>
           <QR />
           <Text style={scanStyles.text}>
-            Scan QR to show the driver’s information for background checks.
+            Scan QR to show the driver's information for background checks.
           </Text>
         </View>
       </CameraView>

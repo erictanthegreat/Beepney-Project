@@ -32,7 +32,7 @@ export default function ProfileSubmission() {
   const [frontIdUri, setFrontIdUri] = useState<string | null>(null);
   const [backIdUri, setBackIdUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [userType, setUserType] = useState<string | null>(null); // "commuter" | "driver"
+  const [userType, setUserType] = useState<string | null>(null);
 
   useEffect(() => {
     if (userType === "driver") {
@@ -96,7 +96,7 @@ export default function ProfileSubmission() {
       } = await supabase.auth.getSession();
       if (!session?.user) {
         Alert.alert("Error", "User not authenticated");
-        router.replace("/(auth)/login");
+        router.replace("/(auth)/Login");
         return;
       }
       setCurrentUserId(session.user.id);
@@ -208,11 +208,11 @@ export default function ProfileSubmission() {
     } else {
       console.log("Navigating, userType =", userType);
       if (userType === "driver") {
-        router.push("/(driver)/home");
+        router.push("/(driver)/Home");
       } else if (userType === "commuter") {
-        router.push("/(commuter)/home");
+        router.push("/(commuter)/Home");
       } else {
-        router.push("/home");
+        router.push("/Home");
       }
     }
   };
@@ -228,18 +228,15 @@ export default function ProfileSubmission() {
         keyboardShouldPersistTaps="handled"
         style={{ flex: 1, backgroundColor: "#fff" }}
       >
-        {/* BACK BUTTON TOP LEFT */}
         <View style={styles.backButtonWrapper}>
           <BackButton />
         </View>
 
-        {/* HEADER LOGO */}
         <Image
           source={require("@/assets/images/Beepney LOGO.png")}
           style={[styles.logo, { width: width * 0.7, height: height * 0.18 }]}
         />
 
-        {/* STEP 1: SUBMIT */}
         {step === 1 && (
           <>
             <View style={styles.inputGroup}>
@@ -259,7 +256,6 @@ export default function ProfileSubmission() {
                 onToggle={(open) => handleToggle(1, open)}
               />
 
-              {/* front image */}
               <View style={{ marginTop: 12, marginBottom: 6 }}>
                 <AttachComp
                   label={
@@ -272,7 +268,6 @@ export default function ProfileSubmission() {
               </View>
             </View>
 
-            {/* back image */}
             <View style={styles.inputGroup}>
               <AttachComp
                 label={
@@ -304,7 +299,6 @@ export default function ProfileSubmission() {
           </>
         )}
 
-        {/* STEP 2: FOR APPROVAL */}
         {step === 2 && (
           <View style={{ alignItems: "center" }}>
             <Text
@@ -336,7 +330,6 @@ export default function ProfileSubmission() {
           </View>
         )}
 
-        {/* BUTTON */}
         <TouchableOpacity
           style={[
             styles.button,

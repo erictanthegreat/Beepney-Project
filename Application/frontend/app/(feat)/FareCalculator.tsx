@@ -59,7 +59,6 @@ export default class FareCalculator extends Component {
     await this.fetchDiscountTypes();
   }
 
-  // Get Current Location and reverse geocode it via Mapbox
   getCurrentLocation = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -71,7 +70,6 @@ export default class FareCalculator extends Component {
       let location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
-      // Reverse geocode with Mapbox
       const res = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${MAPBOX_TOKEN}`
       );
@@ -79,8 +77,8 @@ export default class FareCalculator extends Component {
 
       if (data.features.length > 0) {
         this.setState({
-          origin: data.features[0].place_name, // nearest address
-          originCoords: [longitude, latitude], // coords
+          origin: data.features[0].place_name,
+          originCoords: [longitude, latitude],
         });
       }
     } catch (err) {
@@ -125,7 +123,6 @@ export default class FareCalculator extends Component {
           ...new Set(data.map((item) => item.submission_type)),
         ];
 
-        // Filter only allowed ones
         const filteredTypes = uniqueTypes.filter((t) =>
           allowedTypes.includes(t)
         );
@@ -142,12 +139,11 @@ export default class FareCalculator extends Component {
   handleSelectSuggestion = (place, type) => {
     this.setState({
       [type]: place.place_name,
-      [`${type}Coords`]: place.center, // [lng, lat]
+      [`${type}Coords`]: place.center,
       [`${type}Suggestions`]: [],
     });
   };
 
-  // Toggle dropdown
   handleToggle = (index, open) => {
     this.setState({
       openDropdown: open ? index : null,
@@ -157,7 +153,6 @@ export default class FareCalculator extends Component {
   render() {
     return (
       <View style={{ flex: 1 }}>
-        {/* Header */}
         <View style={fareStyles.headerContainer}>
           <BackButton />
           <Text style={fareStyles.header}>Calculate Your Ride</Text>
@@ -171,7 +166,6 @@ export default class FareCalculator extends Component {
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
-                {/* ORIGIN INPUT */}
                 <View style={fareStyles.cont}>
                   <OriginIcon style={fareStyles.icon} />
                   <TextInput
@@ -183,7 +177,7 @@ export default class FareCalculator extends Component {
                     }}
                     style={{ flex: 1 }}
                   />
-                  {/*  Button to refresh current location */}
+
                   <TouchableOpacity onPress={this.getCurrentLocation}>
                     <Text style={{ color: "#1E86DA", marginLeft: 8 }}>📍</Text>
                   </TouchableOpacity>
@@ -265,7 +259,7 @@ export default class FareCalculator extends Component {
                   style={fareStyles.button}
                   onPress={() =>
                     router.push({
-                      pathname: "/(feat)/calculatedfare",
+                      pathname: "/(feat)/CalculatedFare",
                       params: {
                         origin: this.state.origin,
                         originCoords: JSON.stringify(this.state.originCoords),
@@ -286,7 +280,6 @@ export default class FareCalculator extends Component {
                 </TouchableOpacity>
               </View>
 
-              {/* DETAILED FARE MATRICES */}
               <View
                 style={{
                   flexDirection: "row",
@@ -297,7 +290,7 @@ export default class FareCalculator extends Component {
                 <Text style={fareStyles.fareText}>Detailed Fare Matrices</Text>
                 <TouchableOpacity style={fareStyles.fareButton}>
                   <FareIcon
-                    onPress={() => router.push("/farematrix")}
+                    onPress={() => router.push("/FareMatrix")}
                     style={fareStyles.fareIcon}
                   />
                 </TouchableOpacity>
@@ -306,7 +299,7 @@ export default class FareCalculator extends Component {
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text style={fareStyles.fareText}>Saved Calculated Fare</Text>
                 <TouchableOpacity
-                  onPress={() => router.push("/ridehistory")}
+                  onPress={() => router.push("/RideHistory")}
                   style={fareStyles.fareButton2}
                 >
                   <Text style={fareStyles.fareButtonText}>See all</Text>

@@ -46,7 +46,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
 
   async fetchRentals() {
     try {
-      // Get the current logged-in user
       const {
         data: { user },
         error: userError,
@@ -57,11 +56,10 @@ export default class Renting extends Component<{}, DriverRentingState> {
         return;
       }
 
-      // Only fetch rentals created by this user
       const { data, error } = await supabase
         .from("rental")
         .select("*")
-        .eq("user_id", user.id) // ✅ Only rentals made by this user
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -143,7 +141,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
   };
 
   openInbox = () => {
-    router.push("/(feat)/inbox");
+    router.push("/(feat)/Inbox");
   };
 
   render() {
@@ -152,7 +150,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
 
     return (
       <View style={{ flex: 1 }}>
-        {/* Header & Post Rental Button */}
         <View>
           <View style={rentStyles.topButtons}>
             <BackButton />
@@ -166,7 +163,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
             Book Your Barkada Trip with Beepney
           </Text>
           <TouchableOpacity
-            onPress={() => router.push("/(feat)/postrental")}
+            onPress={() => router.push("/(feat)/PostRental")}
             style={rentStyles.Button}
           >
             <Text style={rentStyles.postHeader}>Post Rental Info</Text>
@@ -174,7 +171,6 @@ export default class Renting extends Component<{}, DriverRentingState> {
           </TouchableOpacity>
         </View>
 
-        {/* Empty State */}
         {isEmpty ? (
           <View style={rentStyles.emptyContainer}>
             <EmptyStateIcon />
@@ -249,7 +245,7 @@ export default class Renting extends Component<{}, DriverRentingState> {
                         style={rentStyles.dropdownItem}
                         onPress={() =>
                           router.push({
-                            pathname: "/(feat)/postrental",
+                            pathname: "/(feat)/PostRental",
                             params: { id: item.id },
                           })
                         }

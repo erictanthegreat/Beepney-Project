@@ -20,11 +20,7 @@ import { supabase } from "@/scripts/supabase";
 
 export default function CreateProfile() {
   const [step, setStep] = useState(1);
-
-  // Responsive dimensions
   const { width, height } = useWindowDimensions();
-
-  // FORM FIELDS
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,10 +31,8 @@ export default function CreateProfile() {
   );
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // Loading state
   const [loading, setLoading] = useState(false);
 
-  // BACK BUTTON HANDLING
   useEffect(() => {
     const handleBackPress = () => {
       if (step > 1) {
@@ -56,7 +50,6 @@ export default function CreateProfile() {
     return () => backHandler.remove();
   }, [step]);
 
-  // Handle Signup + Profile creation
   const handleSignUp = async () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
       Alert.alert("Please fill all fields");
@@ -71,7 +64,6 @@ export default function CreateProfile() {
     setLoading(true);
 
     try {
-      // 1. Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -79,8 +71,8 @@ export default function CreateProfile() {
           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/confirm`,
           data: {
             name: `${firstName} ${lastName}`,
-            role: selectedRole, // <-- send role here
-            avatar_url: avatarUrl, // <-- optional avatar
+            role: selectedRole,
+            avatar_url: avatarUrl,
           },
         },
       });
@@ -99,14 +91,12 @@ export default function CreateProfile() {
         return;
       }
 
-      // Inform user to verify email
       Alert.alert(
         "Sign Up Successful",
         "Your account has been created. Please confirm via the email we sent."
       );
 
-      // Navigate to login
-      router.push("/(auth)/login");
+      router.push("/(auth)/Login");
     } catch (err: any) {
       console.error("handleSignUp error:", err);
       Alert.alert("Error", err?.message ?? "Something went wrong");
@@ -127,7 +117,6 @@ export default function CreateProfile() {
         style={{ flex: 1, backgroundColor: "#fff" }}
       >
         <View style={viewStyles.container}>
-          {/* HEADER */}
           <View>
             <Image
               source={require("@/assets/images/Beepney LOGO.png")}
@@ -144,7 +133,6 @@ export default function CreateProfile() {
             </Text>
           </View>
 
-          {/* BASIC INFO */}
           <View style={styleName.rowContainer}>
             <View style={[inputName.inputGroup, { width: "45%" }]}>
               <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
@@ -216,7 +204,6 @@ export default function CreateProfile() {
             />
           </View>
 
-          {/* BUTTON */}
           <TouchableOpacity
             style={[
               styles.button,
@@ -234,12 +221,11 @@ export default function CreateProfile() {
             )}
           </TouchableOpacity>
 
-          {/* SIGN-IN LINK */}
           <Text style={{ marginTop: height * 0.02 }}>
             Already have an account?{" "}
             <Text
               style={{ color: "#073051", fontWeight: "bold" }}
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => router.push("/(auth)/Login")}
             >
               Sign-In
             </Text>

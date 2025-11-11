@@ -31,7 +31,6 @@ export default function DriverProfile() {
     back_id_url: string | null;
   } | null>(null);
 
-  // Fetch profile info + submission status
   useEffect(() => {
     const fetchProfileAndStatus = async () => {
       try {
@@ -42,7 +41,6 @@ export default function DriverProfile() {
 
         const userId = session.user.id;
 
-        // Fetch profile
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("username, email, avatar_url")
@@ -57,7 +55,6 @@ export default function DriverProfile() {
           setProfileImage(profile.avatar_url);
         }
 
-        // Fetch latest submission for Driver
         const { data: latestSubmission, error: submissionError } =
           await supabase
             .from("submissions")
@@ -86,7 +83,6 @@ export default function DriverProfile() {
     fetchProfileAndStatus();
   }, []);
 
-  // Pick profile image
   const pickImage = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -105,18 +101,16 @@ export default function DriverProfile() {
     }
   };
 
-  // Logout
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
       await AsyncStorage.clear();
-      router.replace("/(auth)/login");
+      router.replace("/(auth)/Login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
 
-  // Switch role back to commuter
   const handleSwitchToCommuter = async () => {
     try {
       const {
@@ -137,7 +131,7 @@ export default function DriverProfile() {
         return;
       }
 
-      router.replace("/(commuter)/home");
+      router.replace("/(commuter)/Home");
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Something went wrong while switching role.");
@@ -150,7 +144,6 @@ export default function DriverProfile() {
       <View style={profStyles.container}>
         <Text style={profStyles.header}>Profile</Text>
 
-        {/* Switch back to Commuter */}
         <TouchableOpacity
           onPress={handleSwitchToCommuter}
           style={profStyles.icon}
@@ -162,7 +155,6 @@ export default function DriverProfile() {
         View your profile.
       </Text>
 
-      {/* Profile Image */}
       <View style={profStyles.profileContainer}>
         {profileImage ? (
           <Image
@@ -177,9 +169,7 @@ export default function DriverProfile() {
         </TouchableOpacity>
       </View>
 
-      {/* Profile Info + Driver License Section */}
       <View style={credStyles.container}>
-        {/* Name */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Name</Text>
           <View style={credStyles.input}>
@@ -189,7 +179,6 @@ export default function DriverProfile() {
           </View>
         </View>
 
-        {/* Email */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Email</Text>
           <View style={credStyles.input}>
@@ -199,7 +188,6 @@ export default function DriverProfile() {
           </View>
         </View>
 
-        {/* Password */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Password</Text>
           <View style={credStyles.input}>
@@ -207,7 +195,6 @@ export default function DriverProfile() {
           </View>
         </View>
 
-        {/* Driver License Section */}
         <View style={credStyles.formGroup}>
           <Text style={credStyles.label}>Driver's License</Text>
 
@@ -253,7 +240,6 @@ export default function DriverProfile() {
           )}
         </View>
 
-        {/* Logout */}
         <TouchableOpacity onPress={handleLogout} style={credStyles.logoutRow}>
           <Text style={credStyles.logoutText}>Logout</Text>
           <LogoutIcon />

@@ -19,7 +19,7 @@ export default function GenerateQr() {
       <View style={genStyles.container}>
         <TouchableOpacity
           style={genStyles.iconButton}
-          onPress={() => router.push("/(result)/payment")}
+          onPress={() => router.push("/(result)/Payment")}
         >
           <GeneratePaymentIcon />
           <Text style={genStyles.genHeader}>
@@ -32,7 +32,7 @@ export default function GenerateQr() {
         </TouchableOpacity>
         <TouchableOpacity
           style={genStyles.iconButton}
-          onPress={() => router.push("/(result)/driverqr")}
+          onPress={() => router.push("/(result)/DriverQR")}
         >
           <GenerateProfIcon />
           <Text style={genStyles.genHeader}>Generate Driver Details</Text>

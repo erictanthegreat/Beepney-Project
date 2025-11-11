@@ -562,7 +562,6 @@ export default function RideHailing() {
                   Waiting for a driver...
                 </Text>
 
-                {/* Pick Up */}
                 <View style={rideStyles.line}></View>
                 <View style={rideStyles.waitcont}>
                   <OriginIcon style={rideStyles.icon2} />
@@ -570,7 +569,6 @@ export default function RideHailing() {
                 </View>
                 <Text style={rideStyles.waitText}>{pickupAddress}</Text>
 
-                {/* Destination */}
                 <View style={{ flexDirection: "row" }}>
                   <DestIcon style={rideStyles.icon2} />
                   <Text style={rideStyles.destText}>Destination:</Text>
@@ -586,7 +584,6 @@ export default function RideHailing() {
                 </Text>
                 <View style={rideStyles.line}></View>
 
-                {/* Summary */}
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
@@ -623,7 +620,6 @@ export default function RideHailing() {
                   Driver on the way!
                 </Text>
 
-                {/* Driver Details */}
                 <View style={rideStyles.line}></View>
                 <Text>Driver Details</Text>
 
@@ -639,14 +635,12 @@ export default function RideHailing() {
 
                 <View style={rideStyles.line}></View>
 
-                {/* Pick Up */}
                 <View style={rideStyles.waitcont}>
                   <OriginIcon style={rideStyles.icon2} />
                   <Text style={rideStyles.pickText}>Pickup: </Text>
                 </View>
                 <Text style={rideStyles.waitText}>{pickupAddress}</Text>
 
-                {/* Destination */}
                 <View style={{ flexDirection: "row" }}>
                   <DestIcon style={rideStyles.icon2} />
                   <Text style={rideStyles.destText}>Destination:</Text>
@@ -662,7 +656,6 @@ export default function RideHailing() {
                 </Text>
                 <View style={rideStyles.line}></View>
 
-                {/* Summary */}
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
@@ -687,7 +680,7 @@ export default function RideHailing() {
             ) : (
               <View style={rideStyles.bsCont}>
                 <Text style={rideStyles.label}>Your Trip</Text>
-                {/* Pickup Destination Inputs */}
+
                 <TouchableOpacity
                   style={rideStyles.tripPoint}
                   onPress={() => focusOnMarker("pickup")}
@@ -756,8 +749,6 @@ export default function RideHailing() {
                 ))}
 
                 <View style={rideStyles.line}></View>
-
-                {/* Ride selection */}
                 <Text style={rideStyles.label}>Select Ride</Text>
                 <View style={rideStyles.rideCont}>
                   <TouchableOpacity
@@ -807,7 +798,6 @@ export default function RideHailing() {
 
                 <View style={rideStyles.line}></View>
 
-                {/* Trip summary */}
                 <View style={rideStyles.iconCont}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
@@ -841,8 +831,17 @@ export default function RideHailing() {
 }
 
 const rideStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  map: { position: "absolute", top: 0, left: 0, width, height },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  map: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width,
+    height,
+  },
   header: {
     fontWeight: "bold",
     fontSize: 25,

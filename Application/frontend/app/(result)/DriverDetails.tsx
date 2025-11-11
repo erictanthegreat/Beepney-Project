@@ -36,20 +36,19 @@ export default function DriverDets() {
       }
 
       try {
-        // Try to parse QR JSON (may contain userName or id)
         let parsedData: any = null;
         try {
           parsedData = JSON.parse(driverId);
           if (parsedData && parsedData.id) driverId = parsedData.id;
         } catch {}
 
-        // Extract userName from QR if present
         let qrUserName = parsedData?.userName || null;
 
-        // Fetch from driverprofiles
         const { data, error } = await supabase
           .from("driverprofiles")
-          .select("phone_number, plate_number, operator_name, operator_address, status")
+          .select(
+            "phone_number, plate_number, operator_name, operator_address, status"
+          )
           .eq("id", driverId)
           .maybeSingle();
 
@@ -60,7 +59,6 @@ export default function DriverDets() {
           return;
         }
 
-        // If QR didn’t have userName, try getting from Auth metadata
         let userName = qrUserName;
         if (!userName) {
           const { data: userData } = await supabase.auth.getUser();
@@ -97,7 +95,9 @@ export default function DriverDets() {
 
   useEffect(() => {
     if (error) {
-      Alert.alert("Error", error, [{ text: "OK", onPress: () => setError(null) }]);
+      Alert.alert("Error", error, [
+        { text: "OK", onPress: () => setError(null) },
+      ]);
     }
   }, [error]);
 
@@ -156,8 +156,15 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
     textAlign: "center",
   },
-  container: { flexDirection: "row", alignItems: "center" },
-  profile: { alignItems: "center", marginTop: 40, paddingHorizontal: 20 },
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profile: {
+    alignItems: "center",
+    marginTop: 40,
+    paddingHorizontal: 20,
+  },
   name: {
     fontWeight: "bold",
     color: "#073051",
@@ -166,15 +173,33 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-  loadingContainer: { alignItems: "center", marginTop: 20 },
-  loadingText: { marginTop: 10, color: "#073051", fontSize: 16 },
-  errorContainer: { alignItems: "center", marginTop: 20, paddingHorizontal: 20 },
+  loadingContainer: {
+    alignItems: "center",
+    marginTop: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    color: "#073051",
+    fontSize: 16,
+  },
+  errorContainer: {
+    alignItems: "center",
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
   errorText: {
     color: "red",
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
   },
-  errorSubText: { color: "#666", fontSize: 14, textAlign: "center", marginTop: 10 },
-  report: { backgroundColor: "#E53935" },
+  errorSubText: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  report: {
+    backgroundColor: "#E53935",
+  },
 });

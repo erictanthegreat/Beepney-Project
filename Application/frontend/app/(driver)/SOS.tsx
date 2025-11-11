@@ -26,7 +26,6 @@ const contactSections = [
   { key: "LTFRB", label: "LTFRB" },
 ];
 
-// Format Philippine numbers to +63XXX-XXX-YYYY
 const formatPHNumber = (num: string): string => {
   const digits = num.replace(/\D/g, "");
   if (digits.startsWith("63") && digits.length === 12) {
@@ -58,9 +57,8 @@ export default function SOS() {
   };
 
   const handlePressHotline = (hotline: Hotline) => {
-    // Navigate to (feat)/SOS with hotline details
     router.push({
-      pathname: "/(feat)/sos",
+      pathname: "/(feat)/SOS",
       params: {
         name: hotline.name,
         type: hotline.section,
@@ -72,7 +70,6 @@ export default function SOS() {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Static Header */}
       <View>
         <BackButton />
         <Text style={soStyles.header}> SOS Call/Report </Text>
@@ -81,7 +78,6 @@ export default function SOS() {
         </Text>
       </View>
 
-      {/* Scrollable Content */}
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
         {contactSections.map((section) => {
           const sectionHotlines = hotlines.filter(
