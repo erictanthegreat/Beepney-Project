@@ -24,7 +24,6 @@ export default class RideHistory extends Component {
         </Text>
 
         {isEmpty ? (
-          // Empty State UI
           <View style={styles.emptyContainer}>
             <EmptyStateIcon />
             <Text style={styles.emptyText}>
@@ -32,9 +31,7 @@ export default class RideHistory extends Component {
             </Text>
           </View>
         ) : (
-          // Non-Empty State UI
           <View style={{ margin: 20 }}>
-            {/* Replace with your rides list */}
             <Text>Ride #1 - Example</Text>
             <Text>Ride #2 - Example</Text>
           </View>

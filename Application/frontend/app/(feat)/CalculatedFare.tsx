@@ -19,6 +19,7 @@ import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
 import FareIcon from "@/assets/images/fare icon.svg";
 import { useLocalSearchParams } from "expo-router";
+import { supabase } from "@/scripts/supabase";
 
 const { width, height } = Dimensions.get("window");
 
@@ -29,7 +30,6 @@ export default function CalculatedFare() {
   const bottomSheetRef = useRef<any>(null);
   const mapCameraRef = useRef<any>(null);
 
-  // Parameters to sync the enter origin and destination from fare calculator
   const params = useLocalSearchParams<{
     origin?: string;
     originCoords?: string;
@@ -40,19 +40,14 @@ export default function CalculatedFare() {
     discounts?: string;
   }>();
 
-  // Regular fare from params (convert string → number)
   const regularFare = params.baseFare ? parseFloat(params.baseFare) : 0;
 
-  // Discount percentage (convert string → number safely)
   const discountPercent = params.discounts ? parseFloat(params.discounts) : 0;
 
-  // Compute discount amount
   const discountAmount = regularFare * (discountPercent / 100);
 
-  // Compute total fare
   const totalFare = regularFare - discountAmount;
 
-  // Parse coords if available
   const initialPickup = params.originCoords
     ? (JSON.parse(params.originCoords) as [number, number])
     : [123.186389, 13.624444];
@@ -97,7 +92,6 @@ export default function CalculatedFare() {
 
   const [fare, setFare] = useState<number>(0);
 
-  // Debounce timer
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
@@ -107,8 +101,8 @@ export default function CalculatedFare() {
       const data = await res.json();
       if (data.routes && data.routes.length > 0) {
         const route = data.routes[0];
-        setRouteCoords(route.geometry.coordinates); // Set polyline coordinates
-        setDistance(route.distance / 1000); // Distance in km
+        setRouteCoords(route.geometry.coordinates);
+        setDistance(route.distance / 1000);
       }
     } catch (err) {
       console.log("Error fetching route:", err);
@@ -193,6 +187,46 @@ export default function CalculatedFare() {
       }
     } catch (err) {
       console.log("Error fetching address:", err);
+    }
+  };
+
+  const handleSaveFare = async () => {
+    try {
+      // Get the current user
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        Alert.alert("Error", "Please log in to save fares.");
+        return;
+      }
+
+      const userId = session.user.id;
+
+      // Insert with user_id
+      const { data, error } = await supabase.from("saved_fares").insert([
+        {
+          user_id: userId, // Add this line
+          origin: pickupAddress,
+          destination: destinationAddress,
+          distance_km: distance,
+          base_fare: regularFare,
+          discount_percent: discountPercent,
+          total_fare: totalFare,
+        },
+      ]);
+
+      if (error) {
+        console.error("Error saving fare:", error);
+        Alert.alert("Error", "Failed to save fare calculation.");
+      } else {
+        Alert.alert("Success", "Fare calculation saved successfully!");
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      Alert.alert("Error", "An unexpected error occurred.");
     }
   };
 
@@ -499,7 +533,7 @@ export default function CalculatedFare() {
           <CustomButton
             title="Save Fare Calculation"
             backgroundColor="#1E86DA"
-            onPress={() => router.push("/")}
+            onPress={handleSaveFare}
             style={{
               width: "95%",
               alignItems: "center",

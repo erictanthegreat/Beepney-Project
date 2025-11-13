@@ -299,7 +299,7 @@ export default class FareCalculator extends Component {
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text style={fareStyles.fareText}>Saved Calculated Fare</Text>
                 <TouchableOpacity
-                  onPress={() => router.push("/RideHistory")}
+                  onPress={() => router.push("/SavedFares")}
                   style={fareStyles.fareButton2}
                 >
                   <Text style={fareStyles.fareButtonText}>See all</Text>
