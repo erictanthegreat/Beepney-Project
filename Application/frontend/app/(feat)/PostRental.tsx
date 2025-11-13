@@ -84,7 +84,6 @@ export default function PostRental() {
       }
 
       if (id) {
-        // Update existing rental
         const { error } = await supabase
           .from("rental")
           .update({
@@ -101,7 +100,6 @@ export default function PostRental() {
           return;
         }
       } else {
-        // Insert new rental
         const { error } = await supabase.from("rental").insert([
           {
             user_id: user?.id,
@@ -119,7 +117,7 @@ export default function PostRental() {
         }
       }
 
-      router.push("/(driver)/renting");
+      router.push("/(driver)/Renting");
     } catch (e) {
       console.error("Unexpected error saving rental:", e);
     }

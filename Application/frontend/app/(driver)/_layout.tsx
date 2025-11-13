@@ -33,7 +33,7 @@ export default function DriverLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="Home"
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
@@ -42,7 +42,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="ridehailing"
+        name="RideHailing"
         options={{
           title: "TricyCall",
           tabBarIcon: ({ color }) => (
@@ -51,7 +51,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="sos"
+        name="SOS"
         options={{
           title: " ",
 
@@ -61,7 +61,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="stations"
+        name="Stations"
         options={{
           title: "Stations",
           tabBarIcon: ({ color }) => (
@@ -70,7 +70,7 @@ export default function DriverLayout() {
         }}
       />
       <Tabs.Screen
-        name="renting"
+        name="Renting"
         options={{
           title: "Renting",
           tabBarIcon: ({ color }) => (

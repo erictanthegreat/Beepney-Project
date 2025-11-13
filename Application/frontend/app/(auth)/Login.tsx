@@ -15,7 +15,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ Function to redirect based on role
   const redirectBasedOnRole = async (userId: string) => {
     const { data: profile, error } = await supabase
       .from("profiles")
@@ -25,18 +24,17 @@ export default function Login() {
 
     if (error || !profile) {
       console.error("Error fetching role:", error);
-      router.replace("/(commuter)/home"); // fallback
+      router.replace("/(commuter)/Home");
       return;
     }
 
     if (profile.role === "driver") {
-      router.replace("/(driver)/home");
+      router.replace("/(driver)/Home");
     } else {
-      router.replace("/(commuter)/home");
+      router.replace("/(commuter)/Home");
     }
   };
 
-  // ✅ Check if user already logged in
   useEffect(() => {
     const checkSession = async () => {
       const {
@@ -49,7 +47,6 @@ export default function Login() {
     checkSession();
   }, []);
 
-  // ✅ Handle login
   const handleLogin = async () => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -106,7 +103,7 @@ export default function Login() {
         Don&apos;t have an Account?{" "}
         <Text
           style={{ color: "#073051", fontFamily: "Poppins" }}
-          onPress={() => router.push("/(auth)/createprofile")}
+          onPress={() => router.push("/(auth)/CreateProfile")}
         >
           Sign-up
         </Text>

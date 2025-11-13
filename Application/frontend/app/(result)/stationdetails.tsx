@@ -7,13 +7,11 @@ import StationDetailsCard from "@/components/ViewStationCard";
 import ViewStationTable from "@/components/ViewStationTable";
 import { supabase } from "@/scripts/supabase";
 
-// Interface matching your database structure
 interface StationDestination {
   vehicle_type: string;
   destination: string;
   count: number;
 }
-
 
 interface Vehicle {
   type: string;
@@ -22,7 +20,7 @@ interface Vehicle {
 }
 
 export default function StationDetails() {
-  const { id } = useLocalSearchParams(); 
+  const { id } = useLocalSearchParams();
   const [station, setStation] = useState<any>(null);
   const [vehicleData, setVehicleData] = useState<Vehicle[]>([]);
 
@@ -33,7 +31,6 @@ export default function StationDetails() {
   }, [id]);
 
   const fetchStationDetails = async (stationId: string) => {
- 
     const { data: stationData, error: stationError } = await supabase
       .from("stations")
       .select("*")
@@ -56,7 +53,6 @@ export default function StationDetails() {
       return;
     }
 
-    // Transform data to match ViewStationTable expectations
     const transformedData: Vehicle[] = (destinationRows || []).map(
       (row: StationDestination) => ({
         type: row.vehicle_type,

@@ -139,7 +139,6 @@ export default class Complaints extends Component<{}, State> {
     userId: string
   ): Promise<string | null> => {
     try {
-      // Get file extension from URI
       const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
       const timestamp = Date.now();
       const fileName = `proof_${timestamp}_${Math.random()
@@ -147,23 +146,19 @@ export default class Complaints extends Component<{}, State> {
         .substring(7)}.${ext}`;
       const path = `proofs/${userId}/${fileName}`;
 
-      // Read file as base64
       const fileBase64 = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      // Convert base64 to Uint8Array
       const fileData = Uint8Array.from(atob(fileBase64), (c) =>
         c.charCodeAt(0)
       );
 
-      // Determine content type
       const contentType =
         type === "image"
           ? `image/${ext === "jpg" ? "jpeg" : ext}`
           : `video/${ext}`;
 
-      // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("beepney-bucket")
         .upload(path, fileData, {
@@ -173,7 +168,6 @@ export default class Complaints extends Component<{}, State> {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data } = supabase.storage
         .from("beepney-bucket")
         .getPublicUrl(path);
@@ -220,10 +214,8 @@ export default class Complaints extends Component<{}, State> {
     this.setState({ isUploading: true });
 
     try {
-      // Filter attachments that have both URI and type
       const validAttachments = attachments.filter((att) => att.uri && att.type);
 
-      // Upload all valid attachments to Supabase Storage
       const uploadPromises = validAttachments.map((att) =>
         this.uploadFileToStorage(att.uri!, att.type!, currentUserId)
       );
@@ -232,7 +224,7 @@ export default class Complaints extends Component<{}, State> {
 
       if (uploadPromises.length > 0) {
         const uploadedUrls = await Promise.all(uploadPromises);
-        // Filter out null values (failed uploads)
+
         proofs = uploadedUrls.filter((url) => url !== null) as string[];
 
         if (uploadedUrls.length > 0 && proofs.length === 0) {
@@ -245,7 +237,6 @@ export default class Complaints extends Component<{}, State> {
         }
       }
 
-      // Insert complaint with uploaded file URLs
       const { error } = await supabase.from("complaints").insert([
         {
           name,
@@ -261,7 +252,6 @@ export default class Complaints extends Component<{}, State> {
 
       if (error) throw error;
 
-      // Reset form
       this.setState({
         contact: "",
         location: "",
@@ -277,7 +267,7 @@ export default class Complaints extends Component<{}, State> {
       Alert.alert("Success", "Complaint submitted successfully!");
 
       router.push({
-        pathname: "/(result)/review (Commuter)",
+        pathname: "/(result)/Review (Commuter)",
         params: { role },
       });
     } catch (err: any) {

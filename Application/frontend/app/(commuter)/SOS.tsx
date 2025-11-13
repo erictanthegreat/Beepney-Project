@@ -83,7 +83,7 @@ export default function SOS() {
 
   const handlePressHotline = (hotline: Hotline) => {
     router.push({
-      pathname: "/(feat)/sos",
+      pathname: "/(feat)/SOS",
       params: {
         name: hotline.name,
         type: hotline.section,

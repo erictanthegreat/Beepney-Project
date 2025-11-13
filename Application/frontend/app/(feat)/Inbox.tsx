@@ -80,13 +80,11 @@ export default function Inbox() {
       const conversationList: Conversation[] = [];
 
       for (const convo of convos) {
-        // Determine the other participant
         let otherUserId =
           convo.driver_id === currentUserId
             ? convo.commuter_id
             : convo.driver_id;
 
-        // Fetch latest message
         const { data: latestMsg, error: latestError } = await supabase
           .from("Messages")
           .select("*")
@@ -99,7 +97,6 @@ export default function Inbox() {
           console.error("Error fetching latest message:", latestError);
         }
 
-        // Count unread messages from other participant
         const { count: unreadCount } = await supabase
           .from("Messages")
           .select("*", { count: "exact", head: true })
@@ -135,7 +132,7 @@ export default function Inbox() {
     router.push({
       pathname: "/(feat)/Chat",
       params: {
-        conversationId: conversation.id, // pass rentalId for Chat
+        conversationId: conversation.id,
         rentalName: conversation.userName,
         userId: currentUserId,
       },

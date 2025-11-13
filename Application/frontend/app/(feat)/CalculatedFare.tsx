@@ -510,7 +510,7 @@ export default function CalculatedFare() {
           <CustomButton
             title="Done"
             backgroundColor="#073051"
-            onPress={() => router.push("/(feat)/farecalculator")}
+            onPress={() => router.push("/(feat)/FareCalculator")}
             style={{
               width: "95%",
               alignItems: "center",

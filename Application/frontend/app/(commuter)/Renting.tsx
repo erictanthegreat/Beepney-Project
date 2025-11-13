@@ -23,7 +23,7 @@ import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "@/scripts/supabase";
 
 type Rental = {
-  id: string; // Added ID for chat navigation
+  id: string;
   name: string;
   contact: string;
   location: string;
@@ -39,7 +39,6 @@ export default function Renting() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Get current user ID
   useEffect(() => {
     const getCurrentUser = async () => {
       const {
@@ -68,7 +67,7 @@ export default function Renting() {
 
       if (data) {
         const rentals: Rental[] = data.map((row: any) => ({
-          id: row.id, // Include the rental ID
+          id: row.id,
           name: row.station_name,
           contact: row.contact_number,
           location: row.location,
@@ -114,14 +113,11 @@ export default function Renting() {
   const openChat = (rental: Rental) => {
     if (!userId) {
       console.error("User not logged in");
-      // Optional: Show an alert to the user
-      // Alert.alert("Error", "Please log in to start a chat");
+
       return;
     }
-
-    // Navigate to chat screen with rental info
     router.push({
-      pathname: "/(feat)/chat",
+      pathname: "/(feat)/Chat",
       params: {
         rentalId: rental.id,
         rentalName: rental.name,
