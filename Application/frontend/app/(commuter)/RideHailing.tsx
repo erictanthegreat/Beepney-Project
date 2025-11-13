@@ -296,7 +296,7 @@ export default function RideHailing() {
         } = await supabase.auth.getUser();
 
         const { data, error } = await supabase
-          .from("tricycall")
+          .from("ride_requests")
           .insert([
             {
               pick_up: pickupAddress,
@@ -305,7 +305,7 @@ export default function RideHailing() {
               fare_price: fare,
               user_id: user.id,
               payment_method: method,
-              status: "Pending",
+              status: "pending",
             },
           ])
           .select();
@@ -327,7 +327,7 @@ export default function RideHailing() {
   const handleCancelRide = async () => {
     if (!currentRideId) return;
     const { error } = await supabase
-      .from("tricycall")
+      .from("ride_requests")
       .delete()
       .eq("id", currentRideId);
     if (error) {
@@ -344,9 +344,10 @@ export default function RideHailing() {
   const checkRideStatus = async () => {
     if (!currentRideId) return;
 
-    const { data, error } = await supabase
-      .from("tricycall")
-      .select("status, driver_id")
+    // Fetch ride status from ride_requests
+    const { data: rideData, error } = await supabase
+      .from("ride_requests")
+      .select("status")
       .eq("id", currentRideId)
       .single();
 
@@ -355,19 +356,25 @@ export default function RideHailing() {
       return;
     }
 
-    if (data?.status === "accepted" && data.driver_id) {
-      const { data: driverData, error: driverError } = await supabase
-        .from("profiles")
-        .select("full_name, phone")
-        .eq("id", data.driver_id)
+    // Fetch assigned driver from ride_assignments
+    if (rideData) {
+      const { data: assignmentData, error: assignmentError } = await supabase
+        .from("ride_assignments")
+        .select("driver_id")
+        .eq("ride_id", currentRideId)
         .single();
 
-      if (!driverError && driverData) {
-        setAssignedDriver(driverData);
-      }
+      if (assignmentData?.driver_id) {
+        const { data: driverData, error: driverError } = await supabase
+          .from("profiles")
+          .select("full_name, phone")
+          .eq("id", assignmentData.driver_id)
+          .single();
 
-      setRideStatus("toPickUp");
-      setWaitingModalVisible(false);
+        if (!driverError && driverData) setAssignedDriver(driverData);
+        setRideStatus("toPickUp");
+        setWaitingModalVisible(false);
+      }
     }
   };
 
@@ -387,7 +394,7 @@ export default function RideHailing() {
         {
           event: "UPDATE",
           schema: "public",
-          table: "tricycall",
+          table: "ride_requests",
           filter: `id=eq.${currentRideId}`,
         },
         async (payload) => {
@@ -406,7 +413,7 @@ export default function RideHailing() {
             }
 
             setRideStatus("toPickUp");
-            setWaitingModalVisible(false);
+            setWaitingModalVisible(false); // hide waiting modal
           }
 
           if (newStatus === "cancelled") {

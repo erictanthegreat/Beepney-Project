@@ -24,16 +24,17 @@ export default function RideHailingDriver() {
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // ✅ Fetch rides from ride_requests instead of tricycall
   const fetchRidesWithUsers = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
 
       const { data: ridesData, error: ridesError } = await supabase
-        .from("tricycall")
+        .from("ride_requests")
         .select(
           "id, pick_up, destination, fare_price, user_id, payment_method, status"
         )
-        .eq("status", "Pending");
+        .eq("status", "pending");
 
       if (ridesError) throw ridesError;
 
@@ -74,8 +75,8 @@ export default function RideHailingDriver() {
             ride.payment_method === "cash"
               ? "Cash"
               : ride.payment_method === "cashless"
-                ? "Cashless"
-                : "Unknown",
+              ? "Cashless"
+              : "Unknown",
         };
       });
 
@@ -93,18 +94,19 @@ export default function RideHailingDriver() {
     fetchRidesWithUsers();
   }, [fetchRidesWithUsers]);
 
+  // ✅ Real-time updates for ride_requests
   useEffect(() => {
     const channel = supabase
-      .channel("tricycall-updates")
+      .channel("ride_requests-updates")
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
-          table: "tricycall",
+          table: "ride_requests",
         },
         (payload) => {
-          if (payload.new.status === "Accepted") {
+          if (payload.new.status === "accepted") {
             setRides((prev) => prev.filter((r) => r.id !== payload.new.id));
           }
         }
@@ -126,6 +128,7 @@ export default function RideHailingDriver() {
     setModalVisible(true);
   };
 
+  // ✅ Accept ride now creates a record in ride_assignments + updates ride_requests
   const handleAcceptRide = async (ride: any) => {
     Alert.alert("Accept Ride", "Do you really want to accept this ride?", [
       { text: "Cancel", style: "cancel" },
@@ -133,15 +136,34 @@ export default function RideHailingDriver() {
         text: "Yes",
         onPress: async () => {
           try {
-            const { error } = await supabase
-              .from("tricycall")
-              .update({ status: "Accepted" })
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
+
+            if (userError) throw userError;
+            if (!user) throw new Error("No user logged in");
+
+            // 1️⃣ Insert into ride_assignments
+            const { error: assignError } = await supabase
+              .from("ride_assignments")
+              .insert({
+                ride_id: ride.id,
+                driver_id: user.id,
+                status: "accepted",
+              });
+
+            if (assignError) throw assignError;
+
+            // 2️⃣ Update ride_requests status
+            const { error: updateError } = await supabase
+              .from("ride_requests")
+              .update({ status: "accepted" })
               .eq("id", ride.id);
 
-            if (error) throw error;
+            if (updateError) throw updateError;
 
             setRides((prev) => prev.filter((r) => r.id !== ride.id));
-
             setModalVisible(false);
           } catch (err) {
             console.error(err);
@@ -168,7 +190,7 @@ export default function RideHailingDriver() {
         />
       ) : rides.length === 0 ? (
         <FlatList
-          data={[]} 
+          data={[]}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -250,7 +272,7 @@ export default function RideHailingDriver() {
                   {selectedRide.status
                     ? selectedRide.status.charAt(0).toUpperCase() +
                       selectedRide.status.slice(1)
-                    : "Pending"}
+                    : "pending"}
                 </Text>
 
                 {selectedRide.status !== "accepted" && (
