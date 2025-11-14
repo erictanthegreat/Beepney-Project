@@ -54,13 +54,114 @@ export default function Inbox() {
     }
   };
 
+  // NEW: Fetch user's real name from profiles table
+  const fetchUserName = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user name:", error);
+        return `User ${userId.slice(0, 6)}`;
+      }
+
+      return data?.username || `User ${userId.slice(0, 6)}`;
+    } catch (e) {
+      console.error("Unexpected error fetching user name:", e);
+      return `User ${userId.slice(0, 6)}`;
+    }
+  };
+
+  // Fetch chat with a specific user
+  const fetchChatWithUser = async (otherUserId: string) => {
+    if (!currentUserId) return null;
+
+    try {
+      const { data: convo, error } = await supabase
+        .from("conversations")
+        .select("*")
+        .or(
+          `and(driver_id.eq.${currentUserId},commuter_id.eq.${otherUserId}),and(driver_id.eq.${otherUserId},commuter_id.eq.${currentUserId})`
+        )
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          console.log("No conversation found with this user");
+          return null;
+        }
+        console.error("Error fetching conversation:", error);
+        return null;
+      }
+
+      const { data: messages, error: messagesError } = await supabase
+        .from("Messages")
+        .select("*")
+        .eq("conversation_id", convo.id)
+        .order("created_at", { ascending: true });
+
+      if (messagesError) {
+        console.error("Error fetching messages:", messagesError);
+        return null;
+      }
+
+      return {
+        conversation: convo,
+        messages: messages || [],
+      };
+    } catch (e) {
+      console.error("Unexpected error fetching chat:", e);
+      return null;
+    }
+  };
+
+  // Fetch or create a chat with a specific user
+  const fetchOrCreateChatWithUser = async (
+    otherUserId: string,
+    currentUserRole: "driver" | "commuter" = "driver"
+  ) => {
+    if (!currentUserId) return null;
+
+    try {
+      const existingChat = await fetchChatWithUser(otherUserId);
+      if (existingChat) return existingChat;
+
+      const newConvo = {
+        driver_id: currentUserRole === "driver" ? currentUserId : otherUserId,
+        commuter_id:
+          currentUserRole === "commuter" ? currentUserId : otherUserId,
+      };
+
+      const { data: convo, error } = await supabase
+        .from("conversations")
+        .insert(newConvo)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating conversation:", error);
+        return null;
+      }
+
+      return {
+        conversation: convo,
+        messages: [],
+      };
+    } catch (e) {
+      console.error("Unexpected error:", e);
+      return null;
+    }
+  };
+
   const fetchConversations = async () => {
     if (!currentUserId) return;
 
     try {
       if (!refreshing) setLoading(true);
 
-      // Fetch all conversations where user is either driver or commuter
       const { data: convos, error } = await supabase
         .from("conversations")
         .select("*")
@@ -78,12 +179,23 @@ export default function Inbox() {
       }
 
       const conversationList: Conversation[] = [];
+      const seenUsers = new Set<string>(); // Track users we've already added
 
       for (const convo of convos) {
         let otherUserId =
           convo.driver_id === currentUserId
             ? convo.commuter_id
             : convo.driver_id;
+
+        // Skip if we've already added a conversation with this user
+        if (seenUsers.has(otherUserId)) {
+          continue;
+        }
+
+        seenUsers.add(otherUserId);
+
+        // Fetch the real user name
+        const userName = await fetchUserName(otherUserId);
 
         const { data: latestMsg, error: latestError } = await supabase
           .from("Messages")
@@ -107,7 +219,7 @@ export default function Inbox() {
         conversationList.push({
           id: convo.id,
           userId: otherUserId,
-          userName: `User ${otherUserId?.slice(0, 6) || "Unknown"}`,
+          userName: userName, // Now using real name instead of ID
           lastMessage: latestMsg?.message || "(No messages yet)",
           lastMessageTime: latestMsg?.created_at || convo.created_at,
           unreadCount: unreadCount || 0,

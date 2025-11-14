@@ -9,13 +9,14 @@ import {
   Modal,
   TouchableOpacity,
   RefreshControl,
-  ListRenderItemInfo,
 } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import TricyCallCard from "@/components/TricyCallCard";
+import Messages from "../../assets/images/receive.svg";
 import EmptyStateIcon from "../../assets/images/empty.svg";
 import { supabase } from "scripts/supabase";
+import { router } from "expo-router";
 
 export default function RideHailingDriver() {
   const [rides, setRides] = useState<any[]>([]);
@@ -23,21 +24,29 @@ export default function RideHailingDriver() {
   const [selectedRide, setSelectedRide] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>(""); // Add this state
 
-  // ✅ Fetch rides including pending and accepted rides assigned to this driver
   const fetchRidesWithUsers = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
 
       // Get current logged-in user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError) throw userError;
       if (!user) throw new Error("No user logged in");
+
+      // Store current user ID
+      setCurrentUserId(user.id);
 
       // Fetch rides: pending + accepted rides for this driver
       const { data: ridesData, error: ridesError } = await supabase
         .from("ride_requests")
-        .select("id, pick_up, destination, fare_price, user_id, payment_method, status, driver_id")
+        .select(
+          "id, pick_up, destination, fare_price, user_id, payment_method, status, driver_id"
+        )
         .or(`status.eq.pending,driver_id.eq.${user.id},status.eq.accepted`);
 
       if (ridesError) throw ridesError;
@@ -63,12 +72,15 @@ export default function RideHailingDriver() {
 
       // Merge ride data with anonymized username
       const merged = ridesData.map((ride) => {
-        const fullName = profilesData.find((p) => p.id === ride.user_id)?.username;
+        const fullName = profilesData.find(
+          (p) => p.id === ride.user_id
+        )?.username;
         let anonymized = "Unknown";
 
         if (fullName) {
           const parts = fullName.split(" ");
-          anonymized = parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}.`;
+          anonymized =
+            parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}.`;
         }
 
         return {
@@ -78,8 +90,8 @@ export default function RideHailingDriver() {
             ride.payment_method === "cash"
               ? "Cash"
               : ride.payment_method === "cashless"
-              ? "Cashless"
-              : "Unknown",
+                ? "Cashless"
+                : "Unknown",
         };
       });
 
@@ -142,7 +154,10 @@ export default function RideHailingDriver() {
         text: "Yes",
         onPress: async () => {
           try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser();
             if (userError) throw userError;
             if (!user) throw new Error("No user logged in");
 
@@ -163,10 +178,11 @@ export default function RideHailingDriver() {
               .eq("id", ride.id);
             if (updateError) throw updateError;
 
-            // Update local state
             setRides((prevRides) =>
               prevRides.map((r) =>
-                r.id === ride.id ? { ...r, status: "accepted", driver_id: user.id } : r
+                r.id === ride.id
+                  ? { ...r, status: "accepted", driver_id: user.id }
+                  : r
               )
             );
             setModalVisible(false);
@@ -187,7 +203,6 @@ export default function RideHailingDriver() {
         .eq("id", ride.id);
       if (error) throw error;
 
-      // Update local state
       setRides((prevRides) =>
         prevRides.map((r) =>
           r.id === ride.id ? { ...r, status: "cancelled" } : r
@@ -198,9 +213,19 @@ export default function RideHailingDriver() {
     }
   };
 
+  const openInbox = () => {
+    router.push("/(feat)/Inbox");
+  };
+
   return (
     <View style={styles.container}>
-      <BackButton />
+      <View style={styles.topBar}>
+        <BackButton />
+        <TouchableOpacity onPress={openInbox}>
+          <Messages style={styles.icon} />
+        </TouchableOpacity>
+      </View>
+
       <Text style={styles.header}>TricyCall</Text>
       <Text style={styles.subHeader}>
         Book your tricycle—fast, safe, local.
@@ -214,7 +239,7 @@ export default function RideHailingDriver() {
         />
       ) : (
         <FlatList
-          data={rides} // all rides, including accepted
+          data={rides}
           keyExtractor={(item) => item.id.toString()}
           refreshControl={
             <RefreshControl
@@ -240,13 +265,15 @@ export default function RideHailingDriver() {
                 destination={item.destination}
                 farePrice={item.fare_price}
                 name={item.username}
-                status={item.status} // pass status
+                status={item.status}
                 onAccept={() =>
                   item.status === "pending" && handleAcceptRide(item)
                 }
                 onCancel={() =>
                   item.status === "accepted" && handleCancelRide(item)
                 }
+                userId={item.user_id} // ✅ Pass the commuter's user_id
+                currentUserId={currentUserId} // ✅ Pass the current driver's user_id
               />
             </TouchableOpacity>
           )}
@@ -298,10 +325,12 @@ export default function RideHailingDriver() {
                     </TouchableOpacity>
                   )}
 
-                {/* ✅ Cancel button */}
                 {selectedRide.status !== "cancelled" && (
                   <TouchableOpacity
-                    style={[styles.acceptButton, { backgroundColor: "#FF4C4C" }]}
+                    style={[
+                      styles.acceptButton,
+                      { backgroundColor: "#FF4C4C" },
+                    ]}
                     onPress={() => handleCancelRide(selectedRide)}
                   >
                     <Text style={styles.acceptButtonText}>Cancel Ride</Text>
@@ -402,5 +431,13 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontFamily: "Poppins",
     color: "#595959",
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  icon: {
+    marginTop: 58,
+    marginRight: 20,
   },
 });

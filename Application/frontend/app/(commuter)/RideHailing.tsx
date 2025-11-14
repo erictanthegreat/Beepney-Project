@@ -17,7 +17,7 @@ import { supabase } from "scripts/supabase";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
 import * as Location from "expo-location";
-
+import PFP from "../../assets/images/pfp.svg";
 import BackButton from "@/components/Backbutton";
 import BottomSheetContainer from "@/components/BottomSheetContainer";
 import CustomButton from "@/components/ui/CustomButton";
@@ -30,6 +30,11 @@ import GroupIcon from "../../assets/images/group.svg";
 import KmIcon from "@/assets/images/km.svg";
 import ETAIcon from "../../assets/images/eta.svg";
 import FareIcon from "../../assets/images/money.svg";
+import BaggageIcon from "../../assets/images/baggage.svg";
+import Call from "@/assets/images/call-rental.svg";
+import Chat from "@/assets/images/chat.svg";
+import { router } from "expo-router";
+import Messages from "../../assets/images/receive.svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -59,6 +64,8 @@ const calculateTricycleFare = (
   if (selectedRide === "solo") {
     return parseFloat((baseFare * SEATS).toFixed(2));
   } else if (selectedRide === "group") {
+    return parseFloat((baseFare * SEATS).toFixed(2));
+  } else if (selectedRide === "baggage") {
     return parseFloat(((baseFare + GROUP_FARE_ADDITIONAL) * SEATS).toFixed(2));
   }
 
@@ -81,9 +88,9 @@ export default function RideHailing() {
   const [activeSelection, setActiveSelection] = useState<
     "pickup" | "destination" | null
   >(null);
-  const [selectedRide, setSelectedRide] = useState<"solo" | "group" | null>(
-    null
-  );
+  const [selectedRide, setSelectedRide] = useState<
+    "solo" | "group" | "baggage" | null
+  >(null);
 
   const [pickupAddress, setPickupAddress] = useState<string>("");
   const [destinationAddress, setDestinationAddress] = useState<string>("");
@@ -111,10 +118,19 @@ export default function RideHailing() {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const [assignedDriver, setAssignedDriver] = useState<any | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>(""); // Add current user ID
 
-  // Get user location
+  // Get user location and current user ID
   useEffect(() => {
     (async () => {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         console.log("Location permission denied");
@@ -347,7 +363,7 @@ export default function RideHailing() {
     // Fetch ride status from ride_requests
     const { data: rideData, error } = await supabase
       .from("ride_requests")
-      .select("status")
+      .select("status, driver_id")
       .eq("id", currentRideId)
       .single();
 
@@ -357,21 +373,26 @@ export default function RideHailing() {
     }
 
     // Fetch assigned driver from ride_assignments
-    if (rideData) {
-      const { data: assignmentData, error: assignmentError } = await supabase
-        .from("ride_assignments")
-        .select("driver_id")
-        .eq("ride_id", currentRideId)
+    if (rideData && rideData.driver_id) {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", rideData.driver_id)
         .single();
 
-      if (assignmentData?.driver_id) {
-        const { data: driverData, error: driverError } = await supabase
-          .from("profiles")
-          .select("username, phone_number")
-          .eq("id", assignmentData.driver_id)
-          .single();
+      const { data: driverProfileData, error: driverProfileError } =
+        await supabase
+          .from("driverprofiles")
+          .select("phone_number")
+          .eq("profile_id", rideData.driver_id)
+          .maybeSingle();
 
-        if (!driverError && driverData) setAssignedDriver(driverData);
+      if (!profileError && profileData) {
+        setAssignedDriver({
+          ...profileData,
+          phone_number: driverProfileData?.phone_number || "N/A",
+          driver_id: rideData.driver_id, // Store driver_id
+        });
         setRideStatus("toPickUp");
         setWaitingModalVisible(false);
       }
@@ -411,21 +432,28 @@ export default function RideHailing() {
                 .eq("id", driver_id)
                 .maybeSingle();
 
-              if (profileError) console.error("Error fetching driver profile:", profileError);
+              if (profileError)
+                console.error("Error fetching driver profile:", profileError);
 
               // Fetch driver phone
-              const { data: driverProfileData, error: driverProfileError } = await supabase
-                .from("driverprofiles")
-                .select("phone_number")
-                .eq("profile_id", driver_id) // <-- make sure this column is correct
-                .maybeSingle();
+              const { data: driverProfileData, error: driverProfileError } =
+                await supabase
+                  .from("driverprofiles")
+                  .select("phone_number")
+                  .eq("profile_id", driver_id)
+                  .maybeSingle();
 
-              if (driverProfileError) console.error("Error fetching driver phone:", driverProfileError);
+              if (driverProfileError)
+                console.error(
+                  "Error fetching driver phone:",
+                  driverProfileError
+                );
 
               // Combine safely
               const driverData = {
                 username: profileData?.username || "Unknown",
                 phone_number: driverProfileData?.phone_number || "N/A",
+                driver_id: driver_id, // Store driver_id
               };
 
               setAssignedDriver(driverData);
@@ -450,6 +478,64 @@ export default function RideHailing() {
       supabase.removeChannel(channel);
     };
   }, [currentRideId]);
+
+  const openInbox = () => {
+    router.push("/(feat)/Inbox");
+  };
+
+  // Handle chat button press
+  const handleChatPress = async () => {
+    if (!assignedDriver?.driver_id || !currentUserId) {
+      alert("Unable to open chat. Missing user information.");
+      return;
+    }
+
+    try {
+      // Try to find existing conversation
+      const { data: existingConvo, error: fetchError } = await supabase
+        .from("conversations")
+        .select("*")
+        .or(
+          `and(driver_id.eq.${assignedDriver.driver_id},commuter_id.eq.${currentUserId}),and(driver_id.eq.${currentUserId},commuter_id.eq.${assignedDriver.driver_id})`
+        )
+        .single();
+
+      let convoId = existingConvo?.id;
+
+      // If no conversation exists, create one
+      if (fetchError && fetchError.code === "PGRST116") {
+        const { data: newConvo, error: createError } = await supabase
+          .from("conversations")
+          .insert({
+            driver_id: assignedDriver.driver_id,
+            commuter_id: currentUserId,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating conversation:", createError);
+          alert("Failed to create conversation.");
+          return;
+        }
+
+        convoId = newConvo.id;
+      }
+
+      // Navigate to chat
+      router.push({
+        pathname: "/(feat)/Chat",
+        params: {
+          conversationId: convoId,
+          rentalName: assignedDriver.username,
+          userId: currentUserId,
+        },
+      });
+    } catch (error) {
+      console.error("Error opening chat:", error);
+      alert("Failed to open chat.");
+    }
+  };
 
   return (
     <View style={rideStyles.container}>
@@ -516,7 +602,13 @@ export default function RideHailing() {
 
       {/* Header */}
       <View>
-        <BackButton />
+        <View style={rideStyles.topBar}>
+          <BackButton />
+          <TouchableOpacity onPress={openInbox}>
+            <Messages style={rideStyles.inbox}></Messages>
+          </TouchableOpacity>
+        </View>
+
         <Text style={rideStyles.header}>TricyCall</Text>
         <Text style={rideStyles.subHeader}>
           Book your tricycle—fast, safe, local.
@@ -642,22 +734,30 @@ export default function RideHailing() {
             ) : rideStatus === "toPickUp" && assignedDriver ? (
               <View style={rideStyles.waitcontainer}>
                 <Text
-                  style={{ fontSize: 20, fontWeight: "bold", color: "#073051" }}
+                  style={{ fontSize: 18, fontWeight: "bold", color: "#073051" }}
                 >
-                  Driver on the way!
+                  Your driver is coming to pick you up...
                 </Text>
 
                 <View style={rideStyles.line}></View>
-                <Text>Driver Details</Text>
 
-                <View>
-                  <Text>Name:</Text>
-                  <Text>{assignedDriver.username || "N/A"}</Text>
-                </View>
+                <View style={rideStyles.waitingContainer}>
+                  <PFP></PFP>
+                  <View style={{ justifyContent: "center" }}>
+                    <Text style={rideStyles.userName}>
+                      {assignedDriver.username || "N/A"}
+                    </Text>
 
-                <View>
-                  <Text>Contact:</Text>
-                  <Text>{assignedDriver.phone_number || "N/A"}</Text>
+                    <View style={rideStyles.detialsContainer}>
+                      <Text style={rideStyles.details}>Contact: </Text>
+                      <Text>{assignedDriver.phone_number || "N/A"}</Text>
+                    </View>
+
+                    <View style={rideStyles.detialsContainer}>
+                      <Text style={rideStyles.details}>Plate No: </Text>
+                      <Text>{assignedDriver.phone_number || "N/A"}</Text>
+                    </View>
+                  </View>
                 </View>
 
                 <View style={rideStyles.line}></View>
@@ -681,7 +781,6 @@ export default function RideHailing() {
                 <Text style={rideStyles.waitText2}>
                   {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
                 </Text>
-                <View style={rideStyles.line}></View>
 
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
@@ -701,6 +800,25 @@ export default function RideHailing() {
                   <View style={rideStyles.iconWithText}>
                     <SoloIcon width={20} height={15} color={"#CBCBCB"} />
                     <Text style={rideStyles.waitSumText}> {selectedRide}</Text>
+                  </View>
+                </View>
+
+                <View style={rideStyles.line}></View>
+
+                <View style={rideStyles.cancelRide}>
+                  <CustomButton
+                    title="Cancel Ride"
+                    backgroundColor="#FF4D4F"
+                    onPress={handleCancelRide}
+                    style={rideStyles.cancelButton}
+                  />
+                  <View style={rideStyles.messageContainer}>
+                    <TouchableOpacity onPress={handleChatPress}>
+                      <Chat />
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                      <Call />
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
@@ -819,6 +937,28 @@ export default function RideHailing() {
                       ]}
                     >
                       Group
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      rideStyles.rideButton,
+                      selectedRide === "baggage" && rideStyles.selectedButton,
+                    ]}
+                    onPress={() => setSelectedRide("baggage")}
+                  >
+                    <BaggageIcon
+                      width={25}
+                      height={25}
+                      color={selectedRide === "baggage" ? "#0D99FF" : "#CBCBCB"}
+                    />
+                    <Text
+                      style={[
+                        rideStyles.text,
+                        selectedRide === "baggage" && { color: "#0D99FF" },
+                      ]}
+                    >
+                      Baggage
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1053,5 +1193,44 @@ const rideStyles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
+  },
+  userName: {
+    color: "#0D99FF",
+    fontSize: 18,
+    fontFamily: "Poppins",
+  },
+  detialsContainer: {
+    flexDirection: "row",
+  },
+  details: {
+    color: "#073051",
+    fontWeight: "bold",
+  },
+  waitingContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  cancelRide: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+  },
+  cancelButton: {
+    marginBottom: 100,
+    width: "70%",
+  },
+  messageContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 10,
+    gap: 4,
+  },
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  inbox: {
+    marginTop: 58,
+    marginRight: 20,
   },
 });
