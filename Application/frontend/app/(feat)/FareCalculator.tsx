@@ -15,6 +15,7 @@ import DropDown from "@/components/ui/DropDown";
 import FareIcon from "@/assets/images/fare.svg";
 import OriginIcon from "@/assets/images/loc.svg";
 import DestIcon from "@/assets/images/loc 2.svg";
+import GPS from "@/assets/images/gps.svg";
 import { supabase } from "scripts/supabase";
 
 const MAPBOX_TOKEN =
@@ -180,7 +181,7 @@ export default class FareCalculator extends Component {
                   />
 
                   <TouchableOpacity onPress={this.getCurrentLocation}>
-                    <Text style={{ color: "#1E86DA", marginLeft: 8 }}>📍</Text>
+                    <GPS />
                   </TouchableOpacity>
                 </View>
                 {this.state.originSuggestions.length > 0 && (
