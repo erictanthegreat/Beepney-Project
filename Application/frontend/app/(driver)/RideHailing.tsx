@@ -24,17 +24,21 @@ export default function RideHailingDriver() {
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ Fetch rides from ride_requests instead of tricycall
+  // ✅ Fetch rides including pending and accepted rides assigned to this driver
   const fetchRidesWithUsers = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
 
+      // Get current logged-in user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("No user logged in");
+
+      // Fetch rides: pending + accepted rides for this driver
       const { data: ridesData, error: ridesError } = await supabase
         .from("ride_requests")
-        .select(
-          "id, pick_up, destination, fare_price, user_id, payment_method, status"
-        )
-        .eq("status", "pending");
+        .select("id, pick_up, destination, fare_price, user_id, payment_method, status, driver_id")
+        .or(`status.eq.pending,driver_id.eq.${user.id},status.eq.accepted`);
 
       if (ridesError) throw ridesError;
 
@@ -44,6 +48,7 @@ export default function RideHailingDriver() {
         return;
       }
 
+      // Fetch usernames for the rides
       const userIds = ridesData.map((r) => r.user_id).filter(Boolean);
 
       let profilesData: any[] = [];
@@ -56,16 +61,14 @@ export default function RideHailingDriver() {
         profilesData = data || [];
       }
 
+      // Merge ride data with anonymized username
       const merged = ridesData.map((ride) => {
-        const fullName = profilesData.find(
-          (p) => p.id === ride.user_id
-        )?.username;
+        const fullName = profilesData.find((p) => p.id === ride.user_id)?.username;
         let anonymized = "Unknown";
 
         if (fullName) {
           const parts = fullName.split(" ");
-          anonymized =
-            parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}.`;
+          anonymized = parts.length === 1 ? parts[0] : `${parts[0]} ${parts[1][0]}.`;
         }
 
         return {
@@ -90,11 +93,12 @@ export default function RideHailingDriver() {
     }
   }, [refreshing]);
 
+  // Fetch rides on mount
   useEffect(() => {
     fetchRidesWithUsers();
   }, [fetchRidesWithUsers]);
 
-  // ✅ Real-time updates for ride_requests
+  // Real-time updates for ride_requests
   useEffect(() => {
     const channel = supabase
       .channel("ride_requests-updates")
@@ -106,9 +110,12 @@ export default function RideHailingDriver() {
           table: "ride_requests",
         },
         (payload) => {
-          if (payload.new.status === "accepted") {
-            setRides((prev) => prev.filter((r) => r.id !== payload.new.id));
-          }
+          const updatedRide = payload.new;
+          setRides((prevRides) =>
+            prevRides.map((ride) =>
+              ride.id === updatedRide.id ? { ...ride, ...updatedRide } : ride
+            )
+          );
         }
       )
       .subscribe();
@@ -128,7 +135,6 @@ export default function RideHailingDriver() {
     setModalVisible(true);
   };
 
-  // ✅ Accept ride now creates a record in ride_assignments + updates ride_requests
   const handleAcceptRide = async (ride: any) => {
     Alert.alert("Accept Ride", "Do you really want to accept this ride?", [
       { text: "Cancel", style: "cancel" },
@@ -136,15 +142,11 @@ export default function RideHailingDriver() {
         text: "Yes",
         onPress: async () => {
           try {
-            const {
-              data: { user },
-              error: userError,
-            } = await supabase.auth.getUser();
-
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
             if (userError) throw userError;
             if (!user) throw new Error("No user logged in");
 
-            // 1️⃣ Insert into ride_assignments
+            // Insert into ride_assignments
             const { error: assignError } = await supabase
               .from("ride_assignments")
               .insert({
@@ -152,18 +154,21 @@ export default function RideHailingDriver() {
                 driver_id: user.id,
                 status: "accepted",
               });
-
             if (assignError) throw assignError;
 
-            // 2️⃣ Update ride_requests status
+            // Update ride_requests status
             const { error: updateError } = await supabase
               .from("ride_requests")
-              .update({ status: "accepted" })
+              .update({ status: "accepted", driver_id: user.id })
               .eq("id", ride.id);
-
             if (updateError) throw updateError;
 
-            setRides((prev) => prev.filter((r) => r.id !== ride.id));
+            // Update local state
+            setRides((prevRides) =>
+              prevRides.map((r) =>
+                r.id === ride.id ? { ...r, status: "accepted", driver_id: user.id } : r
+              )
+            );
             setModalVisible(false);
           } catch (err) {
             console.error(err);
@@ -172,6 +177,25 @@ export default function RideHailingDriver() {
         },
       },
     ]);
+  };
+
+  const handleCancelRide = async (ride: any) => {
+    try {
+      const { error } = await supabase
+        .from("ride_requests")
+        .update({ status: "cancelled" })
+        .eq("id", ride.id);
+      if (error) throw error;
+
+      // Update local state
+      setRides((prevRides) =>
+        prevRides.map((r) =>
+          r.id === ride.id ? { ...r, status: "cancelled" } : r
+        )
+      );
+    } catch (err) {
+      console.error("Failed to cancel ride:", err);
+    }
   };
 
   return (
@@ -188,9 +212,10 @@ export default function RideHailingDriver() {
           color="#073051"
           style={{ marginTop: 20 }}
         />
-      ) : rides.length === 0 ? (
+      ) : (
         <FlatList
-          data={[]}
+          data={rides} // all rides, including accepted
+          keyExtractor={(item) => item.id.toString()}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -198,6 +223,8 @@ export default function RideHailingDriver() {
               colors={["#073051"]}
             />
           }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <EmptyStateIcon />
@@ -206,24 +233,6 @@ export default function RideHailingDriver() {
               </Text>
             </View>
           }
-          contentContainerStyle={{ flexGrow: 1 }}
-          renderItem={function (
-            info: ListRenderItemInfo<any>
-          ): React.ReactElement | null {
-            throw new Error("Function not implemented.");
-          }}
-        />
-      ) : (
-        <FlatList
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#073051"]}
-            />
-          }
-          data={rides}
-          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={() => handleCardPress(item)}>
               <TricyCallCard
@@ -231,12 +240,16 @@ export default function RideHailingDriver() {
                 destination={item.destination}
                 farePrice={item.fare_price}
                 name={item.username}
-                onAccept={() => handleAcceptRide(item)}
+                status={item.status} // pass status
+                onAccept={() =>
+                  item.status === "pending" && handleAcceptRide(item)
+                }
+                onCancel={() =>
+                  item.status === "accepted" && handleCancelRide(item)
+                }
               />
             </TouchableOpacity>
           )}
-          contentContainerStyle={{ paddingBottom: 100, flexGrow: 1 }}
-          showsVerticalScrollIndicator={false}
         />
       )}
 
@@ -275,12 +288,23 @@ export default function RideHailingDriver() {
                     : "pending"}
                 </Text>
 
-                {selectedRide.status !== "accepted" && (
+                {selectedRide.status !== "accepted" &&
+                  selectedRide.status !== "cancelled" && (
+                    <TouchableOpacity
+                      style={styles.acceptButton}
+                      onPress={() => handleAcceptRide(selectedRide)}
+                    >
+                      <Text style={styles.acceptButtonText}>Accept Ride</Text>
+                    </TouchableOpacity>
+                  )}
+
+                {/* ✅ Cancel button */}
+                {selectedRide.status !== "cancelled" && (
                   <TouchableOpacity
-                    style={styles.acceptButton}
-                    onPress={() => handleAcceptRide(selectedRide)}
+                    style={[styles.acceptButton, { backgroundColor: "#FF4C4C" }]}
+                    onPress={() => handleCancelRide(selectedRide)}
                   >
-                    <Text style={styles.acceptButtonText}>Accept Ride</Text>
+                    <Text style={styles.acceptButtonText}>Cancel Ride</Text>
                   </TouchableOpacity>
                 )}
               </>

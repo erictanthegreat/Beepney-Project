@@ -367,7 +367,7 @@ export default function RideHailing() {
       if (assignmentData?.driver_id) {
         const { data: driverData, error: driverError } = await supabase
           .from("profiles")
-          .select("full_name, phone")
+          .select("username, phone_number")
           .eq("id", assignmentData.driver_id)
           .single();
 
@@ -398,25 +398,45 @@ export default function RideHailing() {
           filter: `id=eq.${currentRideId}`,
         },
         async (payload) => {
-          const newStatus = payload.new.status;
-          const driverId = payload.new.driver_id;
+          console.log("Realtime payload:", payload.new);
 
-          if (newStatus === "accepted" && driverId) {
-            const { data: driverData, error: driverError } = await supabase
-              .from("profiles")
-              .select("full_name, phone")
-              .eq("id", driverId)
-              .single();
+          const { status, driver_id } = payload.new;
 
-            if (!driverError && driverData) {
+          if (status === "accepted" && driver_id) {
+            try {
+              // Fetch driver username
+              const { data: profileData, error: profileError } = await supabase
+                .from("profiles")
+                .select("username")
+                .eq("id", driver_id)
+                .maybeSingle();
+
+              if (profileError) console.error("Error fetching driver profile:", profileError);
+
+              // Fetch driver phone
+              const { data: driverProfileData, error: driverProfileError } = await supabase
+                .from("driverprofiles")
+                .select("phone_number")
+                .eq("profile_id", driver_id) // <-- make sure this column is correct
+                .maybeSingle();
+
+              if (driverProfileError) console.error("Error fetching driver phone:", driverProfileError);
+
+              // Combine safely
+              const driverData = {
+                username: profileData?.username || "Unknown",
+                phone_number: driverProfileData?.phone_number || "N/A",
+              };
+
               setAssignedDriver(driverData);
+              setRideStatus("toPickUp");
+              setWaitingModalVisible(false);
+            } catch (err) {
+              console.error("Error fetching driver data:", err);
             }
-
-            setRideStatus("toPickUp");
-            setWaitingModalVisible(false); // hide waiting modal
           }
 
-          if (newStatus === "cancelled") {
+          if (status === "cancelled") {
             alert("Your ride has been cancelled by the driver.");
             setRideStatus("booking");
             setWaitingModalVisible(false);
@@ -632,12 +652,12 @@ export default function RideHailing() {
 
                 <View>
                   <Text>Name:</Text>
-                  <Text>{assignedDriver.full_name || "N/A"}</Text>
+                  <Text>{assignedDriver.username || "N/A"}</Text>
                 </View>
 
                 <View>
                   <Text>Contact:</Text>
-                  <Text>{assignedDriver.phone || "N/A"}</Text>
+                  <Text>{assignedDriver.phone_number || "N/A"}</Text>
                 </View>
 
                 <View style={rideStyles.line}></View>
