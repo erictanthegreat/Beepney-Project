@@ -208,6 +208,11 @@ export default function RideHailingDriver() {
           r.id === ride.id ? { ...r, status: "cancelled" } : r
         )
       );
+
+      // ✅ Update the modal as well
+      if (selectedRide?.id === ride.id) {
+        setSelectedRide({ ...selectedRide, status: "cancelled" });
+      }
     } catch (err) {
       console.error("Failed to cancel ride:", err);
     }
@@ -290,54 +295,51 @@ export default function RideHailingDriver() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalHeader}>Ride Summary</Text>
-            {selectedRide && (
-              <>
-                <Text style={styles.modalName}>
-                  Name: {selectedRide.username}
-                </Text>
-                <Text style={styles.modalText}>
-                  Pickup: {selectedRide.pick_up}
-                </Text>
-                <Text style={styles.modalText}>
-                  Destination: {selectedRide.destination}
-                </Text>
-                <Text style={styles.modalText}>
-                  Payment Method: {selectedRide.payment_method_label}
-                </Text>
-                <Text style={styles.modalText}>
-                  Fare: ₱{selectedRide.fare_price}
-                </Text>
-                <Text style={styles.modalText}>
-                  Status:{" "}
-                  {selectedRide.status
-                    ? selectedRide.status.charAt(0).toUpperCase() +
-                      selectedRide.status.slice(1)
-                    : "pending"}
-                </Text>
+              {selectedRide && (
+                <>
+                  <Text style={styles.modalName}>
+                    Name: {selectedRide.username}
+                  </Text>
+                  <Text style={styles.modalText}>
+                    Pickup: {selectedRide.pick_up}
+                  </Text>
+                  <Text style={styles.modalText}>
+                    Destination: {selectedRide.destination}
+                  </Text>
+                  <Text style={styles.modalText}>
+                    Payment Method: {selectedRide.payment_method_label}
+                  </Text>
+                  <Text style={styles.modalText}>
+                    Fare: ₱{selectedRide.fare_price}
+                  </Text>
+                  <Text style={styles.modalText}>
+                    Status:{" "}
+                    {selectedRide.status
+                      ? selectedRide.status.charAt(0).toUpperCase() +
+                        selectedRide.status.slice(1)
+                      : "pending"}
+                  </Text>
 
-                {selectedRide.status !== "accepted" &&
-                  selectedRide.status !== "cancelled" && (
-                    <TouchableOpacity
-                      style={styles.acceptButton}
-                      onPress={() => handleAcceptRide(selectedRide)}
-                    >
-                      <Text style={styles.acceptButtonText}>Accept Ride</Text>
-                    </TouchableOpacity>
+                  {selectedRide.status !== "accepted" &&
+                    selectedRide.status !== "cancelled" && (
+                      <TouchableOpacity
+                        style={styles.acceptButton}
+                        onPress={() => handleAcceptRide(selectedRide)}
+                      >
+                        <Text style={styles.acceptButtonText}>Accept Ride</Text>
+                      </TouchableOpacity>
                   )}
 
-                {selectedRide.status !== "cancelled" && (
-                  <TouchableOpacity
-                    style={[
-                      styles.acceptButton,
-                      { backgroundColor: "#FF4C4C" },
-                    ]}
-                    onPress={() => handleCancelRide(selectedRide)}
-                  >
-                    <Text style={styles.acceptButtonText}>Cancel Ride</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
+                  {selectedRide.status === "accepted" && (
+                    <TouchableOpacity
+                      style={[styles.acceptButton, { backgroundColor: "#FF4C4C" }]}
+                      onPress={() => handleCancelRide(selectedRide)}
+                    >
+                      <Text style={styles.acceptButtonText}>Cancel Ride</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setModalVisible(false)}
