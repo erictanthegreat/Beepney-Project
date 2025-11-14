@@ -26,6 +26,84 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
+const fareRules: Record<string, any> = {
+  Pedicab: {
+    base: 10,
+    thresholdKm: 3,
+    excessRate: 1.75,
+  },
+
+  "E-Trike": {
+    base: 15,
+    thresholdKm: 3,
+    excessRate: 1.75,
+  },
+  Tricycle: {
+    base: 15,
+    thresholdKm: 3,
+    excessRate: 1.75,
+  },
+  "PUJ Traditional": {
+    base: 13,
+    thresholdKm: 4,
+    excessRate: 1.75,
+  },
+  "PUJ Modern (NON-AC)": {
+    base: 15,
+    thresholdKm: 4,
+    excessRate: 1.75,
+  },
+  "PUJ Modern (AC)": {
+    base: 15,
+    thresholdKm: 4,
+    excessRate: 2.25,
+  },
+  "UVE Traditional": {
+    ratePerKm: 2.4,
+  },
+  "UVE Modern": {
+    ratePerKm: 2.5,
+  },
+  "PUB Provincial": {
+    base: 11,
+    addPerKmAfter: 5,
+    addAmount: 9.5,
+  },
+  Taxi: {
+    ratePerKm: 13.5,
+  },
+};
+
+const computeFare = (vehicle: string, km: number, discountPercent: number) => {
+  const rule = fareRules[vehicle];
+  if (!rule || !km) return 0;
+
+  let fare = 0;
+
+  if (rule.base && rule.thresholdKm) {
+    if (km <= rule.thresholdKm) fare = rule.base;
+    else {
+      const excessKm = km - rule.thresholdKm;
+      fare = rule.base + excessKm * rule.excessRate;
+    }
+  } else if (vehicle === "PUB Provincial") {
+    if (km <= 5) fare = rule.base;
+    else {
+      const excessKm = km - 5;
+      fare = rule.base + (excessKm * rule.addAmount) / 5;
+    }
+  } else if (rule.ratePerKm) {
+    fare = km * rule.ratePerKm;
+  }
+
+  if (discountPercent) {
+    const discountAmount = fare * (discountPercent / 100);
+    fare -= discountAmount;
+  }
+
+  return fare;
+};
+
 export default function CalculatedFare() {
   const bottomSheetRef = useRef<any>(null);
   const mapCameraRef = useRef<any>(null);
@@ -41,12 +119,7 @@ export default function CalculatedFare() {
   }>();
 
   const regularFare = params.baseFare ? parseFloat(params.baseFare) : 0;
-
   const discountPercent = params.discounts ? parseFloat(params.discounts) : 0;
-
-  const discountAmount = regularFare * (discountPercent / 100);
-
-  const totalFare = regularFare - discountAmount;
 
   const initialPickup = params.originCoords
     ? (JSON.parse(params.originCoords) as [number, number])
@@ -89,10 +162,11 @@ export default function CalculatedFare() {
 
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
   const [distance, setDistance] = useState<number>(0);
-
   const [fare, setFare] = useState<number>(0);
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const pickupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
     try {
@@ -130,18 +204,14 @@ export default function CalculatedFare() {
       const data = await res.json();
 
       if (data.features) {
-        if (type === "pickup") {
-          setPickupSuggestions(data.features);
-        } else {
-          setDestinationSuggestions(data.features);
-        }
+        if (type === "pickup") setPickupSuggestions(data.features);
+        else setDestinationSuggestions(data.features);
       }
     } catch (err) {
       console.log("Error fetching suggestions:", err);
     }
   };
 
-  // --- Handle suggestion select ---
   const handleSuggestionSelect = (
     place: any,
     type: "pickup" | "destination"
@@ -166,12 +236,10 @@ export default function CalculatedFare() {
     });
   };
 
-  // Fetch route whenever pickup or destination changes
   useEffect(() => {
     fetchRoute(pickup, destination);
   }, [pickup, destination]);
 
-  // --- Fetch address using Mapbox Geocoding API ---
   const fetchAddress = async (
     coords: [number, number],
     type: "pickup" | "destination"
@@ -192,7 +260,6 @@ export default function CalculatedFare() {
 
   const handleSaveFare = async () => {
     try {
-      // Get the current user
       const {
         data: { session },
         error: sessionError,
@@ -205,16 +272,15 @@ export default function CalculatedFare() {
 
       const userId = session.user.id;
 
-      // Insert with user_id
       const { data, error } = await supabase.from("saved_fares").insert([
         {
-          user_id: userId, // Add this line
+          user_id: userId,
           origin: pickupAddress,
           destination: destinationAddress,
           distance_km: distance,
           base_fare: regularFare,
           discount_percent: discountPercent,
-          total_fare: totalFare,
+          total_fare: fare,
         },
       ]);
 
@@ -230,16 +296,17 @@ export default function CalculatedFare() {
     }
   };
 
-  // Fetch initial destination address on mount
   useEffect(() => {
     fetchAddress(destination, "destination");
   }, []);
 
-  // --- Auto-update marker when pickup input changes ---
+  // Updated: Geocode pickup input and update marker position
   useEffect(() => {
     if (!pickupInput) return;
 
-    const handler = setTimeout(async () => {
+    if (pickupTimeoutRef.current) clearTimeout(pickupTimeoutRef.current);
+
+    pickupTimeoutRef.current = setTimeout(async () => {
       try {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           pickupInput
@@ -249,20 +316,33 @@ export default function CalculatedFare() {
         if (data.features && data.features[0]) {
           const coords: [number, number] = data.features[0].center;
           setPickup(coords);
+          setPickupAddress(data.features[0].place_name);
+
+          // Auto-center camera on new pickup location
+          mapCameraRef.current?.setCamera({
+            centerCoordinate: coords,
+            zoomLevel: 15,
+            animationDuration: 500,
+          });
         }
       } catch (err) {
         console.log("Error auto-updating pickup:", err);
       }
-    }, 600); // debounce typing
+    }, 800);
 
-    return () => clearTimeout(handler);
+    return () => {
+      if (pickupTimeoutRef.current) clearTimeout(pickupTimeoutRef.current);
+    };
   }, [pickupInput]);
 
-  // --- Auto-update marker when destination input changes ---
+  // Updated: Geocode destination input and update marker position
   useEffect(() => {
     if (!destinationInput) return;
 
-    const handler = setTimeout(async () => {
+    if (destinationTimeoutRef.current)
+      clearTimeout(destinationTimeoutRef.current);
+
+    destinationTimeoutRef.current = setTimeout(async () => {
       try {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           destinationInput
@@ -272,13 +352,24 @@ export default function CalculatedFare() {
         if (data.features && data.features[0]) {
           const coords: [number, number] = data.features[0].center;
           setDestination(coords);
+          setDestinationAddress(data.features[0].place_name);
+
+          // Auto-center camera on new destination location
+          mapCameraRef.current?.setCamera({
+            centerCoordinate: coords,
+            zoomLevel: 15,
+            animationDuration: 500,
+          });
         }
       } catch (err) {
         console.log("Error auto-updating destination:", err);
       }
-    }, 600);
+    }, 800);
 
-    return () => clearTimeout(handler);
+    return () => {
+      if (destinationTimeoutRef.current)
+        clearTimeout(destinationTimeoutRef.current);
+    };
   }, [destinationInput]);
 
   const handleDragEnd = async (
@@ -286,14 +377,12 @@ export default function CalculatedFare() {
     marker: "pickup" | "destination"
   ) => {
     try {
-      // Fetch the address for the new coordinates
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`;
       const res = await fetch(url);
       const data = await res.json();
 
       if (data.features && data.features.length > 0) {
         const placeName = data.features[0].place_name;
-
         if (marker === "pickup") {
           setPickup(coords);
           setPickupAddress(placeName);
@@ -306,19 +395,9 @@ export default function CalculatedFare() {
       }
     } catch (err) {
       console.log("Error fetching address on drag:", err);
-
-      if (marker === "pickup") {
-        setPickup(coords);
-      } else {
-        setDestination(coords);
-      }
+      if (marker === "pickup") setPickup(coords);
+      else setDestination(coords);
     }
-
-    // Update the route
-    fetchRoute(
-      marker === "pickup" ? coords : pickup,
-      marker === "destination" ? coords : destination
-    );
   };
 
   const focusOnMarker = (marker: "pickup" | "destination") => {
@@ -331,6 +410,18 @@ export default function CalculatedFare() {
     setActiveSelection(marker);
     bottomSheetRef.current?.close();
   };
+
+  // --- UPDATE FARE WHEN DISTANCE OR VEHICLE CHANGES ---
+  useEffect(() => {
+    if (params.vehicleType) {
+      const calculatedFare = computeFare(
+        params.vehicleType,
+        distance,
+        discountPercent
+      );
+      setFare(calculatedFare);
+    }
+  }, [distance, params.vehicleType, discountPercent]);
 
   return (
     <View style={calcStyles.container}>
@@ -348,7 +439,6 @@ export default function CalculatedFare() {
           />
         )}
 
-        {/* Draw route line */}
         {routeCoords.length > 0 && (
           <Mapbox.ShapeSource
             id="routeSource"
@@ -370,7 +460,6 @@ export default function CalculatedFare() {
           </Mapbox.ShapeSource>
         )}
 
-        {/* Pickup Marker */}
         <Mapbox.PointAnnotation
           id="pickup"
           coordinate={pickup}
@@ -382,7 +471,6 @@ export default function CalculatedFare() {
           <OriginIcon width={30} height={30} />
         </Mapbox.PointAnnotation>
 
-        {/* Destination Marker */}
         <Mapbox.PointAnnotation
           id="destination"
           coordinate={destination}
@@ -526,7 +614,7 @@ export default function CalculatedFare() {
           <View style={calcStyles.rideCont}>
             <View style={calcStyles.row}>
               <Text style={calcStyles.typeFare}>Total Fare:</Text>
-              <Text style={calcStyles.fee}>₱ {totalFare.toFixed(2)}</Text>
+              <Text style={calcStyles.fee}>₱ {fare.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -591,7 +679,6 @@ const calcStyles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 8,
   },
-
   button: {
     flexDirection: "row",
     backgroundColor: "white",
@@ -614,7 +701,6 @@ const calcStyles = StyleSheet.create({
   selectedButton: {
     borderColor: "#0D99FF",
   },
-
   btext: {
     marginTop: 3,
     marginLeft: 10,
@@ -657,7 +743,6 @@ const calcStyles = StyleSheet.create({
   },
   typeFare: {
     color: "#737F83",
-
     fontFamily: "Poppins",
   },
   fee: {
@@ -675,7 +760,6 @@ const calcStyles = StyleSheet.create({
     paddingVertical: 5,
     color: "#737F83",
   },
-
   icon: {
     marginLeft: 20,
   },

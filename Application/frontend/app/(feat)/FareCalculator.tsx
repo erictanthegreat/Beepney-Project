@@ -22,12 +22,13 @@ const MAPBOX_TOKEN =
 
 const baseFares: Record<string, number> = {
   Tricycle: 15,
-  Taxi: 40,
-  "E-Tricycles": 15,
+  Taxi: 13.5,
+  "E-Trike": 15,
   "PUJ Traditional": 13,
-  "PUJ Modern": 15,
-  "UVE Traditional": 25,
-  "UVE Modern": 25,
+  "PUJ Modern (NON-AC)": 15,
+  "PUJ Modern (AC)": 15,
+  "UVE Traditional": 2.4,
+  "UVE Modern": 2.5,
   "PUB Provincional": 11,
   Pedicab: 10,
 };
@@ -239,15 +240,15 @@ export default class FareCalculator extends Component {
 
                 <DropDown
                   data={[
-                    "E-Tricycles",
+                    "E-Trike",
                     "Tricycle",
                     "Taxi",
                     "Pedicab",
-                    "PUJ Traditional",
-                    "PUJ Modern",
-                    "UV Express",
-                    "PUB Traditional",
-                    "PUB Modern",
+                    "PUJ Modern (NON-AC)",
+                    "PUJ Modern (AC)",
+                    "UVE Traditional",
+                    "UVE Modern",
+                    "PUB Provincial",
                   ]}
                   onSelect={(value) => this.setState({ vehicleType: value })}
                   isOpen={this.state.openDropdown === 2}
