@@ -23,11 +23,11 @@ import BottomSheetContainer from "@/components/BottomSheetContainer";
 import CustomButton from "@/components/ui/CustomButton";
 import PaymentMethod from "@/assets/images/payment method.svg";
 import FindIcon from "../../assets/images/find.svg";
-import OriginIcon from "@/assets/images/loc.svg";
-import DestIcon from "@/assets/images/loc 2.svg";
-import SoloIcon from "@/assets/images/solo.svg";
+import OriginIcon from "../../assets/images/loc.svg";
+import DestIcon from "../../assets/images/loc 2.svg";
+import SoloIcon from "../../assets/images/solo.svg";
 import GroupIcon from "../../assets/images/group.svg";
-import KmIcon from "@/assets/images/km.svg";
+import KmIcon from "../../assets/images/km.svg";
 import ETAIcon from "../../assets/images/eta.svg";
 import FareIcon from "../../assets/images/money.svg";
 import BaggageIcon from "../../assets/images/baggage.svg";
@@ -41,6 +41,7 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
+// -------------------- FARE CALCULATION --------------------
 const calculateTricycleFare = (
   distanceInKm: number,
   selectedRide: string | null
@@ -61,9 +62,7 @@ const calculateTricycleFare = (
     baseFare += additionalFare;
   }
 
-  if (selectedRide === "solo") {
-    return parseFloat((baseFare * SEATS).toFixed(2));
-  } else if (selectedRide === "group") {
+  if (selectedRide === "solo" || selectedRide === "group") {
     return parseFloat((baseFare * SEATS).toFixed(2));
   } else if (selectedRide === "baggage") {
     return parseFloat(((baseFare + GROUP_FARE_ADDITIONAL) * SEATS).toFixed(2));
@@ -72,6 +71,7 @@ const calculateTricycleFare = (
   return parseFloat(BASE_FARE_PESOS.toFixed(2));
 };
 
+// -------------------- MAIN COMPONENT --------------------
 export default function RideHailing() {
   const navigation = useNavigation();
   const contentAnim = useRef(new Animated.Value(0)).current;
@@ -97,7 +97,7 @@ export default function RideHailing() {
   const [pickupInput, setPickupInput] = useState<string>("");
   const [destinationInput, setDestinationInput] = useState<string>("");
   const [rideStatus, setRideStatus] = useState<
-    "booking" | "waiting" | "toPickUp"
+    "booking" | "waiting" | "toPickUp" | "completed"
   >("booking");
   const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>(
@@ -122,14 +122,12 @@ export default function RideHailing() {
 
   // Get user location and current user ID
   useEffect(() => {
-    (async () => {
+    const initialize = async () => {
       // Get current user
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-      }
+      if (user) setCurrentUserId(user.id);
 
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
@@ -151,10 +149,25 @@ export default function RideHailing() {
         zoomLevel: 16,
         animationDuration: 500,
       });
-    })();
+    };
+
+    initialize();
   }, []);
 
-  // Fetch route
+  // Animate bottom sheet when waiting modal is visible
+  useEffect(() => {
+    Animated.timing(contentAnim, {
+      toValue: waitingModalVisible ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [waitingModalVisible]);
+
+  // Fetch route whenever pickup, destination, or selected ride changes
+  useEffect(() => {
+    if (pickup && destination) fetchRoute(pickup, destination);
+  }, [pickup, destination, selectedRide]);
+
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
     try {
       const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
@@ -173,19 +186,6 @@ export default function RideHailing() {
     }
   };
 
-  useEffect(() => {
-    Animated.timing(contentAnim, {
-      toValue: waitingModalVisible ? 1 : 0,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [waitingModalVisible]);
-
-  useEffect(() => {
-    if (pickup && destination) fetchRoute(pickup, destination);
-  }, [pickup, destination, selectedRide]);
-
-  // Fetch address
   const fetchAddress = async (
     coords: [number, number],
     type: "pickup" | "destination"
@@ -360,7 +360,6 @@ export default function RideHailing() {
   const checkRideStatus = async () => {
     if (!currentRideId) return;
 
-    // Fetch ride status from ride_requests
     const { data: rideData, error } = await supabase
       .from("ride_requests")
       .select("status, driver_id")
@@ -372,7 +371,6 @@ export default function RideHailing() {
       return;
     }
 
-    // Fetch assigned driver from ride_assignments
     if (rideData && rideData.driver_id) {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
@@ -391,7 +389,7 @@ export default function RideHailing() {
         setAssignedDriver({
           ...profileData,
           phone_number: driverProfileData?.phone_number || "N/A",
-          driver_id: rideData.driver_id, // Store driver_id
+          driver_id: rideData.driver_id,
         });
         setRideStatus("toPickUp");
         setWaitingModalVisible(false);
@@ -425,17 +423,12 @@ export default function RideHailing() {
 
           if (status === "accepted" && driver_id) {
             try {
-              // Fetch driver username
               const { data: profileData, error: profileError } = await supabase
                 .from("profiles")
                 .select("username")
                 .eq("id", driver_id)
                 .maybeSingle();
 
-              if (profileError)
-                console.error("Error fetching driver profile:", profileError);
-
-              // Fetch driver phone
               const { data: driverProfileData, error: driverProfileError } =
                 await supabase
                   .from("driverprofiles")
@@ -443,17 +436,10 @@ export default function RideHailing() {
                   .eq("profile_id", driver_id)
                   .maybeSingle();
 
-              if (driverProfileError)
-                console.error(
-                  "Error fetching driver phone:",
-                  driverProfileError
-                );
-
-              // Combine safely
               const driverData = {
                 username: profileData?.username || "Unknown",
                 phone_number: driverProfileData?.phone_number || "N/A",
-                driver_id: driver_id, // Store driver_id
+                driver_id: driver_id,
               };
 
               setAssignedDriver(driverData);
@@ -469,6 +455,14 @@ export default function RideHailing() {
             setRideStatus("booking");
             setWaitingModalVisible(false);
             setCurrentRideId(null);
+            setAssignedDriver(null);
+          }
+
+          if (status === "completed") {
+            setRideStatus("completed");
+            setWaitingModalVisible(false);
+            setAssignedDriver(null); // optional: clear driver info
+            // BottomSheetContainer can now react to rideStatus === "completed"
           }
         }
       )
@@ -479,11 +473,11 @@ export default function RideHailing() {
     };
   }, [currentRideId]);
 
+  // Inbox navigation
   const openInbox = () => {
     router.push("/(feat)/Inbox");
   };
 
-  // Handle chat button press
   const handleChatPress = async () => {
     if (!assignedDriver?.driver_id || !currentUserId) {
       alert("Unable to open chat. Missing user information.");
@@ -491,7 +485,6 @@ export default function RideHailing() {
     }
 
     try {
-      // Try to find existing conversation
       const { data: existingConvo, error: fetchError } = await supabase
         .from("conversations")
         .select("*")
@@ -502,7 +495,6 @@ export default function RideHailing() {
 
       let convoId = existingConvo?.id;
 
-      // If no conversation exists, create one
       if (fetchError && fetchError.code === "PGRST116") {
         const { data: newConvo, error: createError } = await supabase
           .from("conversations")
@@ -522,7 +514,6 @@ export default function RideHailing() {
         convoId = newConvo.id;
       }
 
-      // Navigate to chat
       router.push({
         pathname: "/(feat)/Chat",
         params: {
@@ -673,6 +664,7 @@ export default function RideHailing() {
               overflow: "hidden",
             }}
           >
+            {/* Waiting for driver */}
             {waitingModalVisible ? (
               <View style={rideStyles.waitcontainer}>
                 <Text
@@ -701,21 +693,17 @@ export default function RideHailing() {
                 <Text style={rideStyles.waitText2}>
                   {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
                 </Text>
-                <View style={rideStyles.line}></View>
 
+                <View style={rideStyles.line}></View>
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>
-                      {distance.toFixed(2)} km
-                    </Text>
+                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
                     <FareIcon />
-                    <Text style={rideStyles.waitSumText}>
-                      ₱{fare.toFixed(2)}
-                    </Text>
+                    <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
@@ -732,6 +720,7 @@ export default function RideHailing() {
                 />
               </View>
             ) : rideStatus === "toPickUp" && assignedDriver ? (
+              // Driver is coming
               <View style={rideStyles.waitcontainer}>
                 <Text
                   style={{ fontSize: 18, fontWeight: "bold", color: "#073051" }}
@@ -785,16 +774,12 @@ export default function RideHailing() {
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>
-                      {distance.toFixed(2)} km
-                    </Text>
+                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
                     <FareIcon />
-                    <Text style={rideStyles.waitSumText}>
-                      ₱{fare.toFixed(2)}
-                    </Text>
+                    <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
@@ -822,7 +807,79 @@ export default function RideHailing() {
                   </View>
                 </View>
               </View>
+            ) : rideStatus === "completed" ? (
+              // Ride completed
+              <View style={rideStyles.waitcontainer}>
+                <Text
+                  style={{ fontSize: 18, fontWeight: "bold", color: "#073051" }}
+                >
+                  You've arrived at your destination
+                </Text>
+
+                <View style={rideStyles.line}></View>
+
+                <View style={rideStyles.waitcont}>
+                  <OriginIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.pickText}>Pickup: </Text>
+                </View>
+                <Text style={rideStyles.waitText}>{pickupAddress}</Text>
+
+                <View style={{ flexDirection: "row" }}>
+                  <DestIcon style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Destination:</Text>
+                </View>
+                <Text style={rideStyles.waitText}> {destinationAddress}</Text>
+
+                <View style={{ flexDirection: "row" }}>
+                  <PaymentMethod style={rideStyles.icon2} />
+                  <Text style={rideStyles.destText}>Payment Method</Text>
+                </View>
+                <Text style={rideStyles.waitText2}>
+                  {selectedPaymentMethod === "cash" ? "Cash" : "Cashless"}
+                </Text>
+
+                <View style={rideStyles.waitSumm}>
+                  <View style={rideStyles.iconWithText}>
+                    <KmIcon />
+                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
+                  </View>
+
+                  <View style={rideStyles.iconWithText}>
+                    <FareIcon />
+                    <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
+                  </View>
+
+                  <View style={rideStyles.iconWithText}>
+                    <SoloIcon width={20} height={15} color={"#CBCBCB"} />
+                    <Text style={rideStyles.waitSumText}> {selectedRide}</Text>
+                  </View>
+                </View>
+
+                <CustomButton
+                  title="Done"
+                  backgroundColor="#073051"
+                  onPress={() => {
+                    setRideStatus("booking");
+                    setCurrentRideId(null);
+                    setAssignedDriver(null);
+                    setWaitingModalVisible(false);
+                    setPickupInput("");
+                    setDestinationInput("");
+                    setPickupAddress("");
+                    setDestinationAddress("");
+                    setSelectedRide(null);
+                    setSelectedPaymentMethod(null);
+                    setRouteCoords([]);
+                    setDistance(0);
+                    setETA(0);
+                    setFare(0);
+                    bottomSheetRef.current?.close();
+                  }}
+                  style={{ marginTop: 80, alignSelf: "center" }}
+                />
+              </View>
             ) : (
+              // Default: Booking form (Your Trip)
               <View style={rideStyles.bsCont}>
                 <Text style={rideStyles.label}>Your Trip</Text>
 
@@ -869,8 +926,7 @@ export default function RideHailing() {
                 <TextInput
                   style={[
                     rideStyles.textInput,
-                    activeSelection === "destination" &&
-                      rideStyles.activeInput2,
+                    activeSelection === "destination" && rideStyles.activeInput2,
                   ]}
                   placeholder="Enter destination address"
                   value={destinationInput}
@@ -968,9 +1024,7 @@ export default function RideHailing() {
                 <View style={rideStyles.iconCont}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>
-                      {distance.toFixed(2)} km
-                    </Text>
+                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
                   </View>
                   <View style={rideStyles.iconWithText}>
                     <ETAIcon />

@@ -14,9 +14,10 @@ type TricyCallCardProps = {
   onAccept: () => void;
   status?: string;
   onCancel?: () => void;
-  userId: string; // The other user's ID (commuter or driver)
-  currentUserId: string; // Current logged-in user's ID
-  conversationId?: string; // Optional: if conversation already exists
+  onDone?: () => void; // ✅ NEW PROP ADDED
+  userId: string;
+  currentUserId: string;
+  conversationId?: string;
 };
 
 export default function TricyCallCard({
@@ -27,26 +28,12 @@ export default function TricyCallCard({
   onAccept,
   status,
   onCancel,
+  onDone, // ✅ NEW
   userId,
   currentUserId,
   conversationId,
 }: TricyCallCardProps) {
   const handleChatPress = async () => {
-    // If we already have a conversationId, go directly to chat
-    if (conversationId) {
-      router.push({
-        pathname: "/(feat)/Chat",
-        params: {
-          conversationId: conversationId,
-          rentalName: name,
-          userId: currentUserId,
-        },
-      });
-      return;
-    }
-
-    // Otherwise, we need to find or create a conversation
-    // Import supabase at the top of your file
     const { supabase } = require("@/scripts/supabase");
 
     try {
@@ -61,12 +48,11 @@ export default function TricyCallCard({
 
       let convoId = existingConvo?.id;
 
-      // If no conversation exists, create one
       if (fetchError && fetchError.code === "PGRST116") {
         const { data: newConvo, error: createError } = await supabase
           .from("conversations")
           .insert({
-            driver_id: currentUserId, // Adjust based on your role logic
+            driver_id: currentUserId,
             commuter_id: userId,
           })
           .select()
@@ -80,7 +66,6 @@ export default function TricyCallCard({
         convoId = newConvo.id;
       }
 
-      // Navigate to chat
       router.push({
         pathname: "/(feat)/Chat",
         params: {
@@ -101,16 +86,32 @@ export default function TricyCallCard({
           {name} - ₱{farePrice}
         </Text>
 
+        {/* =======================
+            PENDING → SHOW ACCEPT
+        ======================== */}
         {status === "pending" && (
           <TouchableOpacity style={styles.button} onPress={onAccept}>
             <Text style={styles.buttonText}>Accept</Text>
           </TouchableOpacity>
         )}
 
-        {status === "accepted" && onCancel && (
-          <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-            <Text style={styles.buttonText}>Cancel</Text>
-          </TouchableOpacity>
+        {/* =======================
+            ACCEPTED → SHOW CANCEL + DONE
+        ======================== */}
+        {status === "accepted" && (
+          <View style={{ flexDirection: "row", gap: 6 }}>
+            {onCancel && (
+              <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+
+            {onDone && (
+              <TouchableOpacity style={styles.doneButton} onPress={onDone}>
+                <Text style={styles.buttonText}>Done</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
 
@@ -150,6 +151,15 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: "#D9534F",
+    borderRadius: 40,
+    paddingVertical: 8,
+    paddingHorizontal: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 10,
+  },
+  doneButton: {
+    backgroundColor: "#0FD150", // GREEN for completion
     borderRadius: 40,
     paddingVertical: 8,
     paddingHorizontal: 25,

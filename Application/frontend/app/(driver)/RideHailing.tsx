@@ -24,13 +24,12 @@ export default function RideHailingDriver() {
   const [selectedRide, setSelectedRide] = useState<any | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string>(""); // Add this state
+  const [currentUserId, setCurrentUserId] = useState<string>("");
 
   const fetchRidesWithUsers = useCallback(async () => {
     try {
       if (!refreshing) setLoading(true);
 
-      // Get current logged-in user
       const {
         data: { user },
         error: userError,
@@ -38,16 +37,14 @@ export default function RideHailingDriver() {
       if (userError) throw userError;
       if (!user) throw new Error("No user logged in");
 
-      // Store current user ID
       setCurrentUserId(user.id);
 
-      // Fetch rides: pending + accepted rides for this driver
       const { data: ridesData, error: ridesError } = await supabase
         .from("ride_requests")
         .select(
           "id, pick_up, destination, fare_price, user_id, payment_method, status, driver_id"
         )
-        .or(`status.eq.pending,driver_id.eq.${user.id},status.eq.accepted`);
+        .or(`status.eq.pending,driver_id.eq.${user.id},status.eq.accepted,status.eq.completed`);
 
       if (ridesError) throw ridesError;
 
@@ -57,7 +54,6 @@ export default function RideHailingDriver() {
         return;
       }
 
-      // Fetch usernames for the rides
       const userIds = ridesData.map((r) => r.user_id).filter(Boolean);
 
       let profilesData: any[] = [];
@@ -70,7 +66,6 @@ export default function RideHailingDriver() {
         profilesData = data || [];
       }
 
-      // Merge ride data with anonymized username
       const merged = ridesData.map((ride) => {
         const fullName = profilesData.find(
           (p) => p.id === ride.user_id
@@ -90,8 +85,8 @@ export default function RideHailingDriver() {
             ride.payment_method === "cash"
               ? "Cash"
               : ride.payment_method === "cashless"
-                ? "Cashless"
-                : "Unknown",
+              ? "Cashless"
+              : "Unknown",
         };
       });
 
@@ -105,12 +100,10 @@ export default function RideHailingDriver() {
     }
   }, [refreshing]);
 
-  // Fetch rides on mount
   useEffect(() => {
     fetchRidesWithUsers();
   }, [fetchRidesWithUsers]);
 
-  // Real-time updates for ride_requests
   useEffect(() => {
     const channel = supabase
       .channel("ride_requests-updates")
@@ -161,7 +154,6 @@ export default function RideHailingDriver() {
             if (userError) throw userError;
             if (!user) throw new Error("No user logged in");
 
-            // Insert into ride_assignments
             const { error: assignError } = await supabase
               .from("ride_assignments")
               .insert({
@@ -171,7 +163,6 @@ export default function RideHailingDriver() {
               });
             if (assignError) throw assignError;
 
-            // Update ride_requests status
             const { error: updateError } = await supabase
               .from("ride_requests")
               .update({ status: "accepted", driver_id: user.id })
@@ -209,13 +200,49 @@ export default function RideHailingDriver() {
         )
       );
 
-      // ✅ Update the modal as well
       if (selectedRide?.id === ride.id) {
         setSelectedRide({ ...selectedRide, status: "cancelled" });
       }
     } catch (err) {
       console.error("Failed to cancel ride:", err);
     }
+  };
+
+  const handleCompleteRide = async (ride: any) => {
+    Alert.alert(
+      "Complete Ride",
+      "Mark this ride as completed? Commuter will be notified.",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from("ride_requests")
+                .update({ status: "completed" })
+                .eq("id", ride.id);
+
+              if (error) throw error;
+
+              setRides((prevRides) =>
+                prevRides.map((r) =>
+                  r.id === ride.id ? { ...r, status: "completed" } : r
+                )
+              );
+
+              if (selectedRide?.id === ride.id) {
+                setSelectedRide({ ...selectedRide, status: "completed" });
+              }
+
+              Alert.alert("Success", "Ride completed!");
+            } catch (err) {
+              console.error("Failed to complete ride:", err);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const openInbox = () => {
@@ -277,8 +304,8 @@ export default function RideHailingDriver() {
                 onCancel={() =>
                   item.status === "accepted" && handleCancelRide(item)
                 }
-                userId={item.user_id} // ✅ Pass the commuter's user_id
-                currentUserId={currentUserId} // ✅ Pass the current driver's user_id
+                userId={item.user_id}
+                currentUserId={currentUserId}
               />
             </TouchableOpacity>
           )}
@@ -295,51 +322,63 @@ export default function RideHailingDriver() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalHeader}>Ride Summary</Text>
-              {selectedRide && (
-                <>
-                  <Text style={styles.modalName}>
-                    Name: {selectedRide.username}
-                  </Text>
-                  <Text style={styles.modalText}>
-                    Pickup: {selectedRide.pick_up}
-                  </Text>
-                  <Text style={styles.modalText}>
-                    Destination: {selectedRide.destination}
-                  </Text>
-                  <Text style={styles.modalText}>
-                    Payment Method: {selectedRide.payment_method_label}
-                  </Text>
-                  <Text style={styles.modalText}>
-                    Fare: ₱{selectedRide.fare_price}
-                  </Text>
-                  <Text style={styles.modalText}>
-                    Status:{" "}
-                    {selectedRide.status
-                      ? selectedRide.status.charAt(0).toUpperCase() +
-                        selectedRide.status.slice(1)
-                      : "pending"}
-                  </Text>
+            {selectedRide && (
+              <>
+                <Text style={styles.modalName}>
+                  Name: {selectedRide.username}
+                </Text>
+                <Text style={styles.modalText}>
+                  Pickup: {selectedRide.pick_up}
+                </Text>
+                <Text style={styles.modalText}>
+                  Destination: {selectedRide.destination}
+                </Text>
+                <Text style={styles.modalText}>
+                  Payment Method: {selectedRide.payment_method_label}
+                </Text>
+                <Text style={styles.modalText}>
+                  Fare: ₱{selectedRide.fare_price}
+                </Text>
+                <Text style={styles.modalText}>
+                  Status:{" "}
+                  {selectedRide.status
+                    ? selectedRide.status.charAt(0).toUpperCase() +
+                      selectedRide.status.slice(1)
+                    : "pending"}
+                </Text>
 
-                  {selectedRide.status !== "accepted" &&
-                    selectedRide.status !== "cancelled" && (
-                      <TouchableOpacity
-                        style={styles.acceptButton}
-                        onPress={() => handleAcceptRide(selectedRide)}
-                      >
-                        <Text style={styles.acceptButtonText}>Accept Ride</Text>
-                      </TouchableOpacity>
-                  )}
+                {/* DONE BUTTON - GREEN */}
+                {selectedRide.status === "accepted" && (
+                  <TouchableOpacity
+                    style={[styles.acceptButton, { backgroundColor: "#0FD150" }]}
+                    onPress={() => handleCompleteRide(selectedRide)}
+                  >
+                    <Text style={styles.acceptButtonText}>Done</Text>
+                  </TouchableOpacity>
+                )}
 
-                  {selectedRide.status === "accepted" && (
-                    <TouchableOpacity
-                      style={[styles.acceptButton, { backgroundColor: "#FF4C4C" }]}
-                      onPress={() => handleCancelRide(selectedRide)}
-                    >
-                      <Text style={styles.acceptButtonText}>Cancel Ride</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
+                {/* CANCEL BUTTON - RED */}
+                {selectedRide.status === "accepted" && (
+                  <TouchableOpacity
+                    style={[styles.acceptButton, { backgroundColor: "#FF4C4C" }]}
+                    onPress={() => handleCancelRide(selectedRide)}
+                  >
+                    <Text style={styles.acceptButtonText}>Cancel Ride</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* ACCEPT BUTTON - BLUE */}
+                {selectedRide.status === "pending" && (
+                  <TouchableOpacity
+                    style={styles.acceptButton}
+                    onPress={() => handleAcceptRide(selectedRide)}
+                  >
+                    <Text style={styles.acceptButtonText}>Accept Ride</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setModalVisible(false)}
