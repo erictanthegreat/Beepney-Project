@@ -32,6 +32,26 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState(1);
   const [firstName, setFirstName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact" })
+        .eq("user_id", session.user.id)
+        .eq("read", false);
+
+      setUnreadCount(data?.length || 0);
+    };
+
+    fetchUnreadCount();
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -122,8 +142,18 @@ export default function Home() {
             Hello, {firstName || "Commuter"}!
           </Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity
+          style={featStyles.notif}
+          onPress={() => router.push("/(feat)/Notifications")}
+        >
           <NotifIcon width={28} height={28} />
+          {unreadCount > 0 && (
+            <View style={featStyles.badge}>
+              <Text style={featStyles.badgeText}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -328,5 +358,26 @@ const featStyles = StyleSheet.create({
   icon: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  notif: {
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    backgroundColor: "#F44336",
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
+    fontFamily: "Poppins",
   },
 });

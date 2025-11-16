@@ -239,6 +239,7 @@ export default class Complaints extends Component<{}, State> {
 
       const { error } = await supabase.from("complaints").insert([
         {
+          user_id: currentUserId, // ⬅️ ADDED
           name,
           contact_information: contact,
           location,
@@ -247,6 +248,7 @@ export default class Complaints extends Component<{}, State> {
           type_of_issues: selectedIssue,
           description,
           proofs,
+          status: "Received", // ⬅️ ADDED
         },
       ]);
 

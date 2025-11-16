@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import ApprovalIcon from "../../assets/images/approval.svg";
 import BackButton from "../../components/Backbutton";
 import * as FileSystem from "expo-file-system";
+import { createNotification } from "@/scripts/notificationHelper";
 
 export default function ProfileSubmission() {
   const { width, height } = useWindowDimensions();
@@ -187,11 +188,40 @@ export default function ProfileSubmission() {
         status: "Pending",
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("submissions")
-        .insert([submissionPayload]);
+        .insert([submissionPayload])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // CREATE NOTIFICATION HERE ⬇️
+      if (data) {
+        const notifType =
+          userType === "commuter"
+            ? "discount_application"
+            : "license_application";
+
+        const notifTitle =
+          userType === "commuter"
+            ? "ID Discount Application Submitted"
+            : "Driver's License Submitted";
+
+        const notifMessage =
+          userType === "commuter"
+            ? `Your ${idType} discount ID has been submitted successfully and is pending review.`
+            : `Your driver's license for ${idType} has been submitted for verification.`;
+
+        await createNotification(
+          currentUserId,
+          notifType,
+          notifTitle,
+          notifMessage,
+          "Pending",
+          data.id
+        );
+      }
 
       setStep(2);
     } catch (err: any) {
