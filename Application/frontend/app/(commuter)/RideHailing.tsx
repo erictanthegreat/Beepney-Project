@@ -528,6 +528,29 @@ export default function RideHailing() {
     }
   };
 
+  const saveFareHistory = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.from("saved_fares").insert([
+      {
+        user_id: user.id,
+        origin: pickupAddress,
+        destination: destinationAddress,
+        distance_km: distance,
+        base_fare: fare,
+        discount_percent: 0,
+        total_fare: fare,
+      },
+    ]);
+
+    if (error) {
+      console.error("Error saving fare:", error);
+    } else {
+      console.log("Fare saved successfully!");
+    }
+  };
+
   return (
     <View style={rideStyles.container}>
       {/* Map */}
@@ -858,7 +881,11 @@ export default function RideHailing() {
                 <CustomButton
                   title="Done"
                   backgroundColor="#073051"
-                  onPress={() => {
+                  onPress={async () => {
+                    // 🔥 SAVE FARE HISTORY BEFORE RESETTING ANYTHING
+                    await saveFareHistory();
+
+                    // Your existing reset logic (unchanged)
                     setRideStatus("booking");
                     setCurrentRideId(null);
                     setAssignedDriver(null);
