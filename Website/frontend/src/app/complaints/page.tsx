@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/pagination";
 import { supabase } from "@/lib/supabase";
 import ComplaintSummaryModal from "../../components/ui/overlay4";
-import { createClient } from "@supabase/supabase-js";
 
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
@@ -117,10 +116,6 @@ const DashboardPage = () => {
   // --- DATA FETCHING ---
   useEffect(() => {
     const fetchData = async () => {
-      const localSupabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       try {
         const { data: complaints, error } = await supabase
           .from("complaints")
@@ -159,10 +154,6 @@ const DashboardPage = () => {
   }, []);
 
   const handleDecision = async (id: string, newStatus: ComplaintStatus) => {
-    const localSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
     const originalStatus =
       data.find((item) => item.id === id)?.status || "Pending";
     setData((prev) =>
