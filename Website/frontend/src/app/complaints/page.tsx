@@ -27,15 +27,8 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { createClient } from "@supabase/supabase-js";
-import ComplaintSummaryModal from "../../components/ui/overlay4"; // ✅ Updated import name
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// --- HELPER FUNCTIONS ---
+import ComplaintSummaryModal from "../../components/ui/overlay4";
+import { supabase } from "@/lib/supabase";
 
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
