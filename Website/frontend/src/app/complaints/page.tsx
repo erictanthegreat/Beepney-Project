@@ -27,7 +27,12 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import ComplaintSummaryModal from "../../components/ui/overlay4";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
@@ -428,7 +433,6 @@ const DashboardPage = () => {
         </Table>
       </main>
 
-      {/* ✅ Modal */}
       {viewingComplaint && (
         <ComplaintSummaryModal
           complaint={viewingComplaint}
