@@ -26,28 +26,16 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import ComplaintSummaryModal from "../../components/ui/overlay4";
 import { createClient } from "@supabase/supabase-js";
+import ComplaintSummaryModal from "../../components/ui/overlay4"; // ✅ Updated import name
 
-// ✅ Force dynamic rendering - prevents prerendering at build time
-export const dynamic = "force-dynamic";
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-// ✅ Lazy initialization of Supabase client
-let supabaseClient: ReturnType<typeof createClient> | null = null;
-
-const getSupabaseClient = () => {
-  if (!supabaseClient) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Supabase environment variables are not set");
-    }
-
-    supabaseClient = createClient(supabaseUrl, supabaseKey);
-  }
-  return supabaseClient;
-};
+// --- HELPER FUNCTIONS ---
 
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
@@ -137,8 +125,6 @@ const DashboardPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const supabase = getSupabaseClient();
-
         const { data: complaints, error } = await supabase
           .from("complaints")
           .select("*")
@@ -197,23 +183,12 @@ const DashboardPage = () => {
       `Submission #${displayNumber} status updated to: ${newStatus}`
     );
 
-    try {
-      const supabase = getSupabaseClient();
+    const { error } = await supabase
+      .from("complaints")
+      .update({ status: newStatus })
+      .eq("id", id);
 
-      const { error } = await supabase
-        .from("complaints")
-        .update({ status: newStatus })
-        .eq("id", id);
-
-      if (error) {
-        setData((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, status: originalStatus } : item
-          )
-        );
-        toast.error(`Failed to update status. Rolled back.`);
-      }
-    } catch (err) {
+    if (error) {
       setData((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, status: originalStatus } : item
@@ -383,6 +358,7 @@ const DashboardPage = () => {
                     </span>
                   </TableCell>
 
+                  {/* ✅ Add View Button */}
                   <TableCell className="flex space-x-2">
                     <button
                       onClick={() => setViewingComplaint(item)}
@@ -391,6 +367,7 @@ const DashboardPage = () => {
                       <EyeIcon className="h-5 w-5" />
                     </button>
 
+                    {/* Existing Dropdown */}
                     <button
                       className="dropdown-trigger flex items-center justify-center w-6 h-6 text-gray-500"
                       onClick={(e) => {
@@ -459,6 +436,7 @@ const DashboardPage = () => {
         </Table>
       </main>
 
+      {/* ✅ Modal */}
       {viewingComplaint && (
         <ComplaintSummaryModal
           complaint={viewingComplaint}
