@@ -2,10 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
   images: {
-    domains: [
-      "lh3.googleusercontent.com", // Google avatars
-      "eutstkauaegdryktgqfl.supabase.co", // Supabase storage domain
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com", // Google avatars
+      },
+      {
+        protocol: "https",
+        hostname: "eutstkauaegdryktgqfl.supabase.co", // Supabase storage domain
+      },
     ],
   },
 };
