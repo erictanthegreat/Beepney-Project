@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import Image from "next/image";
 
@@ -37,12 +37,14 @@ const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
 
     useEffect(() => {
       const fetchUser = async () => {
+        const supabase = getSupabaseClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
         if (user) {
           // get avatar from profiles table
+
           const { data: profile } = await supabase
             .from("profiles")
             .select("avatar_url")
@@ -60,7 +62,7 @@ const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
 
       fetchUser();
     }, []);
-
+    const supabase = getSupabaseClient();
     const handleLogout = async () => {
       await supabase.auth.signOut();
       router.push("/");

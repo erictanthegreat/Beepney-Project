@@ -26,7 +26,7 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { supabase } from "@/lib/supabase";
+import { getSupabaseClient } from "@/lib/supabase";
 import ComplaintSummaryModal from "../../components/ui/overlay4";
 
 const formatDate = (isoString: string | null) => {
@@ -116,6 +116,7 @@ const DashboardPage = () => {
   // --- DATA FETCHING ---
   useEffect(() => {
     const fetchData = async () => {
+      const supabase = getSupabaseClient();
       try {
         const { data: complaints, error } = await supabase
           .from("complaints")
@@ -174,7 +175,7 @@ const DashboardPage = () => {
     toast.success(
       `Submission #${displayNumber} status updated to: ${newStatus}`
     );
-
+    const supabase = getSupabaseClient();
     const { error } = await supabase
       .from("complaints")
       .update({ status: newStatus })
