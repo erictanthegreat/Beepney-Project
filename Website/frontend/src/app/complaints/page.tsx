@@ -26,7 +26,6 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { createClient } from "@supabase/supabase-js";
 import ComplaintSummaryModal from "../../components/ui/overlay4";
 import { supabase } from "@/lib/supabase";
 
