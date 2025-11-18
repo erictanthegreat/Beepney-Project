@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import Header from "../../components/ui/header";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Overlay3 from "../../components/ui/overlay3";
@@ -42,7 +42,6 @@ const FareMatrixPage = () => {
   }, []);
 
   const fetchMatrices = async () => {
-    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("fare_matrix")
       .select("*")
@@ -51,7 +50,6 @@ const FareMatrixPage = () => {
   };
 
   const fetchRole = async () => {
-    const supabase = getSupabaseClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -92,7 +90,7 @@ const FareMatrixPage = () => {
       if (file) {
         const timestamp = Date.now();
         const filePath = `fare-matrix/${selectedSection}/${timestamp}-${file.name}`;
-        const supabase = getSupabaseClient();
+
         const { error: uploadError } = await supabase.storage
           .from("beepney-bucket")
           .upload(filePath, file, { upsert: true });
@@ -111,7 +109,6 @@ const FareMatrixPage = () => {
       }
 
       if (id) {
-        const supabase = getSupabaseClient();
         const { error: updateError } = await supabase
           .from("fare_matrix")
           .update({
@@ -124,7 +121,6 @@ const FareMatrixPage = () => {
 
         if (updateError) throw updateError;
       } else {
-        const supabase = getSupabaseClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -158,7 +154,7 @@ const FareMatrixPage = () => {
 
   const handleDeleteFare = async (id: string) => {
     if (!canEdit()) return;
-    const supabase = getSupabaseClient();
+
     const { error } = await supabase.from("fare_matrix").delete().eq("id", id);
 
     if (error) {

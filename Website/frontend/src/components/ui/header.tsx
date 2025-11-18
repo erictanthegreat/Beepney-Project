@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getSupabaseClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import Image from "next/image";
 
@@ -37,7 +37,6 @@ const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
 
     useEffect(() => {
       const fetchUser = async () => {
-        const supabase = getSupabaseClient();
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -62,7 +61,7 @@ const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
 
       fetchUser();
     }, []);
-    const supabase = getSupabaseClient();
+
     const handleLogout = async () => {
       await supabase.auth.signOut();
       router.push("/");

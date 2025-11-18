@@ -2,7 +2,7 @@
 
 import { PencilIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useState } from "react";
-import { getSupabaseClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import Header from "../../components/ui/header";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -26,7 +26,6 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const supabase = getSupabaseClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -67,7 +66,7 @@ const EditProfilePage = () => {
 
     if (selectedImage && user) {
       const filePath = `pics/${user.id}/${selectedImage.name}`;
-      const supabase = getSupabaseClient();
+
       const { error: uploadError } = await supabase.storage
         .from("beepney-bucket")
         .upload(filePath, selectedImage, { upsert: true });
@@ -83,7 +82,7 @@ const EditProfilePage = () => {
 
       updatedAvatarUrl = publicUrlData.publicUrl ?? avatarUrl;
     }
-    const supabase = getSupabaseClient();
+
     const { error: updateError } = await supabase
       .from("profiles")
       .update({ username, avatar_url: updatedAvatarUrl, role: role.trim() })
