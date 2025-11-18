@@ -1,33 +1,33 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
-import Header from '../../components/ui/header';
-import { Toaster, toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
+import Header from "../../components/ui/header";
+import { Toaster, toast } from "sonner";
 import {
   Table,
   TableHeader,
   TableBody,
   TableRow,
   TableCell,
-  TableHead
-} from '@/components/ui/table';
+  TableHead,
+} from "@/components/ui/table";
 import {
   MagnifyingGlassIcon,
   BarsArrowDownIcon,
   EllipsisVerticalIcon,
-  FunnelIcon
-} from '@heroicons/react/24/outline';
+  FunnelIcon,
+} from "@heroicons/react/24/outline";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
   PaginationPrevious,
   PaginationNext,
-  PaginationLink
-} from '@/components/ui/pagination';
-import Overlay2 from '../../components/ui/overlay2';
-import { createClient } from '@supabase/supabase-js';
+  PaginationLink,
+} from "@/components/ui/pagination";
+import Overlay2 from "../../components/ui/overlay2";
+import { createClient } from "@supabase/supabase-js";
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -44,7 +44,7 @@ interface Submission {
   role: string; // commuter or driver
   updated_at: string;
   created_at: string;
-  status: 'Pending' | 'Approved' | 'Declined';
+  status: "Pending" | "Approved" | "Declined";
   front_id_url?: string;
   back_id_url?: string;
 }
@@ -52,8 +52,12 @@ interface Submission {
 const DashboardPage = () => {
   const [data, setData] = useState<Submission[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<Submission | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [overlayData, setOverlayData] = useState<Submission | null>(null);
 
   const itemsPerPage = 10;
@@ -65,49 +69,53 @@ const DashboardPage = () => {
       try {
         // Step 1: fetch submissions
         const { data: submissions, error } = await supabase
-          .from('submissions')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .from("submissions")
+          .select("*")
+          .order("created_at", { ascending: false });
 
         if (error) throw error;
 
         if (!submissions) return;
 
         // Step 2: fetch usernames from profiles
-        const userIds = submissions.map(s => s.user_id);
+        const userIds = submissions.map((s) => s.user_id);
         const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username')
-          .in('id', userIds);
+          .from("profiles")
+          .select("id, username")
+          .in("id", userIds);
 
         if (profilesError) throw profilesError;
 
         const profilesMap = Object.fromEntries(
-          (profilesData || []).map(p => [p.id, p.username])
+          (profilesData || []).map((p) => [p.id, p.username])
         );
 
         // Step 3: map usernames and roles
         const mapped = submissions.map((s: any) => ({
           ...s,
-          username: profilesMap[s.user_id] || 'N/A',
-          role: s.type || 'N/A',
+          username: profilesMap[s.user_id] || "N/A",
+          role: s.type || "N/A",
         }));
 
         setData(mapped as Submission[]);
       } catch (err) {
-        console.error('Supabase fetch error:', err);
-        toast.error('Failed to fetch submissions');
+        console.error("Supabase fetch error:", err);
+        toast.error("Failed to fetch submissions");
       }
     };
 
     fetchData();
   }, []);
 
-  const handleDecision = async (id: string, decision: 'Approved' | 'Declined') => {
+  const handleDecision = async (
+    id: string,
+    decision: "Approved" | "Declined"
+  ) => {
     const sortedByOldest = [...data].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
-    const rowIndex = sortedByOldest.findIndex(item => item.id === id);
+    const rowIndex = sortedByOldest.findIndex((item) => item.id === id);
     const displayNumber = rowIndex + 1;
 
     setData((prev) =>
@@ -118,30 +126,32 @@ const DashboardPage = () => {
     setSelectedSubmission(null);
 
     toast.success(
-      decision === 'Approved'
+      decision === "Approved"
         ? `Submission #${displayNumber} approved`
         : `Submission #${displayNumber} declined`
     );
 
     const { error } = await supabase
-      .from('submissions')
+      .from("submissions")
       .update({ status: decision })
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
-      toast.error('Failed to update submission');
+      toast.error("Failed to update submission");
     }
   };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest('.dropdown-menu') &&
-          !(e.target as HTMLElement).closest('.dropdown-trigger')) {
+      if (
+        !(e.target as HTMLElement).closest(".dropdown-menu") &&
+        !(e.target as HTMLElement).closest(".dropdown-trigger")
+      ) {
         setSelectedSubmission(null);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const currentData = data.slice(
@@ -182,15 +192,19 @@ const DashboardPage = () => {
 
         {/* Header + Pagination */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 w-full">
-          <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">Database</h1>
+          <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">
+            Database
+          </h1>
 
           <Pagination className="flex justify-end w-full sm:w-auto">
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
-                    currentPage === 1 ? 'pointer-events-none opacity-50' : ''
+                    currentPage === 1 ? "pointer-events-none opacity-50" : ""
                   }`}
                 />
               </PaginationItem>
@@ -201,7 +215,7 @@ const DashboardPage = () => {
                     isActive={currentPage === i + 1}
                     onClick={() => setCurrentPage(i + 1)}
                     className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
-                      currentPage === i + 1 ? 'bg-[#D1D1D1] text-[#6B6B6B]' : ''
+                      currentPage === i + 1 ? "bg-[#D1D1D1] text-[#6B6B6B]" : ""
                     }`}
                   >
                     {i + 1}
@@ -211,9 +225,13 @@ const DashboardPage = () => {
 
               <PaginationItem>
                 <PaginationNext
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
                   className={`group border border-[#D1D1D1] text-[#073051] rounded-[10px] px-4 py-2 hover:bg-[#D1D1D1] hover:text-[#6B6B6B] ${
-                    currentPage === totalPages ? 'pointer-events-none opacity-50' : ''
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : ""
                   }`}
                 />
               </PaginationItem>
@@ -239,9 +257,12 @@ const DashboardPage = () => {
           <TableBody>
             {currentData.map((item) => {
               const sortedByOldest = [...data].sort(
-                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                (a, b) =>
+                  new Date(a.created_at).getTime() -
+                  new Date(b.created_at).getTime()
               );
-              const rowNumber = sortedByOldest.findIndex(d => d.id === item.id) + 1;
+              const rowNumber =
+                sortedByOldest.findIndex((d) => d.id === item.id) + 1;
 
               return (
                 <TableRow key={item.id}>
@@ -257,15 +278,17 @@ const DashboardPage = () => {
                   </TableCell>
                   <TableCell>{item.submission_type}</TableCell>
                   <TableCell>{item.role}</TableCell>
-                  <TableCell>{new Date(item.updated_at).toLocaleString()}</TableCell>
+                  <TableCell>
+                    {new Date(item.updated_at).toLocaleString()}
+                  </TableCell>
                   <TableCell>
                     <span
                       className={`px-2 py-1 rounded-full text-sm font-medium ${
-                        item.status === 'Approved'
-                          ? 'bg-green-100 text-green-700'
-                          : item.status === 'Pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
+                        item.status === "Approved"
+                          ? "bg-green-100 text-green-700"
+                          : item.status === "Pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
                       }`}
                     >
                       {item.status}
@@ -275,9 +298,16 @@ const DashboardPage = () => {
                     <button
                       className="dropdown-trigger flex items-center justify-center w-6 h-6 text-gray-500"
                       onClick={(e) => {
-                        const rect = (e.target as HTMLElement).getBoundingClientRect();
-                        setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
-                        setSelectedSubmission(selectedSubmission?.id === item.id ? null : item);
+                        const rect = (
+                          e.target as HTMLElement
+                        ).getBoundingClientRect();
+                        setDropdownPosition({
+                          top: rect.bottom + window.scrollY,
+                          left: rect.left + window.scrollX,
+                        });
+                        setSelectedSubmission(
+                          selectedSubmission?.id === item.id ? null : item
+                        );
                       }}
                     >
                       <EllipsisVerticalIcon className="h-5 w-5" />
@@ -288,10 +318,13 @@ const DashboardPage = () => {
                       ReactDOM.createPortal(
                         <div
                           className="dropdown-menu absolute w-40 bg-white border border-gray-200 rounded-lg shadow-md z-50"
-                          style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
+                          style={{
+                            top: dropdownPosition.top,
+                            left: dropdownPosition.left,
+                          }}
                         >
                           <button
-                            onClick={() => handleDecision(item.id, 'Approved')}
+                            onClick={() => handleDecision(item.id, "Approved")}
                             className="flex items-center w-full px-3 py-2 text-green-600 hover:bg-gray-50 font-semibold"
                           >
                             <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-green-600" />
@@ -299,7 +332,7 @@ const DashboardPage = () => {
                           </button>
                           <div className="border-t border-gray-200" />
                           <button
-                            onClick={() => handleDecision(item.id, 'Declined')}
+                            onClick={() => handleDecision(item.id, "Declined")}
                             className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
                           >
                             <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
@@ -320,10 +353,10 @@ const DashboardPage = () => {
       <Overlay2
         isOpen={!!overlayData}
         onClose={() => setOverlayData(null)}
-        name={overlayData?.username || ''}
-        idType={overlayData?.submission_type || ''}
-        frontImageUrl={overlayData?.front_id_url || ''}
-        backImageUrl={overlayData?.back_id_url || ''}
+        name={overlayData?.username || ""}
+        idType={overlayData?.submission_type || ""}
+        frontImageUrl={overlayData?.front_id_url || ""}
+        backImageUrl={overlayData?.back_id_url || ""}
       />
     </>
   );
