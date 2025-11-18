@@ -7,11 +7,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "lh3.googleusercontent.com", // Google avatars
+        hostname: "lh3.googleusercontent.com",
       },
       {
         protocol: "https",
-        hostname: "eutstkauaegdryktgqfl.supabase.co", // Supabase storage domain
+        hostname: "eutstkauaegdryktgqfl.supabase.co",
       },
     ],
   },
