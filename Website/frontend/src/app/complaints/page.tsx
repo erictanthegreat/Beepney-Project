@@ -26,8 +26,16 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { getSupabaseClient } from "@/lib/supabase";
-import ComplaintSummaryModal from "../../components/ui/overlay4";
+import { createClient } from "@supabase/supabase-js";
+import ComplaintSummaryModal from "../../components/ui/overlay4"; // ✅ Updated import name
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// --- HELPER FUNCTIONS ---
 
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
@@ -116,7 +124,6 @@ const DashboardPage = () => {
   // --- DATA FETCHING ---
   useEffect(() => {
     const fetchData = async () => {
-      const supabase = getSupabaseClient();
       try {
         const { data: complaints, error } = await supabase
           .from("complaints")
@@ -175,7 +182,7 @@ const DashboardPage = () => {
     toast.success(
       `Submission #${displayNumber} status updated to: ${newStatus}`
     );
-    const supabase = getSupabaseClient();
+
     const { error } = await supabase
       .from("complaints")
       .update({ status: newStatus })
