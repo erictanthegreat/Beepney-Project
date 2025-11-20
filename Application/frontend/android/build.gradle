@@ -1,72 +1,53 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-    ext {
-        buildToolsVersion = "35.0.0"
-        minSdkVersion = 24
-        compileSdkVersion = 34
-        targetSdkVersion = 34
-
-        // Expo SDK 53 requires Kotlin 1.9.24
-        kotlinVersion = "1.9.22"
-    }
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            authentication {
-                basic(BasicAuthentication)
-            }
-            credentials {
-                username = "mapbox"
-                password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
-            }
-        }
-    }
-    dependencies {
-        // Expo SDK 53 → React Native 0.76 requires AGP 8.4.0
-        classpath('com.android.tools.build:gradle:8.4.0')
-
-        classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-    }
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath('com.android.tools.build:gradle')
+    classpath('com.facebook.react:react-native-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+  }
 }
 
 def reactNativeAndroidDir = new File(
-    providers.exec {
-        workingDir(rootDir)
-        commandLine("node", "--print", "require.resolve('react-native/package.json')")
-    }.standardOutput.asText.get().trim(),
-    "../android"
+  providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('react-native/package.json')")
+  }.standardOutput.asText.get().trim(),
+  "../android"
 )
 
 allprojects {
-    repositories {
-        maven {
-            url(reactNativeAndroidDir)
-        }
-
-        google()
-        mavenCentral()
-        maven { url 'https://www.jitpack.io' }
+  repositories {
+    maven {
+      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+      url(reactNativeAndroidDir)
     }
+
+    google()
+    mavenCentral()
+    maven { url 'https://www.jitpack.io' }
+  }
 }
 
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
+// @generated begin @rnmapbox/maps-v2-maven - expo prebuild (DO NOT MODIFY) sync-32f1b7024bb5099f2805443b1960a3233ccde124
 
-// @generated begin @rnmapbox/maps-v2-maven - expo prebuild (DO NOT MODIFY)
 allprojects {
-    repositories {
-        maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            authentication { basic(BasicAuthentication) }
-            credentials {
-                username = 'mapbox'
-                password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
-            }
-        }
+  repositories {
+    maven {
+      url 'https://api.mapbox.com/downloads/v2/releases/maven'
+      authentication { basic(BasicAuthentication) }
+      credentials {
+        username = 'mapbox'
+        password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
+      }
     }
+  }
 }
-// @generated end
+
+// @generated end @rnmapbox/maps-v2-maven

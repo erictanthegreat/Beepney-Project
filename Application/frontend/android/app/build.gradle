@@ -61,11 +61,6 @@ react {
 
     /* Autolinking */
     autolinkLibrariesWithApp()
-    //
-    // Added by install-expo-modules
-    entryFile = file(["node", "-e", "require('expo/scripts/resolveAppEntry')", rootDir.getAbsoluteFile().getParentFile().getAbsolutePath(), "android", "absolute"].execute(null, rootDir).text.trim())
-    cliFile = new File(["node", "--print", "require.resolve('@expo/cli')"].execute(null, rootDir).text.trim())
-    bundleCommand = "export:embed"
 }
 
 /**
@@ -100,9 +95,9 @@ packagingOptions {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.frontend'
+    namespace 'com.BEEPNEY.Beepney'
     defaultConfig {
-        applicationId 'com.anonymous.frontend'
+        applicationId 'com.BEEPNEY.Beepney'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
