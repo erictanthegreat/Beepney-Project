@@ -433,6 +433,7 @@ const rentStyles = StyleSheet.create({
     backgroundColor: "#073051",
     borderRadius: 8,
     alignSelf: "center",
+    marginBottom: 15,
   },
   location: {
     width: "90%",
