@@ -43,6 +43,7 @@ const Header = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
 
         if (user) {
           // get avatar from profiles table
+
           const { data: profile } = await supabase
             .from("profiles")
             .select("avatar_url")

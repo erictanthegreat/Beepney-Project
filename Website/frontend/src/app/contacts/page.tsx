@@ -140,7 +140,8 @@ const ContactsPage: React.FC = () => {
       </div>
 
       {/* ✅ Scrollable main area (like FareMatrix) */}
-      <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px] 
+      <main
+        className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px] 
         overflow-y-auto 
         max-h-[calc(100vh-200px)] 
         scroll-smooth 

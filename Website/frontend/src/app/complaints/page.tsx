@@ -26,14 +26,8 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { createClient } from "@supabase/supabase-js";
-import ComplaintSummaryModal from "../../components/ui/overlay4"; // ✅ Updated import name
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import ComplaintSummaryModal from "../../components/ui/overlay4";
 
 // --- HELPER FUNCTIONS ---
 
@@ -112,8 +106,6 @@ const DashboardPage = () => {
     top: number;
     left: number;
   } | null>(null);
-
-  // ✅ Modal state
   const [viewingComplaint, setViewingComplaint] = useState<Submission | null>(
     null
   );
@@ -121,11 +113,21 @@ const DashboardPage = () => {
   const itemsPerPage = 10;
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
+  // ✅ Supabase client reference
+  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+
   // --- DATA FETCHING ---
   useEffect(() => {
+    // Only initialize Supabase on client
+    const supabaseClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    setSupabase(supabaseClient);
+
     const fetchData = async () => {
       try {
-        const { data: complaints, error } = await supabase
+        const { data: complaints, error } = await supabaseClient
           .from("complaints")
           .select("*")
           .order("created_at", { ascending: false });
@@ -162,6 +164,8 @@ const DashboardPage = () => {
   }, []);
 
   const handleDecision = async (id: string, newStatus: ComplaintStatus) => {
+    if (!supabase) return;
+
     const originalStatus =
       data.find((item) => item.id === id)?.status || "Pending";
     setData((prev) =>
@@ -210,7 +214,8 @@ const DashboardPage = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const currentData = data.slice(
@@ -358,7 +363,6 @@ const DashboardPage = () => {
                     </span>
                   </TableCell>
 
-                  {/* ✅ Add View Button */}
                   <TableCell className="flex space-x-2">
                     <button
                       onClick={() => setViewingComplaint(item)}
@@ -367,7 +371,6 @@ const DashboardPage = () => {
                       <EyeIcon className="h-5 w-5" />
                     </button>
 
-                    {/* Existing Dropdown */}
                     <button
                       className="dropdown-trigger flex items-center justify-center w-6 h-6 text-gray-500"
                       onClick={(e) => {
@@ -436,7 +439,6 @@ const DashboardPage = () => {
         </Table>
       </main>
 
-      {/* ✅ Modal */}
       {viewingComplaint && (
         <ComplaintSummaryModal
           complaint={viewingComplaint}

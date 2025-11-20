@@ -33,9 +33,9 @@ const EditProfilePage = () => {
       if (user) {
         const { data } = await supabase
           .from("profiles")
-          .select("*")
+          .select("*") // ✅ Specify the generic type here (string for 'select' argument, Profile for expected row type)
           .eq("id", user.id)
-          .single<Profile>();
+          .single();
 
         if (data) {
           setUser(data);
@@ -66,6 +66,7 @@ const EditProfilePage = () => {
 
     if (selectedImage && user) {
       const filePath = `pics/${user.id}/${selectedImage.name}`;
+
       const { error: uploadError } = await supabase.storage
         .from("beepney-bucket")
         .upload(filePath, selectedImage, { upsert: true });

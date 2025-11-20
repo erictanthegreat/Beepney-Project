@@ -30,7 +30,10 @@ export default function Home() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin + "/dashboard", // Set a redirect URL after login
+        // Use environment variable for redirect URL (works for dev & production)
+        redirectTo:
+          process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL ||
+          "https://beepney.vercel.app/dashboard",
       },
     });
 

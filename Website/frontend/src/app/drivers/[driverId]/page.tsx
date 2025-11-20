@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Header from '../../../components/ui/header';
-import { ArrowLeftIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
-import { createClient } from '@supabase/supabase-js';
-import Image from 'next/image';
+import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Header from "../../../components/ui/header";
+import { ArrowLeftIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { createClient } from "@supabase/supabase-js";
+import Image from "next/image";
 
 // Create Supabase client
 const supabase = createClient(
@@ -51,8 +51,9 @@ const DriverProfilePage = () => {
 
       try {
         const { data, error } = await supabase
-          .from('driverprofiles')
-          .select(`
+          .from("driverprofiles")
+          .select(
+            `
             id,
             phone_number,
             full_address,
@@ -68,13 +69,14 @@ const DriverProfilePage = () => {
               role,
               avatar_url
             )
-          `)
-          .eq('id', driverId)
+          `
+          )
+          .eq("id", driverId)
           .single();
 
         if (error) {
-          console.error('Supabase fetch error:', error);
-          setError('No driver found with the given ID.');
+          console.error("Supabase fetch error:", error);
+          setError("No driver found with the given ID.");
           setLoading(false);
           return;
         }
@@ -94,16 +96,16 @@ const DriverProfilePage = () => {
           status: (data as any).status ?? null,
           created_at: (data as any).created_at ?? null,
           profile: {
-            username: profile?.username ?? 'Unknown',
-            email: profile?.email ?? 'N/A',
-            role: profile?.role ?? 'N/A',
+            username: profile?.username ?? "Unknown",
+            email: profile?.email ?? "N/A",
+            role: profile?.role ?? "N/A",
             avatar_url: profile?.avatar_url ?? null,
           },
         });
-        setSelectedStatus((data as any).status ?? 'pending');
+        setSelectedStatus((data as any).status ?? "pending");
       } catch (err) {
-        console.error('Unexpected error fetching driver:', err);
-        setError('An unexpected error occurred.');
+        console.error("Unexpected error fetching driver:", err);
+        setError("An unexpected error occurred.");
       } finally {
         setLoading(false);
       }
@@ -112,7 +114,7 @@ const DriverProfilePage = () => {
     fetchDriver();
   }, [driverId]);
 
-  const handleBackClick = () => router.push('/drivers');
+  const handleBackClick = () => router.push("/drivers");
 
   const handleCancel = () => {
     setShowStatusMenu(false);
@@ -124,23 +126,23 @@ const DriverProfilePage = () => {
     if (!driver) return;
     try {
       const { error } = await supabase
-        .from('driverprofiles')
+        .from("driverprofiles")
         .update({ status: selectedStatus })
-        .eq('id', driver.id);
+        .eq("id", driver.id);
 
       if (error) {
-        console.error('Error updating status:', error);
-        alert('Failed to update status.');
+        console.error("Error updating status:", error);
+        alert("Failed to update status.");
         return;
       }
 
       setDriver({ ...driver, status: selectedStatus });
       setShowStatusMenu(false);
       setIsChanged(false);
-      alert('Status updated successfully!');
+      alert("Status updated successfully!");
     } catch (err) {
-      console.error('Unexpected save error:', err);
-      alert('An unexpected error occurred while saving.');
+      console.error("Unexpected save error:", err);
+      alert("An unexpected error occurred while saving.");
     }
   };
 
@@ -160,7 +162,7 @@ const DriverProfilePage = () => {
             onClick={handleBackClick}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleBackClick()}
+            onKeyDown={(e) => e.key === "Enter" && handleBackClick()}
             className="flex items-center justify-center rounded-full border-2 border-[#073051] cursor-pointer
                        transition-colors duration-300 text-[#073051] hover:bg-[#073051] hover:text-white"
             style={{ width: 50, height: 50 }}
@@ -177,8 +179,8 @@ const DriverProfilePage = () => {
         <div
           className="bg-white rounded-[30px] border border-[#D1D1D1] w-full relative"
           style={{
-            minHeight: '620px',
-            padding: '3rem 3rem 6rem 3rem', // extra bottom space for button
+            minHeight: "620px",
+            padding: "3rem 3rem 6rem 3rem", // extra bottom space for button
           }}
         >
           {/* Loading */}
@@ -221,22 +223,24 @@ const DriverProfilePage = () => {
                   <h2 className="text-3xl font-semibold text-[#073051]">
                     {driver.profile.username}
                   </h2>
-                  <p className="text-lg text-gray-600">{driver.profile.email}</p>
+                  <p className="text-lg text-gray-600">
+                    {driver.profile.email}
+                  </p>
 
                   <div className="mt-3 flex items-center gap-2 relative">
                     <span
                       className={`inline-block px-4 py-1 rounded-full text-base font-medium ${
-                        selectedStatus?.toLowerCase() === 'verified'
-                          ? 'bg-blue-100 text-blue-700'
-                          : selectedStatus?.toLowerCase() === 'pending'
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
+                        selectedStatus?.toLowerCase() === "verified"
+                          ? "bg-blue-100 text-blue-700"
+                          : selectedStatus?.toLowerCase() === "pending"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-red-100 text-red-700"
                       }`}
                     >
                       {selectedStatus
                         ? selectedStatus.charAt(0).toUpperCase() +
                           selectedStatus.slice(1).toLowerCase()
-                        : 'N/A'}
+                        : "N/A"}
                     </span>
 
                     <button
@@ -249,7 +253,7 @@ const DriverProfilePage = () => {
                     {showStatusMenu && (
                       <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-40">
                         <button
-                          onClick={() => handleStatusChange('verified')}
+                          onClick={() => handleStatusChange("verified")}
                           className="flex items-center w-full px-3 py-2 text-blue-600 hover:bg-gray-50 font-semibold"
                         >
                           <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-blue-600" />
@@ -257,7 +261,7 @@ const DriverProfilePage = () => {
                         </button>
                         <div className="border-t border-gray-200" />
                         <button
-                          onClick={() => handleStatusChange('declined')}
+                          onClick={() => handleStatusChange("declined")}
                           className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
                         >
                           <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
@@ -276,16 +280,17 @@ const DriverProfilePage = () => {
                     Personal Information
                   </h3>
                   <p>
-                    <strong>Phone Number:</strong> {driver.phone_number ?? 'N/A'}
+                    <strong>Phone Number:</strong>{" "}
+                    {driver.phone_number ?? "N/A"}
                   </p>
                   <p>
-                    <strong>Address:</strong> {driver.full_address ?? 'N/A'}
+                    <strong>Address:</strong> {driver.full_address ?? "N/A"}
                   </p>
                   <p>
-                    <strong>Created At:</strong>{' '}
+                    <strong>Created At:</strong>{" "}
                     {driver.created_at
                       ? new Date(driver.created_at).toLocaleString()
-                      : 'N/A'}
+                      : "N/A"}
                   </p>
                 </div>
 
@@ -294,7 +299,8 @@ const DriverProfilePage = () => {
                     Vehicle Information
                   </h3>
                   <p>
-                    <strong>Plate Number:</strong> {driver.plate_number ?? 'N/A'}
+                    <strong>Plate Number:</strong>{" "}
+                    {driver.plate_number ?? "N/A"}
                   </p>
                 </div>
 
@@ -303,13 +309,14 @@ const DriverProfilePage = () => {
                     Operator Information
                   </h3>
                   <p>
-                    <strong>Name:</strong> {driver.operator_name ?? 'N/A'}
+                    <strong>Name:</strong> {driver.operator_name ?? "N/A"}
                   </p>
                   <p>
-                    <strong>Contact Number:</strong> {driver.operator_number ?? 'N/A'}
+                    <strong>Contact Number:</strong>{" "}
+                    {driver.operator_number ?? "N/A"}
                   </p>
                   <p>
-                    <strong>Address:</strong> {driver.operator_address ?? 'N/A'}
+                    <strong>Address:</strong> {driver.operator_address ?? "N/A"}
                   </p>
                 </div>
               </div>

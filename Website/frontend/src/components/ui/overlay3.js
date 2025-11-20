@@ -3,20 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 
-/**
- * @typedef {Object} Overlay3Props
- * @property {boolean} isOpen
- * @property {() => void} onClose
- * @property {string} sectionName
- * @property {(data: { id?: string; file?: File | null; title: string; description?: string | null }) => void} onSave
- * @property {{ id: string; title: string; description?: string; file_url: string; file_name: string }} [initialData]
- * @property {(id: string) => void} [onDelete]
- * @property {"admin" | "commuter"} role
- */
-
-/**
- * @param {Overlay3Props} props
- */
 export default function Overlay3({
   isOpen,
   onClose,
@@ -48,7 +34,7 @@ export default function Overlay3({
   }, [isOpen, initialData]);
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0] || null;
+    const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
 
     if (selectedFile) {
@@ -111,9 +97,9 @@ export default function Overlay3({
                 placeholder="Enter matrix title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                readOnly={role !== "admin"}
+                readOnly={!canEdit}
                 className={`w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px] ${
-                  role !== "admin" ? "bg-gray-100 cursor-not-allowed" : ""
+                  !canEdit ? "bg-gray-100 cursor-not-allowed" : ""
                 }`}
               />
             </div>
@@ -126,9 +112,9 @@ export default function Overlay3({
                 placeholder="Enter description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                readOnly={role !== "admin"}
+                readOnly={!canEdit}
                 className={`w-full px-4 py-2 border border-[#D1D1D1] rounded-lg text-[16px] h-[120px] resize-none ${
-                  role !== "admin" ? "bg-gray-100 cursor-not-allowed" : ""
+                  !canEdit ? "bg-gray-100 cursor-not-allowed" : ""
                 }`}
               />
             </div>

@@ -6,7 +6,9 @@ buildscript {
         minSdkVersion = 24
         compileSdkVersion = 34
         targetSdkVersion = 34
-        kotlinVersion = "2.2.20"  // Add this - fixes the Kotlin version issue
+
+        // Expo SDK 53 requires Kotlin 1.9.24
+        kotlinVersion = "1.9.24"
     }
     repositories {
         google()
@@ -17,15 +19,17 @@ buildscript {
                 basic(BasicAuthentication)
             }
             credentials {
-                username = "mapbox"  // Changed from "erictan333" to "mapbox"
+                username = "mapbox"
                 password = project.properties['MAPBOX_DOWNLOADS_TOKEN'] ?: ""
             }
         }
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:8.0.0')
+        // Expo SDK 53 → React Native 0.76 requires AGP 8.4.0
+        classpath('com.android.tools.build:gradle:8.4.0')
+
         classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")  // Use the version variable
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
 
@@ -40,7 +44,6 @@ def reactNativeAndroidDir = new File(
 allprojects {
     repositories {
         maven {
-            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
             url(reactNativeAndroidDir)
         }
 
@@ -53,7 +56,7 @@ allprojects {
 apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"
 
-// @generated begin @rnmapbox/maps-v2-maven - expo prebuild (DO NOT MODIFY) sync-32f1b7024bb5099f2805443b1960a3233ccde124
+// @generated begin @rnmapbox/maps-v2-maven - expo prebuild (DO NOT MODIFY)
 allprojects {
     repositories {
         maven {
@@ -66,4 +69,4 @@ allprojects {
         }
     }
 }
-// @generated end @rnmapbox/maps-v2-maven
+// @generated end

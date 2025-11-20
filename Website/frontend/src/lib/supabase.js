@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 // Initialize the Supabase client using the environment variables from .env.local
 const supabase = createClient(

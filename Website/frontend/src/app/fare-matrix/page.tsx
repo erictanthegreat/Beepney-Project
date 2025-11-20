@@ -17,6 +17,8 @@ interface FareMatrix {
   uploaded_by: string;
 }
 
+export type Role = "commuter" | "admin" | "ltfrb";
+
 const fareSections = [
   { key: "PUB", label: "PUB City & Provincial" },
   { key: "PUJ", label: "PUJ" },
@@ -27,7 +29,7 @@ const fareSections = [
 
 const FareMatrixPage = () => {
   const [matrices, setMatrices] = useState<FareMatrix[]>([]);
-  const [role, setRole] = useState<string>("commuter");
+  const [role, setRole] = useState<Role>("commuter");
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState("");
   const [selectedMatrix, setSelectedMatrix] = useState<FareMatrix | null>(null);
@@ -57,7 +59,14 @@ const FareMatrixPage = () => {
         .select("role")
         .eq("id", user.id)
         .single();
-      if (!error && data) setRole(data.role);
+      if (!error && data) {
+        // Validate the role before setting
+        const validRoles: Role[] = ["commuter", "admin", "ltfrb"];
+        const userRole = validRoles.includes(data.role)
+          ? (data.role as Role)
+          : "commuter";
+        setRole(userRole);
+      }
     }
   };
 
@@ -81,6 +90,7 @@ const FareMatrixPage = () => {
       if (file) {
         const timestamp = Date.now();
         const filePath = `fare-matrix/${selectedSection}/${timestamp}-${file.name}`;
+
         const { error: uploadError } = await supabase.storage
           .from("beepney-bucket")
           .upload(filePath, file, { upsert: true });
