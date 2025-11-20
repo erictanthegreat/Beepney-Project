@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -22,6 +23,7 @@ import Verified from "../../assets/images/verified.svg";
 
 export default function CommuterProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [submission, setSubmission] = useState<{
     status: "pending" | "approved" | "declined" | null;
     front_id_url: string | null;
@@ -31,6 +33,7 @@ export default function CommuterProfile() {
   const [profileData, setProfileData] = useState<{
     username: string;
     email: string;
+    userId: string;
   } | null>(null);
 
   const [discountType, setDiscountType] = useState<string | null>(null);
@@ -57,6 +60,7 @@ export default function CommuterProfile() {
           setProfileData({
             username: profile.username,
             email: profile.email,
+            userId: userId,
           });
           setProfileImage(profile.avatar_url);
         }
@@ -106,16 +110,97 @@ export default function CommuterProfile() {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permissionResult.granted) {
-      alert("Permission to access camera roll is required!");
+      Alert.alert(
+        "Permission Required",
+        "Permission to access camera roll is required!"
+      );
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      quality: 0.8,
+      allowsEditing: true,
+      aspect: [1, 1],
     });
 
-    if (!result.canceled) setProfileImage(result.assets[0].uri);
+    if (!result.canceled && profileData?.userId) {
+      await uploadImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (imageUri: string) => {
+    try {
+      setUploading(true);
+
+      // Get file extension
+      const fileExt = imageUri.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `avatar_${Date.now()}.${fileExt}`;
+      const filePath = `pics/${profileData?.userId}/${fileName}`;
+
+      // Read the file as base64
+      const base64 = await fetch(imageUri)
+        .then((res) => res.blob())
+        .then((blob) => {
+          return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64data = reader.result as string;
+              resolve(base64data.split(",")[1]); // Remove data:image/jpeg;base64, prefix
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        });
+
+      // Convert base64 to Uint8Array
+      const binaryString = atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("beepney-bucket")
+        .upload(filePath, bytes, {
+          contentType: `image/${fileExt}`,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("beepney-bucket")
+        .getPublicUrl(filePath);
+
+      const newAvatarUrl = publicUrlData.publicUrl;
+
+      // Update profile in database
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: newAvatarUrl })
+        .eq("id", profileData?.userId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update local state
+      setProfileImage(newAvatarUrl);
+      Alert.alert("Success", "Profile picture updated successfully!");
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      Alert.alert(
+        "Upload Error",
+        error.message || "Failed to upload image. Please check your connection."
+      );
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -225,8 +310,16 @@ export default function CommuterProfile() {
         ) : (
           <ProfileIcon />
         )}
-        <TouchableOpacity onPress={pickImage} style={profStyles.editIcon}>
-          <EditIcon />
+        <TouchableOpacity
+          onPress={pickImage}
+          style={profStyles.editIcon}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <ActivityIndicator size="small" color="#073051" />
+          ) : (
+            <EditIcon />
+          )}
         </TouchableOpacity>
       </View>
 

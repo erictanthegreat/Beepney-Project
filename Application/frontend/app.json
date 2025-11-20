@@ -14,7 +14,7 @@
     "android": {
       "enableMultiDex": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/BEEPNEY LOGO.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
