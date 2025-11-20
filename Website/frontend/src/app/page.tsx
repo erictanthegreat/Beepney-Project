@@ -33,7 +33,7 @@ export default function Home() {
         // Use environment variable for redirect URL (works for dev & production)
         redirectTo:
           process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URL ||
-          "http://localhost:3000/dashboard",
+          "https://beepney.vercel.app/dashboard",
       },
     });
 
