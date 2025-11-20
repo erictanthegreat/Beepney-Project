@@ -3,7 +3,8 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: ["babel-preset-expo"],
-    compact: false, 
+    prebuild: ["react-native-worklets/plugin"],
+    compact: false,
     overrides: [
       {
         compact: true,
