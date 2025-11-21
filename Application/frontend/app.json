@@ -4,7 +4,7 @@
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/BEEPNEY LOGO.png",
+    "icon": "/assets/images/beepney-icon.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,8 +14,8 @@
     "android": {
       "enableMultiDex": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "/assets/images/beepney-icon.png",
+        "backgroundColor": "#208FCB"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
