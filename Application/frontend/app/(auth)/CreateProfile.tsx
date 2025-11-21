@@ -9,12 +9,10 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { router } from "expo-router";
 import { supabase } from "@/scripts/supabase";
 
@@ -106,142 +104,137 @@ export default function CreateProfile() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      contentContainerStyle={viewStyles.container}
+      enableOnAndroid={true}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ flexGrow: 1 }}
-        style={{ flex: 1, backgroundColor: "#fff" }}
-      >
-        <View style={viewStyles.container}>
-          <View>
-            <Image
-              source={require("@/assets/images/Beepney LOGO.png")}
-              style={[
-                imageStyles.logo,
-                { width: width * 0.7, height: height * 0.18 },
-              ]}
-            />
-            <Text style={[textStyles.header, { fontSize: width * 0.08 }]}>
-              Welcome to Beepney!
-            </Text>
-            <Text style={[textStyles.subheader, { fontSize: width * 0.045 }]}>
-              Sign In to Continue
-            </Text>
-          </View>
+      <View>
+        <Image
+          source={require("@/assets/images/Beepney LOGO.png")}
+          style={[
+            imageStyles.logo,
+            { width: width * 0.7, height: height * 0.18 },
+          ]}
+        />
+        <Text style={[textStyles.header, { fontSize: width * 0.08 }]}>
+          Welcome to Beepney!
+        </Text>
+        <Text style={[textStyles.subheader, { fontSize: width * 0.045 }]}>
+          Sign In to Continue
+        </Text>
+      </View>
 
-          <View style={styleName.rowContainer}>
-            <View style={[inputName.inputGroup, { width: "45%" }]}>
-              <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
-                First Name
-              </Text>
-              <TextInput
-                style={[inputName.input, { fontSize: width * 0.035 }]}
-                placeholder="E.g Juan"
-                placeholderTextColor="#B6B6B6"
-                value={firstName}
-                onChangeText={setFirstName}
-              />
-            </View>
-
-            <View style={[inputName.inputGroup, { width: "45%" }]}>
-              <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
-                Last Name
-              </Text>
-              <TextInput
-                style={[inputName.input, { fontSize: width * 0.035 }]}
-                placeholder="E.g Dela Cruz"
-                placeholderTextColor="#B6B6B6"
-                value={lastName}
-                onChangeText={setLastName}
-              />
-            </View>
-          </View>
-
-          <View style={inputStyles.inputGroup}>
-            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-              Email
-            </Text>
-            <TextInput
-              style={[inputStyles.input, { fontSize: width * 0.035 }]}
-              placeholder="Enter your email"
-              placeholderTextColor="#B6B6B6"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={inputStyles.inputGroup}>
-            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-              Password
-            </Text>
-            <TextInput
-              style={[inputStyles.input, { fontSize: width * 0.035 }]}
-              placeholder="Enter your password"
-              placeholderTextColor="#B6B6B6"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-
-          <View style={inputStyles.inputGroup}>
-            <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
-              Confirm Password
-            </Text>
-            <TextInput
-              style={[inputStyles.input, { fontSize: width * 0.035 }]}
-              placeholder="Confirm password"
-              placeholderTextColor="#B6B6B6"
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              { width: width * 0.8, marginTop: height * 0.05 },
-            ]}
-            onPress={handleSignUp}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
-                Sign Up
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          <Text style={{ marginTop: height * 0.02 }}>
-            Already have an account?{" "}
-            <Text
-              style={{ color: "#073051", fontWeight: "bold" }}
-              onPress={() => router.push("/(auth)/Login")}
-            >
-              Sign-In
-            </Text>
+      <View style={styleName.rowContainer}>
+        <View style={[inputName.inputGroup, { width: "45%" }]}>
+          <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
+            First Name
           </Text>
+          <TextInput
+            style={[inputName.input, { fontSize: width * 0.035 }]}
+            placeholder="E.g Juan"
+            placeholderTextColor="#B6B6B6"
+            value={firstName}
+            onChangeText={setFirstName}
+          />
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <View style={[inputName.inputGroup, { width: "45%" }]}>
+          <Text style={[inputName.label, { fontSize: width * 0.04 }]}>
+            Last Name
+          </Text>
+          <TextInput
+            style={[inputName.input, { fontSize: width * 0.035 }]}
+            placeholder="E.g Dela Cruz"
+            placeholderTextColor="#B6B6B6"
+            value={lastName}
+            onChangeText={setLastName}
+          />
+        </View>
+      </View>
+
+      <View style={inputStyles.inputGroup}>
+        <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+          Email
+        </Text>
+        <TextInput
+          style={[inputStyles.input, { fontSize: width * 0.035 }]}
+          placeholder="Enter your email"
+          placeholderTextColor="#B6B6B6"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+      </View>
+
+      <View style={inputStyles.inputGroup}>
+        <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+          Password
+        </Text>
+        <TextInput
+          style={[inputStyles.input, { fontSize: width * 0.035 }]}
+          placeholder="Enter your password"
+          placeholderTextColor="#B6B6B6"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+      </View>
+
+      <View style={inputStyles.inputGroup}>
+        <Text style={[inputStyles.label, { fontSize: width * 0.04 }]}>
+          Confirm Password
+        </Text>
+        <TextInput
+          style={[inputStyles.input, { fontSize: width * 0.035 }]}
+          placeholder="Confirm password"
+          placeholderTextColor="#B6B6B6"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+      </View>
+
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { width: width * 0.8, marginTop: height * 0.05 },
+        ]}
+        onPress={handleSignUp}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={[styles.buttonText, { fontSize: width * 0.045 }]}>
+            Sign Up
+          </Text>
+        )}
+      </TouchableOpacity>
+
+      <Text style={{ marginTop: height * 0.02, marginBottom: 30 }}>
+        Already have an account?{" "}
+        <Text
+          style={{ color: "#073051", fontWeight: "bold" }}
+          onPress={() => router.push("/(auth)/Login")}
+        >
+          Sign-In
+        </Text>
+      </Text>
+    </KeyboardAwareScrollView>
   );
 }
 
 const viewStyles = StyleSheet.create({
   container: {
     alignItems: "center",
-    paddingTop: 40,
+    paddingTop: 25,
+    paddingBottom: 20,
     backgroundColor: "#fff",
-    flex: 1,
+    flexGrow: 1,
   },
 });
 
@@ -258,7 +251,7 @@ const textStyles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     color: "#073051",
-    marginTop: 20,
+    marginTop: 10,
   },
   subheader: {
     fontFamily: "Poppins-Regular",

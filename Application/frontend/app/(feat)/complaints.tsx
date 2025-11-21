@@ -239,7 +239,7 @@ export default class Complaints extends Component<{}, State> {
 
       const { error } = await supabase.from("complaints").insert([
         {
-          user_id: currentUserId, // ⬅️ ADDED
+          user_id: currentUserId,
           name,
           contact_information: contact,
           location,
@@ -248,7 +248,7 @@ export default class Complaints extends Component<{}, State> {
           type_of_issues: selectedIssue,
           description,
           proofs,
-          status: "Received", // ⬅️ ADDED
+          status: "Received",
         },
       ]);
 
@@ -393,7 +393,7 @@ export default class Complaints extends Component<{}, State> {
 }
 
 const rentStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
+  container: { flex: 1, backgroundColor: "#fff" },
   header: {
     fontWeight: "bold",
     fontSize: 25,

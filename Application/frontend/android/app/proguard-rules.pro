@@ -12,3 +12,7 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+
+-keep class com.mapbox.** { *; }
+-keep class com.google.gson.** { *; }
+-dontwarn com.mapbox.**

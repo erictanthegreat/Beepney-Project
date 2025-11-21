@@ -17,6 +17,7 @@ import BackButton from "@/components/Backbutton";
 import Input from "../../components/Input";
 import CustomButton from "../../components/ui/CustomButton";
 import SegmentedButton from "../../components/SegmentedButton";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function PostRental() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -124,10 +125,11 @@ export default function PostRental() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      enableOnAndroid={true}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       <View style={rentStyles.container}>
         <BackButton />
@@ -150,7 +152,7 @@ export default function PostRental() {
             label="Name"
             placeholder="E.g Kevin's Rental"
             keyboardType="default"
-            containerStyle={{ width: "90%" }}
+            containerStyle={{ width: "95%" }}
             value={name}
             onChangeText={setName}
           />
@@ -162,7 +164,7 @@ export default function PostRental() {
             label="Contact Number"
             placeholder="E.g 09XX-XXX-XXXX"
             keyboardType="phone-pad"
-            containerStyle={{ width: "90%" }}
+            containerStyle={{ width: "95%" }}
             value={contact}
             onChangeText={setContact}
           />
@@ -171,7 +173,7 @@ export default function PostRental() {
             label="Location"
             placeholder="E.g To Vigan"
             keyboardType="default"
-            containerStyle={{ width: "90%" }}
+            containerStyle={{ width: "95%" }}
             value={location}
             onChangeText={setLocation}
             editable={!id}
@@ -183,7 +185,7 @@ export default function PostRental() {
                 label="Services Offered"
                 placeholder="E.g Private Transport"
                 keyboardType="default"
-                containerStyle={{ width: "100%" }}
+                containerStyle={{ width: "105%" }}
                 value={service}
                 onChangeText={(text) => updateService(text, index)}
               />
@@ -210,7 +212,7 @@ export default function PostRental() {
           />
         </ScrollView>
       </View>
-    </KeyboardAvoidingView>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -229,7 +231,8 @@ const rentStyles = StyleSheet.create({
   addButton: {
     alignItems: "center",
     marginTop: 8,
-    marginRight: 2,
+    marginRight: 15,
+    marginBottom: 15,
   },
   inputWrapper: {
     width: "90%",
@@ -238,12 +241,14 @@ const rentStyles = StyleSheet.create({
   },
   deleteInside: {
     position: "absolute",
-    right: 10,
-    top: 55,
+    right: 1,
+    top: 52,
     zIndex: 1,
   },
   custButton: {
-    marginLeft: 20,
+    alignSelf: "center",
+    width: "90%",
+    marginRight: 20,
   },
   label: {
     fontSize: 16,

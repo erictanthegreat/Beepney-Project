@@ -7,7 +7,7 @@ import { useColorScheme } from "../hooks/useColorScheme";
 import "react-native-reanimated";
 import React from "react";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
-
+import Mapbox from "@rnmapbox/maps";
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
@@ -17,6 +17,11 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
+  Mapbox.setAccessToken(
+    "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ"
+  );
+
+  Mapbox.setTelemetryEnabled(false);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

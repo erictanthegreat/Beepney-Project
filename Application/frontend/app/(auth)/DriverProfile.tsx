@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import "@fontsource/poppins";
 import { supabase } from "scripts/supabase";
 import { router } from "expo-router";
@@ -81,9 +82,16 @@ export default function DriverProfile() {
   }, [step]);
 
   return (
-    <View style={viewStyles.container}>
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      contentContainerStyle={viewStyles.container}
+      enableOnAndroid={true}
+      extraScrollHeight={20}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       {step !== 3 && (
-        <View>
+        <View style={{ alignItems: "center" }}>
           <Image
             source={require("@/assets/images/Beepney LOGO.png")}
             style={imageStyles.logo}
@@ -161,7 +169,7 @@ export default function DriverProfile() {
           </View>
 
           <View style={inputStyles.inputGroup}>
-            <Text style={inputStyles.label}> Operator's Full Address</Text>
+            <Text style={inputStyles.label}>Operator's Full Address</Text>
             <TextInput
               style={inputStyles.input}
               placeholder="Street Address, Apt/Unit/etc., City, Province"
@@ -233,7 +241,7 @@ export default function DriverProfile() {
           {step === 1 ? "Next" : step === 2 ? "Submit" : "Confirm"}
         </Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -241,7 +249,8 @@ const viewStyles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingTop: 50,
-    flex: 1,
+    paddingBottom: 30,
+    flexGrow: 1,
     backgroundColor: "#fff",
   },
 });

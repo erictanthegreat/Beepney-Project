@@ -41,7 +41,6 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-// -------------------- FARE CALCULATION --------------------
 const calculateTricycleFare = (
   distanceInKm: number,
   selectedRide: string | null
@@ -529,7 +528,9 @@ export default function RideHailing() {
   };
 
   const saveFareHistory = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     const { error } = await supabase.from("saved_fares").insert([
@@ -721,12 +722,16 @@ export default function RideHailing() {
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
                     <FareIcon />
-                    <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
+                    <Text style={rideStyles.waitSumText}>
+                      ₱{fare.toFixed(2)}
+                    </Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
@@ -797,12 +802,16 @@ export default function RideHailing() {
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
                     <FareIcon />
-                    <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
+                    <Text style={rideStyles.waitSumText}>
+                      ₱{fare.toFixed(2)}
+                    </Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
@@ -864,12 +873,16 @@ export default function RideHailing() {
                 <View style={rideStyles.waitSumm}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
                     <FareIcon />
-                    <Text style={rideStyles.waitSumText}>₱{fare.toFixed(2)}</Text>
+                    <Text style={rideStyles.waitSumText}>
+                      ₱{fare.toFixed(2)}
+                    </Text>
                   </View>
 
                   <View style={rideStyles.iconWithText}>
@@ -953,7 +966,8 @@ export default function RideHailing() {
                 <TextInput
                   style={[
                     rideStyles.textInput,
-                    activeSelection === "destination" && rideStyles.activeInput2,
+                    activeSelection === "destination" &&
+                      rideStyles.activeInput2,
                   ]}
                   placeholder="Enter destination address"
                   value={destinationInput}
@@ -1051,7 +1065,9 @@ export default function RideHailing() {
                 <View style={rideStyles.iconCont}>
                   <View style={rideStyles.iconWithText}>
                     <KmIcon />
-                    <Text style={rideStyles.text2}>{distance.toFixed(2)} km</Text>
+                    <Text style={rideStyles.text2}>
+                      {distance.toFixed(2)} km
+                    </Text>
                   </View>
                   <View style={rideStyles.iconWithText}>
                     <ETAIcon />
