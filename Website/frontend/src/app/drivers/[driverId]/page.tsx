@@ -102,6 +102,7 @@ const DriverProfilePage = () => {
             avatar_url: profile?.avatar_url ?? null,
           },
         });
+
         setSelectedStatus((data as any).status ?? "pending");
       } catch (err) {
         console.error("Unexpected error fetching driver:", err);
@@ -146,8 +147,12 @@ const DriverProfilePage = () => {
     }
   };
 
+  // ✅ FIXED: Always capitalize first letter before storing
   const handleStatusChange = (status: string) => {
-    setSelectedStatus(status);
+    const formatted =
+      status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+
+    setSelectedStatus(formatted);
     setIsChanged(true);
     setShowStatusMenu(false);
   };
@@ -180,7 +185,7 @@ const DriverProfilePage = () => {
           className="bg-white rounded-[30px] border border-[#D1D1D1] w-full relative"
           style={{
             minHeight: "620px",
-            padding: "3rem 3rem 6rem 3rem", // extra bottom space for button
+            padding: "3rem 3rem 6rem 3rem",
           }}
         >
           {/* Loading */}
@@ -252,8 +257,9 @@ const DriverProfilePage = () => {
 
                     {showStatusMenu && (
                       <div className="absolute top-full mt-2 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 w-40">
+                        {/* ✅ FIX: Send capitalized values */}
                         <button
-                          onClick={() => handleStatusChange("verified")}
+                          onClick={() => handleStatusChange("Verified")}
                           className="flex items-center w-full px-3 py-2 text-blue-600 hover:bg-gray-50 font-semibold"
                         >
                           <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-blue-600" />
@@ -261,7 +267,7 @@ const DriverProfilePage = () => {
                         </button>
                         <div className="border-t border-gray-200" />
                         <button
-                          onClick={() => handleStatusChange("declined")}
+                          onClick={() => handleStatusChange("Declined")}
                           className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
                         >
                           <span className="w-4 h-4 mr-2 rounded-full border-[3px] border-red-600" />
