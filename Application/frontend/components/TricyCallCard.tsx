@@ -28,7 +28,7 @@ export default function TricyCallCard({
   onAccept,
   status,
   onCancel,
-  onDone, // ✅ NEW
+  onDone,
   userId,
   currentUserId,
   conversationId,
@@ -37,7 +37,6 @@ export default function TricyCallCard({
     const { supabase } = require("@/scripts/supabase");
 
     try {
-      // Try to find existing conversation
       const { data: existingConvo, error: fetchError } = await supabase
         .from("conversations")
         .select("*")
@@ -86,18 +85,12 @@ export default function TricyCallCard({
           {name} - ₱{farePrice}
         </Text>
 
-        {/* =======================
-            PENDING → SHOW ACCEPT
-        ======================== */}
         {status === "pending" && (
           <TouchableOpacity style={styles.button} onPress={onAccept}>
             <Text style={styles.buttonText}>Accept</Text>
           </TouchableOpacity>
         )}
 
-        {/* =======================
-            ACCEPTED → SHOW CANCEL + DONE
-        ======================== */}
         {status === "accepted" && (
           <View style={{ flexDirection: "row", gap: 6 }}>
             {onCancel && (
@@ -130,9 +123,6 @@ export default function TricyCallCard({
       <View style={styles.contact}>
         <TouchableOpacity onPress={handleChatPress}>
           <Chat />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Call />
         </TouchableOpacity>
       </View>
     </View>
