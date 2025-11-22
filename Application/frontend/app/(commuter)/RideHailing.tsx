@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   RefreshControl,
+  Linking,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -70,7 +71,6 @@ const calculateTricycleFare = (
   return parseFloat(BASE_FARE_PESOS.toFixed(2));
 };
 
-// -------------------- MAIN COMPONENT --------------------
 export default function RideHailing() {
   const navigation = useNavigation();
   const contentAnim = useRef(new Animated.Value(0)).current;
@@ -122,7 +122,6 @@ export default function RideHailing() {
   // Get user location and current user ID
   useEffect(() => {
     const initialize = async () => {
-      // Get current user
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -153,7 +152,6 @@ export default function RideHailing() {
     initialize();
   }, []);
 
-  // Animate bottom sheet when waiting modal is visible
   useEffect(() => {
     Animated.timing(contentAnim, {
       toValue: waitingModalVisible ? 1 : 0,
@@ -321,6 +319,7 @@ export default function RideHailing() {
               user_id: user.id,
               payment_method: method,
               status: "pending",
+              distance_km: distance, // Add this line!
             },
           ])
           .select();
@@ -377,17 +376,17 @@ export default function RideHailing() {
         .eq("id", rideData.driver_id)
         .single();
 
-      const { data: driverProfileData, error: driverProfileError } =
-        await supabase
-          .from("driverprofiles")
-          .select("phone_number")
-          .eq("profile_id", rideData.driver_id)
-          .maybeSingle();
+      const { data: driverProfileData } = await supabase
+        .from("driverprofiles")
+        .select("phone_number, plate_number")
+        .eq("profile_id", rideData.driver_id)
+        .maybeSingle();
 
       if (!profileError && profileData) {
         setAssignedDriver({
           ...profileData,
-          phone_number: driverProfileData?.phone_number || "N/A",
+          phone_number: (driverProfileData as any)?.phone_number || "N/A",
+          plate_number: (driverProfileData as any)?.plate_number || "N/A",
           driver_id: rideData.driver_id,
         });
         setRideStatus("toPickUp");
@@ -428,17 +427,17 @@ export default function RideHailing() {
                 .eq("id", driver_id)
                 .maybeSingle();
 
-              const { data: driverProfileData, error: driverProfileError } =
-                await supabase
-                  .from("driverprofiles")
-                  .select("phone_number")
-                  .eq("profile_id", driver_id)
-                  .maybeSingle();
+              const { data: driverProfileData } = await supabase
+                .from("driverprofiles")
+                .select("phone_number, plate_number")
+                .eq("id", driver_id)
+                .maybeSingle();
 
               const driverData = {
                 username: profileData?.username || "Unknown",
-                phone_number: driverProfileData?.phone_number || "N/A",
+                phone_number: (driverProfileData as any)?.phone_number || "N/A",
                 driver_id: driver_id,
+                plate_number: (driverProfileData as any)?.plate_number || "N/A",
               };
 
               setAssignedDriver(driverData);
@@ -533,7 +532,7 @@ export default function RideHailing() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("saved_fares").insert([
+    const { error } = await supabase.from("ride_history").insert([
       {
         user_id: user.id,
         origin: pickupAddress,
@@ -550,6 +549,22 @@ export default function RideHailing() {
     } else {
       console.log("Fare saved successfully!");
     }
+  };
+
+  const handleCallPress = () => {
+    const phoneNumber = assignedDriver?.phone_number;
+
+    if (!phoneNumber || phoneNumber === "N/A") {
+      alert("Driver's phone number is not available.");
+      return;
+    }
+
+    const cleanedNumber = phoneNumber.replace(/[^0-9+]/g, "");
+
+    Linking.openURL(`tel:${cleanedNumber}`).catch((err) => {
+      console.error("Failed to open dialer:", err);
+      alert("Unable to open phone dialer.");
+    });
   };
 
   return (
@@ -772,7 +787,7 @@ export default function RideHailing() {
 
                     <View style={rideStyles.detialsContainer}>
                       <Text style={rideStyles.details}>Plate No: </Text>
-                      <Text>{assignedDriver.phone_number || "N/A"}</Text>
+                      <Text>{assignedDriver.plate_number || "N/A"}</Text>
                     </View>
                   </View>
                 </View>
@@ -833,7 +848,7 @@ export default function RideHailing() {
                     <TouchableOpacity onPress={handleChatPress}>
                       <Chat />
                     </TouchableOpacity>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={handleCallPress}>
                       <Call />
                     </TouchableOpacity>
                   </View>
@@ -895,10 +910,8 @@ export default function RideHailing() {
                   title="Done"
                   backgroundColor="#073051"
                   onPress={async () => {
-                    // 🔥 SAVE FARE HISTORY BEFORE RESETTING ANYTHING
                     await saveFareHistory();
 
-                    // Your existing reset logic (unchanged)
                     setRideStatus("booking");
                     setCurrentRideId(null);
                     setAssignedDriver(null);

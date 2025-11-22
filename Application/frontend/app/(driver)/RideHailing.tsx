@@ -42,9 +42,11 @@ export default function RideHailingDriver() {
       const { data: ridesData, error: ridesError } = await supabase
         .from("ride_requests")
         .select(
-          "id, pick_up, destination, fare_price, user_id, payment_method, status, driver_id"
+          "id, pick_up, destination, fare_price, user_id, payment_method, status, driver_id, selected_ride, distance_km"
         )
-        .or(`status.eq.pending,driver_id.eq.${user.id},status.eq.accepted,status.eq.completed`);
+        .or(
+          `status.eq.pending,and(driver_id.eq.${user.id},status.eq.accepted)`
+        );
 
       if (ridesError) throw ridesError;
 
@@ -85,8 +87,8 @@ export default function RideHailingDriver() {
             ride.payment_method === "cash"
               ? "Cash"
               : ride.payment_method === "cashless"
-              ? "Cashless"
-              : "Unknown",
+                ? "Cashless"
+                : "Unknown",
         };
       });
 
@@ -110,17 +112,58 @@ export default function RideHailingDriver() {
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
           schema: "public",
           table: "ride_requests",
         },
         (payload) => {
-          const updatedRide = payload.new;
-          setRides((prevRides) =>
-            prevRides.map((ride) =>
-              ride.id === updatedRide.id ? { ...ride, ...updatedRide } : ride
-            )
-          );
+          // Handle DELETE event
+          if (payload.eventType === "DELETE") {
+            const deletedId = payload.old.id;
+            setRides((prevRides) =>
+              prevRides.filter((ride) => ride.id !== deletedId)
+            );
+            // Close modal if the deleted ride was selected
+            if (selectedRide?.id === deletedId) {
+              setModalVisible(false);
+              setSelectedRide(null);
+            }
+            return;
+          }
+
+          // Handle UPDATE event
+          if (payload.eventType === "UPDATE") {
+            const updatedRide = payload.new;
+
+            // If ride was cancelled by commuter, remove it from the list and show alert
+            if (updatedRide.status === "cancelled") {
+              setRides((prevRides) =>
+                prevRides.filter((ride) => ride.id !== updatedRide.id)
+              );
+              // Close modal if the cancelled ride was selected
+              if (selectedRide?.id === updatedRide.id) {
+                setModalVisible(false);
+                setSelectedRide(null);
+                Alert.alert(
+                  "Ride Cancelled",
+                  "This ride has been cancelled by the commuter."
+                );
+              }
+              return;
+            }
+
+            // Otherwise update the ride in the list
+            setRides((prevRides) =>
+              prevRides.map((ride) =>
+                ride.id === updatedRide.id ? { ...ride, ...updatedRide } : ride
+              )
+            );
+          }
+
+          // Handle INSERT event (new ride request)
+          if (payload.eventType === "INSERT") {
+            fetchRidesWithUsers(); // Refresh to get full data with username
+          }
         }
       )
       .subscribe();
@@ -128,7 +171,7 @@ export default function RideHailingDriver() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [selectedRide]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -187,25 +230,39 @@ export default function RideHailingDriver() {
   };
 
   const handleCancelRide = async (ride: any) => {
-    try {
-      const { error } = await supabase
-        .from("ride_requests")
-        .update({ status: "cancelled" })
-        .eq("id", ride.id);
-      if (error) throw error;
+    Alert.alert("Cancel Ride", "Are you sure you want to cancel this ride?", [
+      { text: "No", style: "cancel" },
+      {
+        text: "Yes",
+        onPress: async () => {
+          try {
+            // Update status to cancelled (commuter will be notified via realtime)
+            const { error: updateError } = await supabase
+              .from("ride_requests")
+              .update({ status: "cancelled" })
+              .eq("id", ride.id);
+            if (updateError) throw updateError;
 
-      setRides((prevRides) =>
-        prevRides.map((r) =>
-          r.id === ride.id ? { ...r, status: "cancelled" } : r
-        )
-      );
+            // Delete from ride_requests
+            const { error: deleteError } = await supabase
+              .from("ride_requests")
+              .delete()
+              .eq("id", ride.id);
+            if (deleteError) throw deleteError;
 
-      if (selectedRide?.id === ride.id) {
-        setSelectedRide({ ...selectedRide, status: "cancelled" });
-      }
-    } catch (err) {
-      console.error("Failed to cancel ride:", err);
-    }
+            // Remove from local state
+            setRides((prevRides) => prevRides.filter((r) => r.id !== ride.id));
+            setModalVisible(false);
+            setSelectedRide(null);
+
+            Alert.alert("Cancelled", "Ride has been cancelled.");
+          } catch (err) {
+            console.error("Failed to cancel ride:", err);
+            Alert.alert("Error", "Failed to cancel ride.");
+          }
+        },
+      },
+    ]);
   };
 
   const handleCompleteRide = async (ride: any) => {
@@ -218,26 +275,63 @@ export default function RideHailingDriver() {
           text: "Yes",
           onPress: async () => {
             try {
-              const { error } = await supabase
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+
+              if (!user) {
+                Alert.alert("Error", "No user logged in.");
+                return;
+              }
+
+              // First update status to completed
+              const { error: updateError } = await supabase
                 .from("ride_requests")
                 .update({ status: "completed" })
                 .eq("id", ride.id);
 
-              if (error) throw error;
+              if (updateError) throw updateError;
 
-              setRides((prevRides) =>
-                prevRides.map((r) =>
-                  r.id === ride.id ? { ...r, status: "completed" } : r
-                )
-              );
+              // Save to ride_history with driver_id
+              const { error: historyError } = await supabase
+                .from("ride_history")
+                .insert({
+                  user_id: ride.user_id,
+                  driver_id: user.id, // Add driver's ID
+                  origin: ride.pick_up,
+                  destination: ride.destination,
+                  distance_km: ride.distance_km || 0,
+                  base_fare: ride.fare_price,
+                  discount_percent: 0,
+                  total_fare: ride.fare_price,
+                });
 
-              if (selectedRide?.id === ride.id) {
-                setSelectedRide({ ...selectedRide, status: "completed" });
+              if (historyError) {
+                console.error("Failed to save ride history:", historyError);
               }
+
+              // Delete from ride_requests after delay
+              setTimeout(async () => {
+                const { error: deleteError } = await supabase
+                  .from("ride_requests")
+                  .delete()
+                  .eq("id", ride.id);
+                if (deleteError) {
+                  console.error("Failed to delete ride:", deleteError);
+                }
+              }, 1500);
+
+              // Remove from local state
+              setRides((prevRides) =>
+                prevRides.filter((r) => r.id !== ride.id)
+              );
+              setModalVisible(false);
+              setSelectedRide(null);
 
               Alert.alert("Success", "Ride completed!");
             } catch (err) {
               console.error("Failed to complete ride:", err);
+              Alert.alert("Error", "Failed to complete ride.");
             }
           },
         },
@@ -350,7 +444,10 @@ export default function RideHailingDriver() {
                 {/* DONE BUTTON - GREEN */}
                 {selectedRide.status === "accepted" && (
                   <TouchableOpacity
-                    style={[styles.acceptButton, { backgroundColor: "#0FD150" }]}
+                    style={[
+                      styles.acceptButton,
+                      { backgroundColor: "#0FD150" },
+                    ]}
                     onPress={() => handleCompleteRide(selectedRide)}
                   >
                     <Text style={styles.acceptButtonText}>Done</Text>
@@ -360,7 +457,10 @@ export default function RideHailingDriver() {
                 {/* CANCEL BUTTON - RED */}
                 {selectedRide.status === "accepted" && (
                   <TouchableOpacity
-                    style={[styles.acceptButton, { backgroundColor: "#FF4C4C" }]}
+                    style={[
+                      styles.acceptButton,
+                      { backgroundColor: "#FF4C4C" },
+                    ]}
                     onPress={() => handleCancelRide(selectedRide)}
                   >
                     <Text style={styles.acceptButtonText}>Cancel Ride</Text>

@@ -1,14 +1,16 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   useWindowDimensions,
   StyleSheet,
   Text,
   View,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import PagerView from "react-native-pager-view";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import IntroMockup from "../assets/mockups/intro.svg";
 import TricyCallMockup from "../assets/mockups/tricy.svg";
 import TricyCallMockup1 from "../assets/mockups/tricy 1.svg";
@@ -21,15 +23,45 @@ import CustomButton from "@/components/ui/CustomButton";
 export default function Onboarding() {
   const pagerRef = useRef<PagerView>(null);
   const [currentPage, setCurrentPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Responsive screen dimensions
   const { width, height } = useWindowDimensions();
+
+  // Check if user has seen onboarding before
+  useEffect(() => {
+    checkOnboardingStatus();
+  }, []);
+
+  const checkOnboardingStatus = async () => {
+    try {
+      const hasSeenOnboarding = await AsyncStorage.getItem("hasSeenOnboarding");
+
+      if (hasSeenOnboarding !== null) {
+        // User has already seen onboarding, skip to login
+        router.replace("/(auth)/Login");
+      }
+    } catch (error) {
+      console.error("Error checking onboarding status:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completeOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem("hasSeenOnboarding", "true");
+      router.replace("/(auth)/Login");
+    } catch (error) {
+      console.error("Error saving onboarding status:", error);
+      router.replace("/(auth)/Login");
+    }
+  };
 
   const handleNext = () => {
     if (currentPage < 3) {
       pagerRef.current?.setPage(currentPage + 1);
     } else {
-      router.push("/(auth)/Login");
+      completeOnboarding();
     }
   };
 
@@ -38,6 +70,15 @@ export default function Onboarding() {
     if (currentPage === 3) return "Finish";
     return "Next";
   };
+
+  // Show loading while checking onboarding status
+  if (isLoading) {
+    return (
+      <View style={onboardStyles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0D99FF" />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -159,6 +200,12 @@ export default function Onboarding() {
 }
 
 const onboardStyles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+  },
   button: {
     position: "absolute",
     alignSelf: "center",
@@ -208,7 +255,7 @@ const onboardStyles = StyleSheet.create({
   },
   logo: {
     height: undefined,
-    aspectRatio: 2, // maintains proportions
+    aspectRatio: 2,
     resizeMode: "contain",
     alignSelf: "center",
     marginTop: "8%",
