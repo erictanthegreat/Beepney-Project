@@ -1,9 +1,7 @@
-
 import React from "react";
 import { TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import BackButtonIcon from "../assets/images/backbutton.svg";
-
 
 export default function BackButton() {
   const router = useRouter();

@@ -188,17 +188,45 @@ export default function RideHailing() {
     type: "pickup" | "destination"
   ) => {
     try {
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?types=address&limit=1&access_token=${MAPBOX_TOKEN}`;
       const res = await fetch(url);
       const data = await res.json();
+
       if (data.features && data.features.length > 0) {
-        const placeName = data.features[0].place_name;
-        if (type === "pickup") {
-          setPickupAddress(placeName);
-          setPickupInput(placeName);
+        const feature = data.features[0];
+
+        // Build detailed address like Google Maps
+        let address = "";
+
+        // Get address number and street
+        if (feature.address) {
+          address = `${feature.address} ${feature.text}`;
         } else {
-          setDestinationAddress(placeName);
-          setDestinationInput(placeName);
+          address = feature.text;
+        }
+
+        // Add context (neighborhood, city, region, etc.)
+        if (feature.context) {
+          const contextParts = feature.context
+            .filter(
+              (c: any) =>
+                c.id.includes("locality") ||
+                c.id.includes("place") ||
+                c.id.includes("region")
+            )
+            .map((c: any) => c.text);
+
+          if (contextParts.length > 0) {
+            address += `, ${contextParts.join(", ")}`;
+          }
+        }
+
+        if (type === "pickup") {
+          setPickupAddress(address);
+          setPickupInput(address);
+        } else {
+          setDestinationAddress(address);
+          setDestinationInput(address);
         }
       }
     } catch (err) {
@@ -220,7 +248,7 @@ export default function RideHailing() {
     try {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
         query
-      )}.json?autocomplete=true&limit=5&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
+      )}.json?autocomplete=true&limit=5&types=address,poi&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
 
       const res = await fetch(url);
       const data = await res.json();
@@ -234,7 +262,6 @@ export default function RideHailing() {
       console.log("Error fetching suggestions:", err);
     }
   };
-
   const handleSuggestionSelect = (
     place: any,
     type: "pickup" | "destination"

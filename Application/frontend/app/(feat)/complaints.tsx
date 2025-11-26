@@ -12,7 +12,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import Attach from "@/components/AttachProof";
@@ -26,6 +26,10 @@ interface Attachment {
   id: number;
   uri?: string | null;
   type?: "image" | "video" | null;
+}
+
+interface ComplaintsProps {
+  params?: any;
 }
 
 interface State {
@@ -44,7 +48,7 @@ interface State {
   currentUserId: string | null;
 }
 
-export default class Complaints extends Component<{}, State> {
+class Complaints extends Component<ComplaintsProps, State> {
   state: State = {
     attachments: [{ id: 0 }],
     nextId: 1,
@@ -64,7 +68,28 @@ export default class Complaints extends Component<{}, State> {
   componentDidMount() {
     this.fetchUserName();
     this.fetchComplaints();
+    this.prefillDriverInfo();
   }
+
+  prefillDriverInfo = () => {
+    const { params } = this.props;
+
+    if (params?.driverName) {
+      const driverInfo = `Driver Information:
+Name: ${params.driverName}
+Plate Number: ${params.plateNumber}
+Contact: ${params.contactNumber}
+Operator Address: ${params.operatorAddress}
+
+
+Complaint Details:
+`;
+
+      this.setState({
+        description: driverInfo,
+      });
+    }
+  };
 
   fetchUserName = async () => {
     try {
@@ -392,6 +417,13 @@ export default class Complaints extends Component<{}, State> {
   }
 }
 
+function ComplaintsWrapper() {
+  const params = useLocalSearchParams();
+  return <Complaints params={params} />;
+}
+
+export default ComplaintsWrapper;
+
 const rentStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   header: {
@@ -448,7 +480,7 @@ const rentStyles = StyleSheet.create({
     borderRadius: 6,
     alignItems: "center",
     position: "relative",
-    top: -15,
+    top: -14,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
   },

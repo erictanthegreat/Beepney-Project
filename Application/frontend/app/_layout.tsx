@@ -41,6 +41,7 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)/Login" />
             <Stack.Screen name="(auth)/DriverProfile" />
             <Stack.Screen name="(feat)/FareCalculator" />
+            <Stack.Screen name="(feat)/FareCalculatorDriver" />
             <Stack.Screen name="(feat)/FareMatrix" />
             <Stack.Screen name="(feat)/RideHistory" />
             <Stack.Screen name="(feat)/ScanDriverdets" />
@@ -50,6 +51,7 @@ export default function RootLayout() {
             <Stack.Screen name="(feat)/GenerateQr" />
             <Stack.Screen name="(feat)/PostRental" />
             <Stack.Screen name="(feat)/CalculatedFare" />
+            <Stack.Screen name="(feat)/CalculatedFareDriver" />
             <Stack.Screen name="(feat)/complaints" />
             <Stack.Screen name="(result)/DriverQr" />
             <Stack.Screen name="(result)/DriverDetails" />

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "@/scripts/supabase";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -62,7 +63,14 @@ export default function Login() {
   };
 
   return (
-    <View style={viewStyles.container}>
+    <KeyboardAwareScrollView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      contentContainerStyle={viewStyles.container}
+      enableOnAndroid={true}
+      extraScrollHeight={20}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
       <View>
         <Image
           source={require("../../assets/images/Beepney LOGO.png")}
@@ -108,7 +116,7 @@ export default function Login() {
           Sign-up
         </Text>
       </Text>
-    </View>
+    </KeyboardAwareScrollView>
   );
 }
 

@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Text, View, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  Image,
+} from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import ProfileIcon from "../../assets/images/prof.svg";
@@ -14,6 +21,8 @@ interface DriverProfile {
   user_name: string;
   operator_address: string;
   eligible: string;
+  avatar_url?: string | null;
+  username?: string;
 }
 
 export default function DriverDets() {
@@ -44,6 +53,7 @@ export default function DriverDets() {
 
         let qrUserName = parsedData?.userName || null;
 
+        // Fetch driver profile data
         const { data, error } = await supabase
           .from("driverprofiles")
           .select(
@@ -59,28 +69,48 @@ export default function DriverDets() {
           return;
         }
 
+        // Fetch user profile data (avatar and username)
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("avatar_url, username")
+          .eq("id", driverId)
+          .maybeSingle();
+
+        if (profileError) {
+          console.warn("Could not fetch profile data:", profileError);
+        }
+
+        // Determine the display name
         let userName = qrUserName;
         if (!userName) {
-          const { data: userData } = await supabase.auth.getUser();
-          const user = userData?.user;
-          if (user && user.id === driverId) {
-            userName =
-              user.user_metadata?.name ||
-              user.user_metadata?.full_name ||
-              user.user_metadata?.display_name ||
-              user.email ||
-              "Unknown User";
+          // Try to get username from profiles table first
+          if (profileData?.username) {
+            userName = profileData.username;
           } else {
-            userName = data.operator_name || "Unknown User";
+            // Fallback to auth user metadata
+            const { data: userData } = await supabase.auth.getUser();
+            const user = userData?.user;
+            if (user && user.id === driverId) {
+              userName =
+                user.user_metadata?.name ||
+                user.user_metadata?.full_name ||
+                user.user_metadata?.display_name ||
+                user.email ||
+                "Unknown User";
+            } else {
+              userName = data.operator_name || "Unknown User";
+            }
           }
         }
 
         setDriver({
           contact_number: data.phone_number,
           plate_number: data.plate_number,
-          user_name: userName,
+          user_name: data.operator_name, // Use operator_name from driverprofiles
           operator_address: data.operator_address,
           eligible: data.status,
+          avatar_url: profileData?.avatar_url || null,
+          username: profileData?.username || userName, // Display name for UI
         });
       } catch (err: any) {
         console.error("Error fetching driver:", err);
@@ -109,7 +139,6 @@ export default function DriverDets() {
       </View>
 
       <View style={styles.profile}>
-        <ProfileIcon />
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#073051" />
@@ -117,7 +146,18 @@ export default function DriverDets() {
           </View>
         ) : driver ? (
           <>
-            <Text style={styles.name}>{driver.user_name}</Text>
+            {driver.avatar_url ? (
+              <Image
+                source={{ uri: driver.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <ProfileIcon />
+            )}
+
+            <Text style={styles.name}>
+              {driver.username || driver.user_name}
+            </Text>
             <DriverDetails
               contactNumber={driver.contact_number}
               plateNumber={driver.plate_number}
@@ -128,7 +168,21 @@ export default function DriverDets() {
             <CustomButton
               title="Report this Driver"
               style={styles.report}
-              onPress={() => router.push("/(feat)/Complaints")}
+              onPress={() => {
+                if (driver) {
+                  router.push({
+                    pathname: "/(feat)/Complaints",
+                    params: {
+                      driverName: driver.username || driver.user_name,
+                      plateNumber: driver.plate_number,
+                      contactNumber: driver.contact_number,
+                      operatorAddress: driver.operator_address,
+                      operatorName: driver.user_name,
+                      driverId: Array.isArray(id) ? id[0] : id,
+                    },
+                  });
+                }
+              }}
             />
           </>
         ) : (
@@ -164,6 +218,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 40,
     paddingHorizontal: 20,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: "#073051",
   },
   name: {
     fontWeight: "bold",
@@ -201,5 +262,6 @@ const styles = StyleSheet.create({
   },
   report: {
     backgroundColor: "#E53935",
+    marginTop: 40,
   },
 });

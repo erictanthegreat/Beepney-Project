@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  BackHandler,
 } from "react-native";
 import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
@@ -20,6 +21,7 @@ import DriverIcon from "../../assets/images/driber.svg";
 import LogoutIcon from "../../assets/images/logout.svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Verified from "../../assets/images/verified.svg";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function CommuterProfile() {
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -38,13 +40,40 @@ export default function CommuterProfile() {
 
   const [discountType, setDiscountType] = useState<string | null>(null);
 
+  // Prevent back navigation when logged out
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Check if user is logged in
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session) {
+            // If no session, prevent back navigation
+            return true;
+          }
+        });
+        return false;
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      return () => backHandler.remove();
+    }, [])
+  );
+
   useEffect(() => {
     const fetchProfileAndStatus = async () => {
       try {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        if (!session?.user) return;
+        if (!session?.user) {
+          // If no session, redirect to login
+          router.replace("/(auth)/Login");
+          return;
+        }
 
         const userId = session.user.id;
 
@@ -204,13 +233,37 @@ export default function CommuterProfile() {
   };
 
   const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      await AsyncStorage.clear();
-      router.replace("/(auth)/Login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Sign out from Supabase
+              await supabase.auth.signOut();
+
+              // Clear all AsyncStorage data
+              await AsyncStorage.clear();
+
+              // Clear navigation stack and redirect to login
+              router.dismissAll();
+              router.replace("/(auth)/Login");
+            } catch (error) {
+              console.error("Logout failed:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleIdPress = () => {
