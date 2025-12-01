@@ -11,10 +11,13 @@ import {
 import { router } from "expo-router";
 import { supabase } from "@/scripts/supabase";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const redirectBasedOnRole = async (userId: string) => {
     const { data: profile, error } = await supabase
@@ -49,12 +52,14 @@ export default function Login() {
   }, []);
 
   const handleLogin = async () => {
+    setIsLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     if (error) {
+      setIsLoading(false);
       Alert.alert("Login failed", error.message);
     } else if (data.user) {
       console.log("User logged in:", data.user.id);
@@ -94,19 +99,36 @@ export default function Login() {
 
       <View style={inputStyles.inputGroup}>
         <Text style={inputStyles.label}>Password</Text>
-        <TextInput
-          style={inputStyles.input}
-          placeholder="Enter your password"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={inputStyles.passwordContainer}>
+          <TextInput
+            style={inputStyles.passwordInput}
+            placeholder="Enter your password"
+            secureTextEntry={!isPasswordVisible}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            style={inputStyles.eyeIcon}
+          >
+            <Ionicons
+              name={isPasswordVisible ? "eye-off" : "eye"}
+              size={24}
+              color="#666"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Sign In</Text>
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        <Text style={styles.buttonText}>
+          {isLoading ? "Signing In..." : "Sign In"}
+        </Text>
       </TouchableOpacity>
-
       <Text style={{ marginTop: 20 }}>
         Don&apos;t have an Account?{" "}
         <Text
@@ -174,6 +196,24 @@ const inputStyles = StyleSheet.create({
     backgroundColor: "#fff",
     fontFamily: "Poppins",
   },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 8,
+    backgroundColor: "#fff",
+  },
+  passwordInput: {
+    flex: 1,
+    paddingLeft: 10,
+    fontSize: 16,
+    fontFamily: "Poppins",
+    paddingVertical: 12,
+  },
+  eyeIcon: {
+    paddingHorizontal: 10,
+  },
 });
 
 const styles = StyleSheet.create({
@@ -185,6 +225,10 @@ const styles = StyleSheet.create({
     marginTop: 150,
     width: "80%",
     alignItems: "center",
+  },
+  buttonDisabled: {
+    backgroundColor: "#A0C4D8",
+    opacity: 0.7,
   },
   buttonText: {
     color: "#fff",

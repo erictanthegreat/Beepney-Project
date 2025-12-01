@@ -11,12 +11,13 @@ import { AntDesign } from "@expo/vector-icons";
 
 export default function DropDown({
   data = [],
-  value, // <-- NEW
+  value,
   onSelect,
   isOpen,
   onToggle,
+  placeholder = "Select", // <-- NEW: customizable placeholder
 }) {
-  const [selected, setSelected] = useState(value || data[0] || "Select");
+  const [selected, setSelected] = useState(value || null); // <-- Start with null if no value
   const [buttonWidth, setButtonWidth] = useState(100);
   const dropdownWidth = 145;
 
@@ -25,7 +26,7 @@ export default function DropDown({
 
   useEffect(() => {
     Animated.timing(animatedHeight, {
-      toValue: isOpen ? data.length * 45 : 0, // each item ~45px tall
+      toValue: isOpen ? data.length * 45 : 0,
       duration: 200,
       useNativeDriver: false,
     }).start();
@@ -44,6 +45,10 @@ export default function DropDown({
     if (onSelect) onSelect(item);
   };
 
+  // Display placeholder if nothing selected, otherwise show selected value
+  const displayText = selected || placeholder;
+  const isPlaceholder = !selected;
+
   return (
     <View style={styles.container}>
       {/* Button */}
@@ -53,13 +58,16 @@ export default function DropDown({
         activeOpacity={0.8}
       >
         <Text
-          style={styles.buttonText}
+          style={[
+            styles.buttonText,
+            isPlaceholder && styles.placeholderText, // <-- Different style for placeholder
+          ]}
           onLayout={(e) => {
             const textWidth = e.nativeEvent.layout.width;
             setButtonWidth(textWidth + 50);
           }}
         >
-          {selected}
+          {displayText}
         </Text>
         <AntDesign
           name={isOpen ? "up" : "down"}
@@ -109,6 +117,9 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "500",
+  },
+  placeholderText: {
+    opacity: 1,
   },
   dropdown: {
     backgroundColor: "#fff",

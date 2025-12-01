@@ -1,8 +1,16 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, Dimensions, TextInput } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+  Alert,
+} from "react-native";
 import { router } from "expo-router";
 import "@fontsource/poppins";
 import Mapbox from "@rnmapbox/maps";
+import * as Location from "expo-location";
 import BackButton from "@/components/Backbutton";
 import LocationIcon from "../../assets/images/filter.svg";
 import { supabase } from "@/scripts/supabase";
@@ -20,6 +28,8 @@ export interface Station {
   location: string;
   coordinates: [number, number];
   vehicleTypes: string[];
+
+  destinations?: string[];
 }
 
 const VEHICLE_COLORS: { [key: string]: string } = {
@@ -29,18 +39,52 @@ const VEHICLE_COLORS: { [key: string]: string } = {
   ALL: "#0D99FF",
 };
 
-export default class Stations extends Component {
-  state = {
-    stations: [] as Station[],
-    filteredStations: [] as Station[],
+interface StationsState {
+  stations: Station[];
+  filteredStations: Station[];
+  mapReady: boolean;
+  searchQuery: string;
+  followUser: boolean;
+}
+
+export default class Stations extends Component<{}, StationsState> {
+  state: StationsState = {
+    stations: [],
+    filteredStations: [],
     mapReady: false,
     searchQuery: "",
+    followUser: false, // Initial state for GPS tracking
+  };
+
+  // --- Location Permission Logic ---
+  private requestLocationPermission = async (): Promise<boolean> => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+
+    if (status !== "granted") {
+      console.error("Location permission denied");
+      Alert.alert(
+        "Location Required",
+        "Please enable location services for this app in your device settings to see your current position."
+      );
+      return false;
+    }
+    return true;
   };
 
   async componentDidMount() {
+    const hasPermission = await this.requestLocationPermission();
+
     const stations = await this.fetchStationsMobile();
-    this.setState({ stations, filteredStations: stations });
+
+    this.setState({
+      stations,
+      filteredStations: stations,
+      // Only set followUser to true if permission was granted
+      followUser: hasPermission,
+    });
   }
+
+  // --- Data Fetching Methods ---
 
   fetchStationsMobile = async (): Promise<Station[]> => {
     const { data: allDestinations, error: destError } = await supabase
@@ -88,7 +132,7 @@ export default class Stations extends Component {
       }));
   };
 
-  handleSearch = async (text: string) => {
+  handleSearch = async (text: string): Promise<void> => {
     this.setState({ searchQuery: text });
 
     if (text.trim() === "") {
@@ -122,7 +166,7 @@ export default class Stations extends Component {
       destinationsMap[dest.station_id].push(dest.destination);
     });
 
-    const finalStations = (matchedStations || [])
+    const finalStations: Station[] = (matchedStations || [])
       .filter((s: any) => s.coordinates && s.coordinates.length === 2)
       .map((s: any) => ({
         id: s.id,
@@ -136,11 +180,13 @@ export default class Stations extends Component {
     this.setState({ filteredStations: finalStations });
   };
 
-  handleMapReady = () => {
+  // --- UI/Map Methods ---
+
+  handleMapReady = (): void => {
     this.setState({ mapReady: true });
   };
 
-  handleMarkerPress = (station: Station) => {
+  handleMarkerPress = (station: Station): void => {
     router.push({
       pathname: "/(result)/StationDetails",
       params: { id: station.id },
@@ -165,8 +211,9 @@ export default class Stations extends Component {
     return "#808080";
   };
 
+  // --- Render Method ---
   render() {
-    const { filteredStations } = this.state;
+    const { filteredStations, followUser } = this.state;
 
     return (
       <View style={statStyles.container}>
@@ -174,13 +221,30 @@ export default class Stations extends Component {
           style={statStyles.map}
           styleURL={Mapbox.StyleURL.Street}
           onDidFinishLoadingMap={this.handleMapReady}
+          // onUserTrackingModeChange is now correctly on Mapbox.Camera
         >
           {this.state.mapReady && (
             <Mapbox.Camera
               zoomLevel={13}
-              centerCoordinate={[123.186389, 13.624444]}
+              centerCoordinate={[123.186389, 13.624444]} // Default area center
+              followUserLocation={followUser}
+              // 1. FIX: onUserTrackingModeChange moved from Mapbox.MapView to here
+              onUserTrackingModeChange={(e) => {
+                this.setState({
+                  followUser: e.nativeEvent.payload.followUserLocation,
+                });
+              }}
+              // 2. FIX: Replaced "compass" string with Mapbox constant for type safety
+              followUserMode={Mapbox.UserTrackingMode.FollowWithHeading}
+              maxZoomLevel={18}
             />
           )}
+
+          {/* Displays the user's current location (blue dot) */}
+          <Mapbox.UserLocation
+            visible={followUser}
+            showsUserHeadingIndicator={true}
+          />
 
           {filteredStations.map((station) => (
             <React.Fragment key={station.id}>
@@ -211,6 +275,8 @@ export default class Stations extends Component {
             </React.Fragment>
           ))}
         </Mapbox.MapView>
+
+        {/* --- UI Components --- */}
 
         <View style={statStyles.topBar}>
           <BackButton />
@@ -244,6 +310,8 @@ export default class Stations extends Component {
     );
   }
 }
+
+// --- Stylesheet ---
 
 const statStyles = StyleSheet.create({
   container: {

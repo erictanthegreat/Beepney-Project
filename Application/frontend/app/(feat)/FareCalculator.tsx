@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import * as Location from "expo-location";
 import { router } from "expo-router";
@@ -44,7 +45,7 @@ const discounts: Record<string, number> = {
 
 export default class FareCalculator extends Component {
   state = {
-    vehicleType: "",
+    vehicleType: null,
     openDropdown: null,
     origin: "",
     destination: "",
@@ -52,14 +53,49 @@ export default class FareCalculator extends Component {
     destinationCoords: null,
     originSuggestions: [],
     destinationSuggestions: [],
-    IdType: "Regular",
+    IdType: null,
     discountTypes: ["Regular"],
+    recentFare: null,
+    loadingRecentFare: true,
   };
 
   async componentDidMount() {
     await this.getCurrentLocation();
     await this.fetchDiscountTypes();
+    await this.fetchRecentFare();
   }
+
+  fetchRecentFare = async () => {
+    this.setState({ loadingRecentFare: true });
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        this.setState({ recentFare: null, loadingRecentFare: false });
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("saved_fares")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching recent fare:", error);
+        this.setState({ recentFare: null });
+      } else {
+        this.setState({ recentFare: data && data.length > 0 ? data[0] : null });
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching recent fare:", err);
+      this.setState({ recentFare: null });
+    } finally {
+      this.setState({ loadingRecentFare: false });
+    }
+  };
 
   getCurrentLocation = async () => {
     try {
@@ -129,9 +165,16 @@ export default class FareCalculator extends Component {
           allowedTypes.includes(t)
         );
 
-        const finalTypes = ["Regular", ...filteredTypes];
+        const finalTypes = [
+          "Select Discount",
+          "Regular",
+          ...filteredTypes,
+        ].filter((item, index, self) => self.indexOf(item) === index);
 
-        this.setState({ discountTypes: finalTypes });
+        this.setState({
+          discountTypes: finalTypes,
+          IdType: null,
+        });
       }
     } catch (err) {
       console.error("Error fetching discount types:", err);
@@ -153,6 +196,98 @@ export default class FareCalculator extends Component {
   };
 
   render() {
+    const {
+      origin,
+      destination,
+      vehicleType,
+      IdType,
+      originCoords,
+      destinationCoords,
+      discountTypes,
+      recentFare,
+      loadingRecentFare,
+    } = this.state;
+
+    const isCalculateDisabled =
+      !origin ||
+      !destination ||
+      !vehicleType ||
+      vehicleType === "Select Vehicle" ||
+      !IdType ||
+      IdType === "Select Discount" ||
+      !originCoords ||
+      !destinationCoords;
+
+    const selectedIdType = IdType === "Select Discount" ? "" : IdType;
+    const selectedVehicleType =
+      vehicleType === "Select Vehicle" ? "" : vehicleType;
+
+    const vehicleOptions = [
+      "Select Vehicle",
+      "E-Trike",
+      "Tricycle",
+      "Taxi",
+      "Pedicab",
+      "PUJ Modern (NON-AC)",
+      "PUJ Modern (AC)",
+      "UVE Traditional",
+      "UVE Modern",
+      "PUB Provincial",
+    ].filter((item, index, self) => self.indexOf(item) === index);
+
+    const RecentFareCard = () => {
+      if (loadingRecentFare) {
+        return (
+          <ActivityIndicator
+            size="small"
+            color="#073051"
+            style={{ marginVertical: 10, alignSelf: "center" }}
+          />
+        );
+      }
+
+      if (!recentFare) {
+        return (
+          <View style={fareStyles.recentCard}>
+            <Text style={fareStyles.noFareText}>No recent saved fares.</Text>
+          </View>
+        );
+      }
+
+      const { origin, destination, total_fare, created_at, vehicle_type } =
+        recentFare;
+      const formattedDate = new Date(created_at).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      return (
+        <View style={fareStyles.recentCard}>
+          <View style={fareStyles.cardRow}>
+            <OriginIcon style={fareStyles.cardIcon} />
+            <Text style={fareStyles.cardText} numberOfLines={1}>
+              {origin || "Start Point"}
+            </Text>
+          </View>
+          <View style={[fareStyles.cardRow, { marginTop: 5 }]}>
+            <DestIcon style={fareStyles.cardIcon} />
+            <Text style={fareStyles.cardText} numberOfLines={1}>
+              {destination || "End Point"}
+            </Text>
+          </View>
+
+          <View style={fareStyles.fareSummary}>
+            <Text style={fareStyles.fareDate}>{formattedDate}</Text>
+            <Text style={fareStyles.fareType}>{vehicle_type}</Text>
+            <Text style={fareStyles.fareTotal}>
+              ₱ {total_fare ? total_fare.toFixed(2) : "0.00"}
+            </Text>
+          </View>
+        </View>
+      );
+    };
+
     return (
       <View style={{ flex: 1 }}>
         <View style={fareStyles.headerContainer}>
@@ -165,6 +300,7 @@ export default class FareCalculator extends Component {
 
         <FlatList
           data={[]}
+          contentContainerStyle={{ paddingBottom: 30 }}
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
@@ -172,7 +308,7 @@ export default class FareCalculator extends Component {
                   <OriginIcon style={fareStyles.icon} />
                   <TextInput
                     placeholder="Enter Origin"
-                    value={this.state.origin}
+                    value={origin}
                     onChangeText={(text) => {
                       this.setState({ origin: text });
                       this.fetchSuggestions(text, "origin");
@@ -201,12 +337,11 @@ export default class FareCalculator extends Component {
                   />
                 )}
 
-                {/* DESTINATION INPUT */}
                 <View style={fareStyles.cont}>
                   <DestIcon style={fareStyles.icon} />
                   <TextInput
                     placeholder="Enter Destination"
-                    value={this.state.destination}
+                    value={destination}
                     onChangeText={(text) => {
                       this.setState({ destination: text });
                       this.fetchSuggestions(text, "destination");
@@ -232,53 +367,47 @@ export default class FareCalculator extends Component {
                 )}
 
                 <DropDown
-                  data={this.state.discountTypes}
+                  data={discountTypes}
                   onSelect={(value) => this.setState({ IdType: value })}
                   isOpen={this.state.openDropdown === 1}
                   onToggle={(open) => this.handleToggle(1, open)}
-                  value={this.state.IdType}
+                  value={selectedIdType}
+                  placeholder="Select Discount"
                 />
 
                 <DropDown
-                  data={[
-                    "E-Trike",
-                    "Tricycle",
-                    "Taxi",
-                    "Pedicab",
-                    "PUJ Modern (NON-AC)",
-                    "PUJ Modern (AC)",
-                    "UVE Traditional",
-                    "UVE Modern",
-                    "PUB Provincial",
-                  ]}
+                  data={vehicleOptions}
                   onSelect={(value) => this.setState({ vehicleType: value })}
                   isOpen={this.state.openDropdown === 2}
                   onToggle={(open) => this.handleToggle(2, open)}
-                  value={this.state.vehicleType || undefined}
+                  value={selectedVehicleType}
+                  placeholder="Select Vehicle"
                 />
 
                 <TouchableOpacity
-                  style={fareStyles.button}
+                  style={[
+                    fareStyles.button,
+                    isCalculateDisabled && fareStyles.disabledButton,
+                  ]}
                   onPress={() =>
                     router.push({
                       pathname: "/(feat)/CalculatedFare",
                       params: {
-                        origin: this.state.origin,
-                        originCoords: JSON.stringify(this.state.originCoords),
-                        destination: this.state.destination,
-                        destinationCoords: JSON.stringify(
-                          this.state.destinationCoords
-                        ),
-                        vehicleType: this.state.vehicleType,
-                        baseFare: String(
-                          baseFares[this.state.vehicleType] || 0
-                        ),
-                        discounts: String(discounts[this.state.IdType] || 0),
+                        origin: origin,
+                        originCoords: JSON.stringify(originCoords),
+                        destination: destination,
+                        destinationCoords: JSON.stringify(destinationCoords),
+                        vehicleType: vehicleType,
+                        baseFare: String(baseFares[vehicleType] || 0),
+                        discounts: String(discounts[IdType] || 0),
                       },
                     })
                   }
+                  disabled={isCalculateDisabled}
                 >
-                  <Text style={fareStyles.buttText}>Calculate Fare</Text>
+                  <Text style={fareStyles.buttText}>
+                    {isCalculateDisabled ? "Fill All Fields" : "Calculate Fare"}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
@@ -298,15 +427,29 @@ export default class FareCalculator extends Component {
                 </TouchableOpacity>
               </View>
 
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={fareStyles.fareText}>Saved Calculated Fare</Text>
-                <TouchableOpacity
-                  onPress={() => router.push("/SavedFares")}
-                  style={fareStyles.fareButton2}
-                >
-                  <Text style={fareStyles.fareButtonText}>See all</Text>
-                </TouchableOpacity>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginRight: 20,
+                  marginBottom: 10,
+                }}
+              >
+                <Text style={fareStyles.fareText}>Recent Calculated Fare</Text>
               </View>
+
+              <View style={{ marginHorizontal: 20 }}>
+                <RecentFareCard />
+              </View>
+              <TouchableOpacity
+                onPress={() => router.push("/SavedFares")}
+                style={fareStyles.fareButton2}
+              >
+                <Text style={fareStyles.fareButtonText}>
+                  See all saved fares
+                </Text>
+              </TouchableOpacity>
             </>
           }
           renderItem={() => null}
@@ -346,6 +489,9 @@ const fareStyles = StyleSheet.create({
     marginTop: 40,
     width: "100%",
     alignItems: "center",
+  },
+  disabledButton: {
+    backgroundColor: "#b0b0b0",
   },
   buttText: {
     color: "white",
@@ -395,12 +541,16 @@ const fareStyles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 30,
-    marginLeft: 30,
+    justifyContent: "center",
     borderRadius: 15,
+    width: "90%",
+    alignSelf: "center",
   },
   fareButtonText: {
     color: "#1E86DA",
     fontFamily: "Poppins",
+    alignSelf: "center",
+    justifyContent: "center",
   },
   icon: {
     width: 24,
@@ -413,5 +563,64 @@ const fareStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
     backgroundColor: "#f9f9f9",
+  },
+
+  recentCard: {
+    backgroundColor: "#F8F9FB",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  cardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  cardIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 8,
+  },
+  cardText: {
+    fontWeight: "600",
+    fontSize: 14,
+    color: "#073051",
+    flexShrink: 1,
+    fontFamily: "Poppins",
+  },
+  fareSummary: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+  },
+  fareDate: {
+    color: "#999",
+    fontSize: 11,
+    fontFamily: "Poppins",
+  },
+  fareType: {
+    color: "#073051",
+    fontSize: 12,
+    fontFamily: "Poppins",
+  },
+  fareTotal: {
+    color: "#0D99FF",
+    fontWeight: "bold",
+    fontSize: 16,
+    fontFamily: "Poppins",
+  },
+  noFareText: {
+    textAlign: "center",
+    color: "#737F83",
+    fontFamily: "Poppins",
+    fontSize: 14,
   },
 });

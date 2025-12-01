@@ -346,7 +346,7 @@ export default function RideHailing() {
               user_id: user.id,
               payment_method: method,
               status: "pending",
-              distance_km: distance, // Add this line!
+              distance_km: distance,
             },
           ])
           .select();
