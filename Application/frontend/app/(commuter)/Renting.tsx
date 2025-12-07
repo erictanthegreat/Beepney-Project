@@ -260,6 +260,7 @@ const rentStyles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 100,
     alignItems: "center",
+    
   },
   emptyText: {
     textAlign: "center",

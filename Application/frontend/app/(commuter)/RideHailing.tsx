@@ -486,8 +486,8 @@ export default function RideHailing() {
           if (status === "completed") {
             setRideStatus("completed");
             setWaitingModalVisible(false);
-            setAssignedDriver(null); // optional: clear driver info
-            // BottomSheetContainer can now react to rideStatus === "completed"
+            setAssignedDriver(null); 
+           
           }
         }
       )
@@ -498,7 +498,6 @@ export default function RideHailing() {
     };
   }, [currentRideId]);
 
-  // Inbox navigation
   const openInbox = () => {
     router.push("/(feat)/Inbox");
   };

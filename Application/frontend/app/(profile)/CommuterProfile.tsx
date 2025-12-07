@@ -70,7 +70,7 @@ export default function CommuterProfile() {
           data: { session },
         } = await supabase.auth.getSession();
         if (!session?.user) {
-          // If no session, redirect to login
+         
           router.replace("/(auth)/Login");
           return;
         }
@@ -167,7 +167,7 @@ export default function CommuterProfile() {
       const fileName = `avatar_${Date.now()}.${fileExt}`;
       const filePath = `pics/${profileData?.userId}/${fileName}`;
 
-      // Read the file as base64
+      
       const base64 = await fetch(imageUri)
         .then((res) => res.blob())
         .then((blob) => {
@@ -175,21 +175,21 @@ export default function CommuterProfile() {
             const reader = new FileReader();
             reader.onloadend = () => {
               const base64data = reader.result as string;
-              resolve(base64data.split(",")[1]); // Remove data:image/jpeg;base64, prefix
+              resolve(base64data.split(",")[1]); 
             };
             reader.onerror = reject;
             reader.readAsDataURL(blob);
           });
         });
 
-      // Convert base64 to Uint8Array
+      
       const binaryString = atob(base64);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
 
-      // Upload to Supabase Storage
+     
       const { error: uploadError } = await supabase.storage
         .from("beepney-bucket")
         .upload(filePath, bytes, {
@@ -201,14 +201,12 @@ export default function CommuterProfile() {
         throw uploadError;
       }
 
-      // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from("beepney-bucket")
         .getPublicUrl(filePath);
 
       const newAvatarUrl = publicUrlData.publicUrl;
 
-      // Update profile in database
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: newAvatarUrl })
@@ -218,7 +216,6 @@ export default function CommuterProfile() {
         throw updateError;
       }
 
-      // Update local state
       setProfileImage(newAvatarUrl);
       Alert.alert("Success", "Profile picture updated successfully!");
     } catch (error: any) {

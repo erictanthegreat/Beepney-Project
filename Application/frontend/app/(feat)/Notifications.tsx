@@ -15,7 +15,7 @@ import { supabase } from "@/scripts/supabase";
 export default function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("all"); // 'all', 'submissions', 'complaints'
+  const [sortBy, setSortBy] = useState("all"); 
 
   useEffect(() => {
     fetchNotifications();

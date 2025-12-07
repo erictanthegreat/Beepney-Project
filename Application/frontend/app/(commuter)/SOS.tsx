@@ -69,7 +69,7 @@ export default function SOS() {
     }
   };
 
-  // Refetch when screen is focused
+ 
   useFocusEffect(
     useCallback(() => {
       fetchHotlines();

@@ -112,7 +112,7 @@ export default function RideHailingDriver() {
       .on(
         "postgres_changes",
         {
-          event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
+          event: "*", 
           schema: "public",
           table: "ride_requests",
         },
