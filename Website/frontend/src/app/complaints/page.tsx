@@ -230,9 +230,9 @@ const DashboardPage = () => {
       case "In-Action":
         return "bg-blue-100 text-blue-700";
       case "In-Review":
-        return "bg-purple-100 text-purple-700";
-      case "Received":
         return "bg-yellow-100 text-yellow-700";
+      case "Received":
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -402,14 +402,14 @@ const DashboardPage = () => {
                         >
                           <button
                             onClick={() => handleDecision(item.id, "Received")}
-                            className="flex items-center w-full px-3 py-2 text-yellow-600 hover:bg-gray-50 font-semibold"
+                            className="flex items-center w-full px-3 py-2 text-gray-600 hover:bg-gray-50 font-semibold"
                             disabled={item.status === "Received"}
                           >
                             Received
                           </button>
                           <button
                             onClick={() => handleDecision(item.id, "In-Review")}
-                            className="flex items-center w-full px-3 py-2 text-purple-600 hover:bg-gray-50 font-semibold"
+                            className="flex items-center w-full px-3 py-2 text-yellow-600 hover:bg-gray-50 font-semibold"
                             disabled={item.status === "In-Review"}
                           >
                             In-Review
