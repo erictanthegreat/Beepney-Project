@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import Header from "../../components/ui/header";
 import Overlay from "../../components/ui/overlay";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import { BarsArrowDownIcon, FunnelIcon } from "@heroicons/react/24/outline";
 
 interface Hotline {
   id: string;
@@ -134,95 +135,98 @@ const ContactsPage: React.FC = () => {
 
   return (
     <>
-      {/* ✅ Sticky header that stays visible during scroll */}
-      <div className="sticky top-0 z-50 bg-white shadow-sm">
-        <Header />
-      </div>
+      <main className="relative h-screen w-full overflow-hidden">
+        {/* Sticky header */}
+        <div className="sticky top-0 z-20 bg-white shadow-sm">
+          <Header />
+        </div>
 
-      {/* ✅ Scrollable main area (like FareMatrix) */}
-      <main
-        className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-[50px] space-y-[45px] 
-        overflow-y-auto 
-        max-h-[calc(100vh-200px)] 
-        scroll-smooth 
-        [&::-webkit-scrollbar]:hidden 
-        [-ms-overflow-style:none] 
-        [scrollbar-width:none]"
-      >
-        {contactSections.map(({ key, label }) => {
-          const sectionHotlines = hotlines.filter((h) => h.section === key);
+        {/* Page content (scrolls normally) */}
+        <div className="overflow-auto max-h-[calc(100vh-80px)]">
+        <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-10 space-y-[45px] pb-20">
+          {/* Page header + action buttons */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">
+              Contacts
+            </h1>
 
-          return (
-            <div key={key}>
-              <h2 className="text-[32px] sm:text-[40px] font-bold text-[#073051] mb-6">
-                {label}
-              </h2>
-
-              <div
-                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
-                style={{ gridAutoRows: "1fr" }}
-              >
-                {sectionHotlines.map((h, idx) => (
-                  <div
-                    key={h.id}
-                    className="border border-[#D1D1D1] rounded-[15px] flex items-start p-4 gap-3 w-full h-full min-h-[100px] cursor-pointer hover:bg-gray-100 transition"
-                    onClick={() => handleEditHotline(h)}
-                  >
-                    <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
-
-                    <div className="flex flex-col">
-                      <h3 className="font-semibold text-[#000000] text-lg">
-                        {key} Hotline {idx + 1}{" "}
-                        <span className="text-[#595959] font-normal">
-                          ({h.name})
-                        </span>
-                      </h3>
-
-                      <p className="text-[#0F76C2] text-sm">
-                        {formatPHNumber(h.number)}
-                      </p>
-
-                      {h.address && (
-                        <p className="text-[#9A9A9A] text-sm">{h.address}</p>
-                      )}
-
-                      {h.aor && (
-                        <p className="text-[#9A9A9A] text-sm">
-                          <strong>AOR:</strong> {h.aor}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {canEdit() && (
-                  <div
-                    className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
-                    onClick={() => openOverlay(key)}
-                  >
-                    <button className="text-[#CBCBCB] group-hover:text-[#6B6B6B] transition-colors duration-200">
-                      <PlusIcon className="h-7 w-7" />
-                    </button>
-                  </div>
-                )}
-              </div>
+            <div className="flex flex-wrap md:flex-nowrap gap-4">
+              <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
+                <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
+                <span>Sort</span>
+              </button>
+              <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
+                <FunnelIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
+                <span>Filter</span>
+              </button>
             </div>
-          );
-        })}
-      </main>
+          </div>
 
-      <Overlay
-        isOpen={isOverlayOpen}
-        onClose={() => {
-          setIsOverlayOpen(false);
-          setEditingHotline(null);
-        }}
-        sectionName={selectedSection}
-        onSave={handleSaveHotline}
-        onDelete={handleDeleteHotline}
-        initialData={editingHotline || undefined}
-        role={role}
-      />
+          {/* Contact sections */}
+          {contactSections.map(({ key, label }) => {
+            const sectionHotlines = hotlines.filter((h) => h.section === key);
+
+            return (
+              <div key={key}>
+                <h2 className="text-[32px] sm:text-[30px] font-bold text-[#073051] mb-6">
+                  {label}
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {sectionHotlines.map((h, idx) => (
+                    <div
+                      key={h.id}
+                      className="border border-[#D1D1D1] rounded-[15px] p-4 flex flex-col flex-1 min-h-[100px] gap-2 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                      onClick={() => handleEditHotline(h)}
+                    >
+                      <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <p className="font-semibold text-[#073051] text-lg truncate">
+                          {key} Hotline {idx + 1}{" "}
+                          <span className="text-[#595959] font-normal truncate">
+                            ({h.name})
+                          </span>
+                        </p>
+                        <p className="text-[#0F76C2] text-sm">
+                          {formatPHNumber(h.number)}
+                        </p>
+                        {h.address && <p className="text-[#9A9A9A] text-sm">{h.address}</p>}
+                        {h.aor && (
+                          <p className="text-[#9A9A9A] text-sm">
+                            <strong>AOR:</strong> {h.aor}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {canEdit() && (
+                    <div
+                      className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
+                      onClick={() => openOverlay(key)}
+                    >
+                      <PlusIcon className="h-7 w-7 text-[#CBCBCB] group-hover:text-[#6B6B6B]" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </main></div>
+
+        <Overlay
+          isOpen={isOverlayOpen}
+          onClose={() => {
+            setIsOverlayOpen(false);
+            setEditingHotline(null);
+          }}
+          sectionName={selectedSection}
+          onSave={handleSaveHotline}
+          onDelete={handleDeleteHotline}
+          initialData={editingHotline || undefined}
+          role={role}
+        />
+      </main>
     </>
   );
 };

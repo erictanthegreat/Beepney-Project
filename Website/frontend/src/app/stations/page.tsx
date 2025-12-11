@@ -484,9 +484,9 @@ const StationsPage = () => {
 
   return (
     <>
-      <Header ref={headerRef} />
-
-      <main className="flex h-screen overflow-hidden">
+      <main className="relative h-screen w-full overflow-hidden">
+        <Header ref={headerRef} />
+        
         {/* Sidebar */}
         <aside
           className="fixed left-0 w-[425px] border-r border-[#D1D1D1] p-6 z-10 bg-white flex flex-col overflow-y-auto"
