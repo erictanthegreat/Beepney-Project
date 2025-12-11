@@ -152,10 +152,6 @@ const ContactsPage: React.FC = () => {
 
             <div className="flex flex-wrap md:flex-nowrap gap-4">
               <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
-                <BarsArrowDownIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
-                <span>Sort</span>
-              </button>
-              <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
                 <FunnelIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
                 <span>Filter</span>
               </button>
