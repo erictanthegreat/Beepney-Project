@@ -30,7 +30,7 @@ interface FareConfig {
   excess_rate: number | null;
   rate_per_km: number | null;
   add_per_km_after: number | null;
-  add_amount_after: number | null;
+  add_amount: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -108,7 +108,6 @@ const FareMatrixPage = () => {
     }
   };
 
-  // Save or update fare configs
   const handleSaveFareConfigs = async (
     configs: FareConfig[]
   ): Promise<void> => {

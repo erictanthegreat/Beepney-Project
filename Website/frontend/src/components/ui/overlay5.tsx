@@ -12,7 +12,7 @@ interface FareConfig {
   excess_rate: number | null;
   rate_per_km: number | null;
   add_per_km_after: number | null;
-  add_amount_after: number | null;
+  add_amount: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -46,7 +46,7 @@ const Overlay5: React.FC<FareConfigOverlayProps> = ({
             excess_rate: null,
             rate_per_km: null,
             add_per_km_after: null,
-            add_amount_after: null,
+            add_amount: null,
           },
         ]);
       }
@@ -80,7 +80,7 @@ const Overlay5: React.FC<FareConfigOverlayProps> = ({
         excess_rate: null,
         rate_per_km: null,
         add_per_km_after: null,
-        add_amount_after: null,
+        add_amount: null,
       },
     ]);
   };
@@ -190,7 +190,7 @@ const Overlay5: React.FC<FareConfigOverlayProps> = ({
                       "excess_rate",
                       "rate_per_km",
                       "add_per_km_after",
-                      "add_amount_after",
+                      "add_amount",
                     ].map((field) => (
                       <td key={field} className="px-4 py-3 border-b">
                         <input
