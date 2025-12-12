@@ -26,76 +26,56 @@ const { width, height } = Dimensions.get("window");
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-const fareRules: Record<string, any> = {
-  Pedicab: {
-    base: 10,
-    thresholdKm: 3,
-    excessRate: 1.75,
-  },
+// Type definition for fare rules
+interface FareRule {
+  id: string;
+  vehicle_type: string;
+  base_fare: number | null;
+  threshold_km: number | null;
+  excess_rate: number | null;
+  rate_per_km: number | null;
+  add_per_km_after: number | null;
+  add_amount: number | null;
+  is_active: boolean;
+}
 
-  "E-Trike": {
-    base: 15,
-    thresholdKm: 3,
-    excessRate: 1.75,
-  },
-  Tricycle: {
-    base: 15,
-    thresholdKm: 3,
-    excessRate: 1.75,
-  },
-  "PUJ Traditional": {
-    base: 13,
-    thresholdKm: 4,
-    excessRate: 1.75,
-  },
-  "PUJ Modern (NON-AC)": {
-    base: 15,
-    thresholdKm: 4,
-    excessRate: 1.75,
-  },
-  "PUJ Modern (AC)": {
-    base: 15,
-    thresholdKm: 4,
-    excessRate: 2.25,
-  },
-  "UVE Traditional": {
-    ratePerKm: 2.4,
-  },
-  "UVE Modern": {
-    ratePerKm: 2.5,
-  },
-  "PUB Provincial": {
-    base: 11,
-    addPerKmAfter: 5,
-    addAmount: 9.5,
-  },
-  Taxi: {
-    ratePerKm: 13.5,
-  },
-};
-
-const computeFare = (vehicle: string, km: number, discountPercent: number) => {
-  const rule = fareRules[vehicle];
-  if (!rule || !km) return 0;
+const computeFare = (
+  fareRule: FareRule | undefined,
+  km: number,
+  discountPercent: number
+) => {
+  if (!fareRule || !km) return 0;
 
   let fare = 0;
 
-  if (rule.base && rule.thresholdKm) {
-    if (km <= rule.thresholdKm) fare = rule.base;
-    else {
-      const excessKm = km - rule.thresholdKm;
-      fare = rule.base + excessKm * rule.excessRate;
+  // Case 1: Base fare with threshold and excess rate
+  if (fareRule.base_fare && fareRule.threshold_km && fareRule.excess_rate) {
+    if (km <= fareRule.threshold_km) {
+      fare = fareRule.base_fare;
+    } else {
+      const excessKm = km - fareRule.threshold_km;
+      fare = fareRule.base_fare + excessKm * fareRule.excess_rate;
     }
-  } else if (vehicle === "PUB Provincial") {
-    if (km <= 5) fare = rule.base;
-    else {
-      const excessKm = km - 5;
-      fare = rule.base + (excessKm * rule.addAmount) / 5;
+  }
+  // Case 2: PUB Provincial (special calculation)
+  else if (
+    fareRule.base_fare &&
+    fareRule.add_per_km_after &&
+    fareRule.add_amount
+  ) {
+    if (km <= fareRule.add_per_km_after) {
+      fare = fareRule.base_fare;
+    } else {
+      const excessKm = km - fareRule.add_per_km_after;
+      fare = fareRule.base_fare + (excessKm * fareRule.add_amount) / 5;
     }
-  } else if (rule.ratePerKm) {
-    fare = km * rule.ratePerKm;
+  }
+  // Case 3: Simple rate per km
+  else if (fareRule.rate_per_km) {
+    fare = km * fareRule.rate_per_km;
   }
 
+  // Apply discount
   if (discountPercent) {
     const discountAmount = fare * (discountPercent / 100);
     fare -= discountAmount;
@@ -139,9 +119,6 @@ export default function CalculatedFare() {
   const [activeSelection, setActiveSelection] = useState<
     "pickup" | "destination" | null
   >(null);
-  const [selectedRide, setSelectedRide] = useState<"solo" | "group" | null>(
-    null
-  );
 
   const [pickupAddress, setPickupAddress] = useState<string>(
     params.origin || ""
@@ -164,9 +141,49 @@ export default function CalculatedFare() {
   const [distance, setDistance] = useState<number>(0);
   const [fare, setFare] = useState<number>(0);
 
+  // New state for fare rules
+  const [fareRules, setFareRules] = useState<Record<string, FareRule>>({});
+  const [isLoadingFares, setIsLoadingFares] = useState(true);
+
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const pickupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const destinationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch fare rules from Supabase
+  const fetchFareRules = async () => {
+    try {
+      setIsLoadingFares(true);
+      const { data, error } = await supabase
+        .from("fare_rules")
+        .select("*")
+        .eq("is_active", true);
+
+      if (error) {
+        console.error("Error fetching fare rules:", error);
+        Alert.alert("Error", "Failed to load fare rules.");
+        return;
+      }
+
+      if (data) {
+        // Convert array to object with vehicle_type as key
+        const rulesMap: Record<string, FareRule> = {};
+        data.forEach((rule) => {
+          rulesMap[rule.vehicle_type] = rule;
+        });
+        setFareRules(rulesMap);
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching fare rules:", err);
+      Alert.alert("Error", "An unexpected error occurred loading fare rules.");
+    } finally {
+      setIsLoadingFares(false);
+    }
+  };
+
+  // Fetch fare rules on component mount
+  useEffect(() => {
+    fetchFareRules();
+  }, []);
 
   const fetchRoute = async (start: [number, number], end: [number, number]) => {
     try {
@@ -183,7 +200,6 @@ export default function CalculatedFare() {
     }
   };
 
-  // --- Fetch autocomplete suggestions ---
   const fetchSuggestions = async (
     query: string,
     type: "pickup" | "destination"
@@ -278,6 +294,7 @@ export default function CalculatedFare() {
           origin: pickupAddress,
           destination: destinationAddress,
           distance_km: distance,
+          vehicle_type: params.vehicleType,
           base_fare: regularFare,
           discount_percent: discountPercent,
           total_fare: fare,
@@ -300,7 +317,6 @@ export default function CalculatedFare() {
     fetchAddress(destination, "destination");
   }, []);
 
-  // Updated: Geocode pickup input and update marker position
   useEffect(() => {
     if (!pickupInput) return;
 
@@ -318,7 +334,6 @@ export default function CalculatedFare() {
           setPickup(coords);
           setPickupAddress(data.features[0].place_name);
 
-          // Auto-center camera on new pickup location
           mapCameraRef.current?.setCamera({
             centerCoordinate: coords,
             zoomLevel: 15,
@@ -335,7 +350,6 @@ export default function CalculatedFare() {
     };
   }, [pickupInput]);
 
-  // Updated: Geocode destination input and update marker position
   useEffect(() => {
     if (!destinationInput) return;
 
@@ -354,7 +368,6 @@ export default function CalculatedFare() {
           setDestination(coords);
           setDestinationAddress(data.features[0].place_name);
 
-          // Auto-center camera on new destination location
           mapCameraRef.current?.setCamera({
             centerCoordinate: coords,
             zoomLevel: 15,
@@ -411,21 +424,20 @@ export default function CalculatedFare() {
     bottomSheetRef.current?.close();
   };
 
-  // --- UPDATE FARE WHEN DISTANCE OR VEHICLE CHANGES ---
+  // Update fare when distance, vehicle, or fare rules change
   useEffect(() => {
-    if (params.vehicleType) {
+    if (params.vehicleType && fareRules[params.vehicleType]) {
       const calculatedFare = computeFare(
-        params.vehicleType,
+        fareRules[params.vehicleType],
         distance,
         discountPercent
       );
       setFare(calculatedFare);
     }
-  }, [distance, params.vehicleType, discountPercent]);
+  }, [distance, params.vehicleType, discountPercent, fareRules]);
 
   return (
     <View style={calcStyles.container}>
-      {/* Map */}
       <Mapbox.MapView
         style={calcStyles.map}
         styleURL={Mapbox.StyleURL.Street}
@@ -487,10 +499,8 @@ export default function CalculatedFare() {
       </Mapbox.MapView>
       <BackButton />
 
-      {/* Bottom Sheet */}
       <BottomSheetContainer ref={bottomSheetRef}>
         <View style={calcStyles.bsCont}>
-          {/* Pickup info */}
           <TouchableOpacity
             style={calcStyles.tripPoint}
             onPress={() => focusOnMarker("pickup")}
@@ -534,7 +544,6 @@ export default function CalculatedFare() {
             </TouchableOpacity>
           ))}
 
-          {/* Destination info */}
           <TouchableOpacity
             style={calcStyles.tripPoint}
             onPress={() => focusOnMarker("destination")}
@@ -589,34 +598,41 @@ export default function CalculatedFare() {
 
           <View style={calcStyles.line}></View>
 
-          {/* Ride selection */}
           <View style={{ flexDirection: "row" }}>
             <FareIcon />
             <Text style={calcStyles.label}>Fare Calculation</Text>
           </View>
 
-          <View style={calcStyles.rideCont}>
-            <View style={calcStyles.row}>
-              <Text style={calcStyles.typeFare}>Regular Fare:</Text>
-              <Text style={calcStyles.fee}>₱ {regularFare.toFixed(2)}</Text>
-            </View>
-            <View style={calcStyles.row}>
-              <Text style={calcStyles.typeFare}>Distance Fee:</Text>
-              <Text style={calcStyles.fee}>₱ 0.00</Text>
-            </View>
-            <View style={calcStyles.row}>
-              <Text style={calcStyles.typeFare}>Discount:</Text>
-              <Text style={calcStyles.fee}>{discountPercent} %</Text>
-            </View>
-          </View>
+          {isLoadingFares ? (
+            <Text style={{ color: "#737F83", marginLeft: 24 }}>
+              Loading fare rules...
+            </Text>
+          ) : (
+            <>
+              <View style={calcStyles.rideCont}>
+                <View style={calcStyles.row}>
+                  <Text style={calcStyles.typeFare}>Regular Fare:</Text>
+                  <Text style={calcStyles.fee}>₱ {regularFare.toFixed(2)}</Text>
+                </View>
+                <View style={calcStyles.row}>
+                  <Text style={calcStyles.typeFare}>Distance Fee:</Text>
+                  <Text style={calcStyles.fee}>₱ 0.00</Text>
+                </View>
+                <View style={calcStyles.row}>
+                  <Text style={calcStyles.typeFare}>Discount:</Text>
+                  <Text style={calcStyles.fee}>{discountPercent} %</Text>
+                </View>
+              </View>
 
-          <View style={calcStyles.line}></View>
-          <View style={calcStyles.rideCont}>
-            <View style={calcStyles.row}>
-              <Text style={calcStyles.typeFare}>Total Fare:</Text>
-              <Text style={calcStyles.fee}>₱ {fare.toFixed(2)}</Text>
-            </View>
-          </View>
+              <View style={calcStyles.line}></View>
+              <View style={calcStyles.rideCont}>
+                <View style={calcStyles.row}>
+                  <Text style={calcStyles.typeFare}>Total Fare:</Text>
+                  <Text style={calcStyles.fee}>₱ {fare.toFixed(2)}</Text>
+                </View>
+              </View>
+            </>
+          )}
 
           <CustomButton
             title="Save Fare Calculation"

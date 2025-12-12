@@ -3,9 +3,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Header from "../../components/ui/header";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import {
+  PlusIcon,
+  Cog6ToothIcon,
+  FunnelIcon,
+} from "@heroicons/react/24/outline";
 import Overlay3 from "../../components/ui/overlay3";
-import { Cog6ToothIcon, FunnelIcon } from "@heroicons/react/24/outline";
+import Overlay5 from "../../components/ui/overlay5";
 
 interface FareMatrix {
   id: string;
@@ -18,12 +22,25 @@ interface FareMatrix {
   uploaded_by: string;
 }
 
+interface FareConfig {
+  id?: string;
+  vehicle_type: string;
+  base_fare: number | null;
+  threshold_km: number | null;
+  excess_rate: number | null;
+  rate_per_km: number | null;
+  add_per_km_after: number | null;
+  add_amount_after: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export type Role = "commuter" | "admin" | "ltfrb";
 
 const fareSections = [
   { key: "PUB", label: "PUB City & Provincial" },
   { key: "PUJ", label: "PUJ" },
-  { key: "Tricycle", label: "Tricyle" },
+  { key: "Tricycle", label: "Tricycle" },
   { key: "Taxi", label: "Taxi" },
   { key: "UV Express", label: "UV Express" },
 ];
@@ -31,45 +48,88 @@ const fareSections = [
 const FareMatrixPage = () => {
   const [matrices, setMatrices] = useState<FareMatrix[]>([]);
   const [role, setRole] = useState<Role>("commuter");
+
+  // Overlay for fare matrix upload/edit
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState("");
   const [selectedMatrix, setSelectedMatrix] = useState<FareMatrix | null>(null);
+
+  // Overlay for fare config editing
+  const [isFareOverlayOpen, setFareOverlayOpen] = useState(false);
+  const [existingFareConfigs, setExistingFareConfigs] = useState<FareConfig[]>(
+    []
+  );
 
   const canEdit = () => role === "admin" || role === "ltfrb";
 
   useEffect(() => {
     fetchMatrices();
     fetchRole();
+    fetchFareConfigs();
   }, []);
 
+  // Fetch fare matrix files
   const fetchMatrices = async () => {
     const { data, error } = await supabase
       .from("fare_matrix")
       .select("*")
       .order("created_at", { ascending: true });
+
     if (!error && data) setMatrices(data);
   };
 
+  // Fetch roles
   const fetchRole = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData.user;
     if (user) {
       const { data, error } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
         .single();
+
       if (!error && data) {
         const validRoles: Role[] = ["commuter", "admin", "ltfrb"];
-        const userRole = validRoles.includes(data.role)
-          ? (data.role as Role)
-          : "commuter";
-        setRole(userRole);
+        setRole(validRoles.includes(data.role) ? data.role : "commuter");
       }
     }
   };
 
+  // Fetch fare configurations (for Overlay5)
+  const fetchFareConfigs = async () => {
+    const { data, error } = await supabase
+      .from("fare_rules")
+      .select("*")
+      .order("vehicle_type", { ascending: true });
+
+    if (!error && data) {
+      setExistingFareConfigs(data);
+    }
+  };
+
+  // Save or update fare configs
+  const handleSaveFareConfigs = async (
+    configs: FareConfig[]
+  ): Promise<void> => {
+    const rows = configs.map((c) => ({
+      ...c,
+      updated_at: new Date().toISOString(),
+    }));
+
+    const { error } = await supabase.from("fare_rules").upsert(rows, {
+      onConflict: "vehicle_type",
+    });
+
+    if (error) {
+      console.error("SUPABASE ERROR:", error);
+      throw error;
+    }
+
+    await fetchFareConfigs();
+  };
+
+  // File upload/save logic
   const handleSaveFare = async ({
     id,
     file,
@@ -109,7 +169,7 @@ const FareMatrixPage = () => {
       }
 
       if (id) {
-        const { error: updateError } = await supabase
+        await supabase
           .from("fare_matrix")
           .update({
             title,
@@ -118,27 +178,21 @@ const FareMatrixPage = () => {
             ...(fileName && { file_name: fileName }),
           })
           .eq("id", id);
-
-        if (updateError) throw updateError;
       } else {
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
-        const { error: insertError } = await supabase
-          .from("fare_matrix")
-          .insert([
-            {
-              section: selectedSection,
-              title,
-              description,
-              file_url: fileUrl,
-              file_name: fileName,
-              uploaded_by: user?.id,
-            },
-          ]);
-
-        if (insertError) throw insertError;
+        await supabase.from("fare_matrix").insert([
+          {
+            section: selectedSection,
+            title,
+            description,
+            file_url: fileUrl,
+            file_name: fileName,
+            uploaded_by: user?.id,
+          },
+        ]);
       }
 
       fetchMatrices();
@@ -183,25 +237,28 @@ const FareMatrixPage = () => {
   return (
     <>
       <main className="relative h-screen w-full overflow-hidden">
-        {/* Sticky header */}
         <div className="sticky top-0 z-20 bg-white shadow-sm">
           <Header />
         </div>
 
-        {/* Scrollable main content */}
         <div className="overflow-auto max-h-[calc(100vh-80px)]">
           <main className="max-w-screen-2xl mx-auto px-4 md:px-8 mt-10 space-y-[45px] pb-20">
-            {/* Page header and buttons */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <h1 className="text-[32px] sm:text-[40px] font-bold text-[#073051]">
                 Fare Matrix
               </h1>
 
               <div className="flex flex-wrap md:flex-nowrap gap-4">
-                <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
-                  <Cog6ToothIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
-                  <span>Configure</span>
-                </button>
+                {canEdit() && (
+                  <button
+                    className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200"
+                    onClick={() => setFareOverlayOpen(true)}
+                  >
+                    <Cog6ToothIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
+                    <span>Configure</span>
+                  </button>
+                )}
+
                 <button className="group flex items-center space-x-2 border border-[#D1D1D1] px-4 py-2 rounded-[15px] text-[#9A9A9A] hover:bg-[#D1D1D1] hover:text-[#6B6B6B] transition-colors duration-200">
                   <FunnelIcon className="h-5 w-5 text-[#073051] group-hover:text-[#6B6B6B]" />
                   <span>Filter</span>
@@ -209,7 +266,6 @@ const FareMatrixPage = () => {
               </div>
             </div>
 
-            {/* Fare Sections */}
             {fareSections.map(({ key, label }) => (
               <div key={key}>
                 <h2 className="text-[32px] sm:text-[30px] font-bold text-[#073051] mb-6">
@@ -225,16 +281,17 @@ const FareMatrixPage = () => {
                         className="border border-[#D1D1D1] rounded-[15px] p-4 flex flex-col flex-1 min-h-[100px] gap-2 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
                         onClick={() => handleEditFare(m)}
                       >
-                        <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA] flex-shrink-0" />
-
-                        <div className="flex flex-col flex-1 min-w-0">
+                        <div className="w-3 h-3 mt-1 rounded-full bg-[#1E86DA]" />
+                        <div className="flex flex-col">
                           <p className="font-semibold text-[#073051] text-lg truncate">
                             {key} Fare {idx + 1}{" "}
                             <span className="text-[#595959] font-normal truncate">
                               ({m.title})
                             </span>
                           </p>
-                          <p className="text-sm text-gray-500 truncate">{m.file_name}</p>
+                          <p className="text-sm text-gray-500 truncate">
+                            {m.file_name}
+                          </p>
                           <p className="text-xs text-gray-400 mt-2">
                             {new Date(m.created_at).toLocaleDateString()}
                           </p>
@@ -253,7 +310,7 @@ const FareMatrixPage = () => {
 
                   {canEdit() && (
                     <div
-                      className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group w-full h-full min-h-[100px]"
+                      className="border border-[#D1D1D1] rounded-[15px] flex items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors duration-200 group min-h-[100px]"
                       onClick={() => handleAddFare(key)}
                     >
                       <PlusIcon className="h-7 w-7 text-[#CBCBCB] group-hover:text-[#6B6B6B]" />
@@ -265,6 +322,7 @@ const FareMatrixPage = () => {
           </main>
         </div>
 
+        {/* Overlay for matrix upload/edit */}
         <Overlay3
           isOpen={overlayOpen}
           onClose={() => {
@@ -276,6 +334,14 @@ const FareMatrixPage = () => {
           initialData={selectedMatrix ?? undefined}
           onDelete={handleDeleteFare}
           role={role}
+        />
+
+        {/* Overlay for fare configurations */}
+        <Overlay5
+          isOpen={isFareOverlayOpen}
+          onClose={() => setFareOverlayOpen(false)}
+          onSave={handleSaveFareConfigs}
+          initialConfigs={existingFareConfigs}
         />
       </main>
     </>

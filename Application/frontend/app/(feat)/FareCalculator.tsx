@@ -22,18 +22,7 @@ import { supabase } from "scripts/supabase";
 const MAPBOX_TOKEN =
   "pk.eyJ1IjoiZXJpY3RhbjMzMyIsImEiOiJjbWU4NTVsamswOWNuMmpwd29lZmx1OTNwIn0.1rtunFwJarUUNmyOKSdSYQ";
 
-const baseFares: Record<string, number> = {
-  Tricycle: 15,
-  Taxi: 13.5,
-  "E-Trike": 15,
-  "PUJ Traditional": 13,
-  "PUJ Modern (NON-AC)": 15,
-  "PUJ Modern (AC)": 15,
-  "UVE Traditional": 2.4,
-  "UVE Modern": 2.5,
-  "PUB Provincional": 11,
-  Pedicab: 10,
-};
+// REMOVED: hardcoded baseFares object - now fetched from database
 
 const discounts: Record<string, number> = {
   Regular: 0,
@@ -42,6 +31,17 @@ const discounts: Record<string, number> = {
   "Solo Parent": 20,
   PWD: 20,
 };
+
+interface FareRule {
+  vehicle_type: string;
+  base_fare: number | null;
+  threshold_km: number | null;
+  excess_rate: number | null;
+  rate_per_km: number | null;
+  add_per_km_after: number | null;
+  add_amount: number | null;
+  is_active: boolean;
+}
 
 export default class FareCalculator extends Component {
   state = {
@@ -57,13 +57,43 @@ export default class FareCalculator extends Component {
     discountTypes: ["Regular"],
     recentFare: null,
     loadingRecentFare: true,
+    fareRules: {} as Record<string, FareRule>,
+    loadingFareRules: true,
   };
 
   async componentDidMount() {
     await this.getCurrentLocation();
+    await this.fetchFareRules();
     await this.fetchDiscountTypes();
     await this.fetchRecentFare();
   }
+
+  fetchFareRules = async () => {
+    this.setState({ loadingFareRules: true });
+    try {
+      const { data, error } = await supabase
+        .from("fare_rules")
+        .select("*")
+        .eq("is_active", true);
+
+      if (error) {
+        console.error("Error fetching fare rules:", error);
+        return;
+      }
+
+      if (data) {
+        const rulesMap: Record<string, FareRule> = {};
+        data.forEach((rule: FareRule) => {
+          rulesMap[rule.vehicle_type] = rule;
+        });
+        this.setState({ fareRules: rulesMap });
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching fare rules:", err);
+    } finally {
+      this.setState({ loadingFareRules: false });
+    }
+  };
 
   fetchRecentFare = async () => {
     this.setState({ loadingRecentFare: true });
@@ -195,6 +225,15 @@ export default class FareCalculator extends Component {
     });
   };
 
+  getBaseFare = (vehicleType: string): number => {
+    const { fareRules } = this.state;
+    const rule = fareRules[vehicleType];
+
+    if (!rule) return 0;
+
+    return rule.base_fare || rule.rate_per_km || 0;
+  };
+
   render() {
     const {
       origin,
@@ -206,6 +245,8 @@ export default class FareCalculator extends Component {
       discountTypes,
       recentFare,
       loadingRecentFare,
+      fareRules,
+      loadingFareRules,
     } = this.state;
 
     const isCalculateDisabled =
@@ -216,23 +257,20 @@ export default class FareCalculator extends Component {
       !IdType ||
       IdType === "Select Discount" ||
       !originCoords ||
-      !destinationCoords;
+      !destinationCoords ||
+      loadingFareRules;
 
     const selectedIdType = IdType === "Select Discount" ? "" : IdType;
     const selectedVehicleType =
       vehicleType === "Select Vehicle" ? "" : vehicleType;
 
+    const activeVehicleTypes = Object.keys(fareRules).filter(
+      (type) => fareRules[type].is_active
+    );
+
     const vehicleOptions = [
       "Select Vehicle",
-      "E-Trike",
-      "Tricycle",
-      "Taxi",
-      "Pedicab",
-      "PUJ Modern (NON-AC)",
-      "PUJ Modern (AC)",
-      "UVE Traditional",
-      "UVE Modern",
-      "PUB Provincial",
+      ...activeVehicleTypes.sort(),
     ].filter((item, index, self) => self.indexOf(item) === index);
 
     const RecentFareCard = () => {
@@ -304,6 +342,16 @@ export default class FareCalculator extends Component {
           ListHeaderComponent={
             <>
               <View style={fareStyles.container}>
+                {/* NEW: Show loading indicator while fare rules are loading */}
+                {loadingFareRules && (
+                  <View style={fareStyles.loadingContainer}>
+                    <ActivityIndicator size="small" color="#073051" />
+                    <Text style={fareStyles.loadingText}>
+                      Loading fare information...
+                    </Text>
+                  </View>
+                )}
+
                 <View style={fareStyles.cont}>
                   <OriginIcon style={fareStyles.icon} />
                   <TextInput
@@ -398,7 +446,7 @@ export default class FareCalculator extends Component {
                         destination: destination,
                         destinationCoords: JSON.stringify(destinationCoords),
                         vehicleType: vehicleType,
-                        baseFare: String(baseFares[vehicleType] || 0),
+                        baseFare: String(this.getBaseFare(vehicleType)), // UPDATED: Use dynamic base fare
                         discounts: String(discounts[IdType] || 0),
                       },
                     })
@@ -406,7 +454,11 @@ export default class FareCalculator extends Component {
                   disabled={isCalculateDisabled}
                 >
                   <Text style={fareStyles.buttText}>
-                    {isCalculateDisabled ? "Fill All Fields" : "Calculate Fare"}
+                    {loadingFareRules
+                      ? "Loading..."
+                      : isCalculateDisabled
+                        ? "Fill All Fields"
+                        : "Calculate Fare"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -564,7 +616,22 @@ const fareStyles = StyleSheet.create({
     borderBottomColor: "#eee",
     backgroundColor: "#f9f9f9",
   },
-
+  // NEW: Loading styles
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+    padding: 10,
+    backgroundColor: "#F0F8FF",
+    borderRadius: 8,
+  },
+  loadingText: {
+    marginLeft: 10,
+    color: "#073051",
+    fontFamily: "Poppins",
+    fontSize: 14,
+  },
   recentCard: {
     backgroundColor: "#F8F9FB",
     borderRadius: 12,
