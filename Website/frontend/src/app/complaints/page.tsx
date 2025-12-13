@@ -29,9 +29,9 @@ import {
 } from "@/components/ui/pagination";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import ComplaintSummaryModal from "../../components/ui/overlay4";
+import Overlay6 from "../../components/ui/overlay6";
 
 // --- HELPER FUNCTIONS ---
-
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
   const date = new Date(isoString);
@@ -72,13 +72,13 @@ const formatTime = (timeString: string | null) => {
 };
 
 // --- TYPES ---
-
 type ComplaintStatus =
   | "Pending"
   | "Received"
   | "In-Review"
   | "In-Action"
-  | "Solved";
+  | "Solved"
+  | "Dismissed";
 
 interface Submission {
   id: string;
@@ -111,15 +111,15 @@ const DashboardPage = () => {
     null
   );
 
+  const [dismissTarget, setDismissTarget] = useState<Submission | null>(null);
+
   const itemsPerPage = 10;
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
-  // ✅ Supabase client reference
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
 
   // --- DATA FETCHING ---
   useEffect(() => {
-    // Only initialize Supabase on client
     const supabaseClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -169,11 +169,13 @@ const DashboardPage = () => {
 
     const originalStatus =
       data.find((item) => item.id === id)?.status || "Pending";
+
     setData((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, status: newStatus } : item
       )
     );
+
     setSelectedSubmission(null);
     setDropdownPosition(null);
 
@@ -184,9 +186,7 @@ const DashboardPage = () => {
     const rowIndex = sortedByOldest.findIndex((item) => item.id === id);
     const displayNumber = rowIndex + 1;
 
-    toast.success(
-      `Submission #${displayNumber} status updated to: ${newStatus}`
-    );
+    toast.success(`Submission #${displayNumber} status updated to: ${newStatus}`);
 
     const { error } = await supabase
       .from("complaints")
@@ -234,6 +234,8 @@ const DashboardPage = () => {
         return "bg-yellow-100 text-yellow-700";
       case "Received":
         return "bg-gray-100 text-gray-700";
+      case "Dismissed":
+        return "bg-red-100 text-red-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -429,6 +431,12 @@ const DashboardPage = () => {
                             In-Action
                           </button>
                           <button
+                            onClick={() => setDismissTarget(item)}
+                            className="flex items-center w-full px-3 py-2 text-red-600 hover:bg-gray-50 font-semibold"
+                          >
+                            Dismissed
+                          </button>
+                          <button
                             onClick={() => handleDecision(item.id, "Solved")}
                             className="flex items-center w-full px-3 py-2 text-green-600 hover:bg-gray-50 font-semibold"
                             disabled={item.status === "Solved"}
@@ -459,6 +467,43 @@ const DashboardPage = () => {
               .findIndex((d) => d.id === viewingComplaint.id) + 1
           }
           onClose={() => setViewingComplaint(null)}
+        />
+      )}
+
+      {/* 🚧 overlay6.tsx added */}
+      {dismissTarget && (
+        <Overlay6
+          isOpen={!!dismissTarget}
+          complaintId={dismissTarget.id}
+          complaintUsername={dismissTarget.username}
+          onClose={() => setDismissTarget(null)}
+          onSubmit={async (id, reason) => {
+            if (!supabase) return;
+
+            try {
+              const { error } = await supabase
+                .from("complaints")
+                .update({ status: "Dismissed", description: reason })
+                .eq("id", id);
+
+              if (error) throw error;
+
+              setData((prev) =>
+                prev.map((item) =>
+                  item.id === id
+                    ? { ...item, status: "Dismissed", description: reason }
+                    : item
+                )
+              );
+
+              toast.success("Complaint dismissed successfully.");
+            } catch (err) {
+              console.error(err);
+              toast.error("Failed to dismiss complaint.");
+            } finally {
+              setDismissTarget(null);
+            }
+          }}
         />
       )}
     </>
