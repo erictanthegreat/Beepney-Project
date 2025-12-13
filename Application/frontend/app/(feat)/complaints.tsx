@@ -21,6 +21,7 @@ import Input from "@/components/Input";
 import IssueDropdown from "@/components/DropdownComplaints";
 import { supabase } from "@/scripts/supabase";
 import * as FileSystem from "expo-file-system";
+import DatePicker from "react-native-date-picker";
 
 interface Attachment {
   id: number;
@@ -46,6 +47,10 @@ interface State {
   role: "commuter" | "driver";
   isUploading: boolean;
   currentUserId: string | null;
+  showDatePicker: boolean;
+  showTimePicker: boolean;
+  selectedDate: Date;
+  selectedTime: Date;
 }
 
 class Complaints extends Component<ComplaintsProps, State> {
@@ -63,6 +68,10 @@ class Complaints extends Component<ComplaintsProps, State> {
     role: "commuter",
     isUploading: false,
     currentUserId: null,
+    showDatePicker: false,
+    showTimePicker: false,
+    selectedDate: new Date(),
+    selectedTime: new Date(),
   };
 
   componentDidMount() {
@@ -156,6 +165,37 @@ Complaint Details:
 
   handleIssueSelect = (issue: string) => {
     this.setState({ selectedIssue: issue });
+  };
+
+  formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  formatTime = (date: Date): string => {
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+  };
+
+  handleDateConfirm = (date: Date) => {
+    this.setState({
+      selectedDate: date,
+      incidentDate: this.formatDate(date),
+      showDatePicker: false,
+    });
+  };
+
+  handleTimeConfirm = (date: Date) => {
+    this.setState({
+      selectedTime: date,
+      incidentTime: this.formatTime(date),
+      showTimePicker: false,
+    });
   };
 
   uploadFileToStorage = async (
@@ -342,20 +382,48 @@ Complaint Details:
               value={this.state.location}
               onChangeText={(text) => this.setState({ location: text })}
             />
-            <Input
-              label={"Date of Incident"}
-              containerStyle={rentStyles.location}
-              placeholder="YYYY-MM-DD"
-              value={this.state.incidentDate}
-              onChangeText={(text) => this.setState({ incidentDate: text })}
+
+            {/* Date Picker */}
+            <Text style={rentStyles.label}>Date of Incident</Text>
+            <TouchableOpacity
+              style={rentStyles.dateTimeButton}
+              onPress={() => this.setState({ showDatePicker: true })}
+            >
+              <Text style={rentStyles.dateTimeText}>
+                {this.state.incidentDate || "Select Date"}
+              </Text>
+            </TouchableOpacity>
+
+            <DatePicker
+              modal
+              open={this.state.showDatePicker}
+              date={this.state.selectedDate}
+              mode="date"
+              maximumDate={new Date()}
+              onConfirm={this.handleDateConfirm}
+              onCancel={() => this.setState({ showDatePicker: false })}
             />
-            <Input
-              label={"Time of Incident"}
-              containerStyle={rentStyles.location}
-              placeholder="HH:MM AM/PM"
-              value={this.state.incidentTime}
-              onChangeText={(text) => this.setState({ incidentTime: text })}
+
+            {/* Time Picker */}
+            <Text style={rentStyles.label}>Time of Incident</Text>
+            <TouchableOpacity
+              style={rentStyles.dateTimeButton}
+              onPress={() => this.setState({ showTimePicker: true })}
+            >
+              <Text style={rentStyles.dateTimeText}>
+                {this.state.incidentTime || "Select Time"}
+              </Text>
+            </TouchableOpacity>
+
+            <DatePicker
+              modal
+              open={this.state.showTimePicker}
+              date={this.state.selectedTime}
+              mode="time"
+              onConfirm={this.handleTimeConfirm}
+              onCancel={() => this.setState({ showTimePicker: false })}
             />
+
             <IssueDropdown onSelectIssue={this.handleIssueSelect} />
             <Text style={rentStyles.label}>Description</Text>
             <View style={rentStyles.cont}>
@@ -507,5 +575,21 @@ const rentStyles = StyleSheet.create({
     color: "#073051",
     fontFamily: "Poppins",
     fontSize: 14,
+  },
+  dateTimeButton: {
+    borderWidth: 1,
+    backgroundColor: "white",
+    width: "90%",
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    borderColor: "#CBCBCB",
+    marginLeft: 21,
+    marginBottom: 20,
+  },
+  dateTimeText: {
+    fontSize: 13,
+    color: "#595959",
+    fontFamily: "Poppins",
   },
 });

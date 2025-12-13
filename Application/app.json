@@ -1,8 +1,23 @@
 {
   "expo": {
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow Beepney to save QR codes to your photos.",
+          "savePhotosPermission": "Allow Beepney to save QR codes to your photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
     "android": {
-      "package": "com.BEEPNEY.Beepney"
+      "package": "com.BEEPNEY.Beepney",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES"
+      ]
     }
   }
 }

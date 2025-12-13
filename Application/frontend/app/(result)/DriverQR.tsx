@@ -1,9 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { Text, View, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import "@fontsource/poppins";
 import QRCode from "react-native-qrcode-svg";
 import BackButton from "@/components/Backbutton";
 import { supabase } from "@/scripts/supabase";
+import * as FileSystem from "expo-file-system";
+import * as MediaLibrary from "expo-media-library";
+import ViewShot from "react-native-view-shot";
 
 interface DriverInfo {
   id: string;
@@ -18,10 +28,22 @@ export default function DriverQR() {
   const [driverInfo, setDriverInfo] = useState<DriverInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [qrValue, setQrValue] = useState<string>("");
+  const viewShotRef = useRef<ViewShot>(null);
 
   useEffect(() => {
     fetchCurrentDriver();
+    requestPermissions();
   }, []);
+
+  const requestPermissions = async () => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "Please grant media library permission to save the QR code"
+      );
+    }
+  };
 
   const fetchCurrentDriver = async () => {
     try {
@@ -49,32 +71,67 @@ export default function DriverQR() {
         .eq("id", user.id.trim())
         .single();
 
-      if (error) {
+      if (error || !data) {
         Alert.alert("Error", "Failed to load driver information");
-      } else if (data) {
-        setDriverInfo({
-          ...data,
-          user_name: userName,
-        });
-
-        const qrData = {
-          screen: "DriverQR",
-          id: data.id,
-          userName,
-          plateNumber: data.plate_number,
-          phoneNumber: data.phone_number,
-          fullAddress: data.full_address,
-          generatedAt: new Date().toISOString(),
-        };
-
-        setQrValue(JSON.stringify(qrData));
-      } else {
-        Alert.alert("Error", "Driver profile not found");
+        return;
       }
-    } catch (error) {
+
+      setDriverInfo({
+        ...data,
+        user_name: userName,
+      });
+
+      const qrData = {
+        screen: "DriverQR",
+        id: data.id,
+        userName,
+        plateNumber: data.plate_number,
+        phoneNumber: data.phone_number,
+        fullAddress: data.full_address,
+        generatedAt: new Date().toISOString(),
+      };
+
+      setQrValue(JSON.stringify(qrData));
+    } catch (err) {
       Alert.alert("Error", "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadQRCode = async () => {
+    try {
+      if (!viewShotRef.current) {
+        Alert.alert("Error", "QR Code not ready");
+        return;
+      }
+
+      // Capture QR view
+      const tempUri = await viewShotRef.current.capture();
+
+      const filename = `Driver_QR_${driverInfo?.plate_number}_${Date.now()}.png`;
+      const localUri = FileSystem.cacheDirectory + filename;
+
+      // Move file to local cache
+      await FileSystem.moveAsync({
+        from: tempUri,
+        to: localUri,
+      });
+
+      // Save to device gallery
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Error", "Gallery permission denied");
+        return;
+      }
+
+      const asset = await MediaLibrary.createAssetAsync(localUri);
+      await MediaLibrary.createAlbumAsync("Beepney QR Codes", asset, false);
+
+      Alert.alert("Success", "QR Code saved to gallery!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Failed to save QR code");
     }
   };
 
@@ -105,41 +162,56 @@ export default function DriverQR() {
       <View style={styles.qrContainer}>
         {qrValue ? (
           <>
-            <QRCode
-              value={qrValue}
-              size={200}
-              color="#1E86DA"
-              backgroundColor="white"
-            />
-            {driverInfo && (
-              <View style={styles.driverInfoContainer}>
-                <Text style={styles.driverName}>{driverInfo.user_name}</Text>
-                <Text style={styles.plateNumber}>
-                  Plate: {driverInfo.plate_number}
-                </Text>
-                {driverInfo.phone_number && (
-                  <Text style={styles.subInfo}>
-                    Phone: {driverInfo.phone_number}
+            <ViewShot
+              ref={viewShotRef}
+              options={{ format: "png", quality: 1 }}
+              style={styles.captureContainer}
+            >
+              <QRCode
+                value={qrValue}
+                size={200}
+                color="#1E86DA"
+                backgroundColor="white"
+              />
+
+              {driverInfo && (
+                <View style={styles.driverInfoContainer}>
+                  <Text style={styles.driverName}>{driverInfo.user_name}</Text>
+                  <Text style={styles.plateNumber}>
+                    Plate: {driverInfo.plate_number}
                   </Text>
-                )}
-                {driverInfo.full_address && (
-                  <Text style={styles.subInfo}>
-                    Address: {driverInfo.full_address}
-                  </Text>
-                )}
-                {driverInfo.operator_name && (
-                  <Text style={styles.subInfo}>
-                    Operator: {driverInfo.operator_name}
-                  </Text>
-                )}
-              </View>
-            )}
-            <Text style={styles.text}>
-              Scan the QR to view {"\n"}Driver's Details
-            </Text>
-            <Text style={styles.generatedText}>
-              Generated: {new Date().toLocaleTimeString()}
-            </Text>
+                  {driverInfo.phone_number && (
+                    <Text style={styles.subInfo}>
+                      Phone: {driverInfo.phone_number}
+                    </Text>
+                  )}
+                  {driverInfo.full_address && (
+                    <Text style={styles.subInfo}>
+                      Address: {driverInfo.full_address}
+                    </Text>
+                  )}
+                  {driverInfo.operator_name && (
+                    <Text style={styles.subInfo}>
+                      Operator: {driverInfo.operator_name}
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              <Text style={styles.text}>
+                Scan the QR to view {"\n"}Driver's Details
+              </Text>
+              <Text style={styles.generatedText}>
+                Generated: {new Date().toLocaleTimeString()}
+              </Text>
+            </ViewShot>
+
+            <TouchableOpacity
+              style={styles.downloadButton}
+              onPress={downloadQRCode}
+            >
+              <Text style={styles.downloadButtonText}>Save to Gallery</Text>
+            </TouchableOpacity>
           </>
         ) : (
           <Text style={styles.errorText}>Failed to generate QR code</Text>
@@ -150,7 +222,10 @@ export default function DriverQR() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   topBar: {
     marginTop: 10,
     paddingHorizontal: 13,
@@ -158,15 +233,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  title: { fontWeight: "bold", fontSize: 25, color: "#073051", paddingTop: 50 },
+  title: {
+    fontWeight: "bold",
+    fontSize: 25,
+    color: "#073051",
+    paddingTop: 50,
+  },
   qrContainer: {
-    top: 150,
+    top: 100,
     justifyContent: "center",
+    alignSelf: "center",
     alignItems: "center",
     borderRadius: 20,
     paddingVertical: 30,
     width: "80%",
-    marginLeft: 35,
     borderWidth: 1,
     borderColor: "#CBCBCB",
     backgroundColor: "#fff",
@@ -180,9 +260,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#073051",
   },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  loadingText: { marginTop: 20, fontSize: 16, color: "#073051" },
-  driverInfoContainer: { marginTop: 20, alignItems: "center" },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 16,
+    color: "#073051",
+  },
+  driverInfoContainer: {
+    marginTop: 20,
+    alignItems: "center",
+  },
   driverName: {
     fontSize: 18,
     fontWeight: "bold",
@@ -198,4 +289,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   errorText: { color: "red", fontSize: 16, textAlign: "center" },
+  downloadButton: {
+    marginTop: 20,
+    backgroundColor: "#1E86DA",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  downloadButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  captureContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 20,
+  },
 });
