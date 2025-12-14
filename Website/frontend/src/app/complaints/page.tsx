@@ -31,7 +31,6 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import ComplaintSummaryModal from "../../components/ui/overlay4";
 import Overlay6 from "../../components/ui/overlay6";
 
-// --- HELPER FUNCTIONS ---
 const formatDate = (isoString: string | null) => {
   if (!isoString || isoString === "N/A") return "N/A";
   const date = new Date(isoString);
@@ -164,6 +163,39 @@ const DashboardPage = () => {
     fetchData();
   }, []);
 
+  // Handler for dismissing complaints with custom reason
+  const handleDismissComplaint = async (
+    complaintId: string,
+    reason: string
+  ) => {
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase
+        .from("complaints")
+        .update({
+          status: "Dismissed",
+          dismissal_reason: reason, // ✅ Changed from 'description' to 'dismissal_reason'
+        })
+        .eq("id", complaintId);
+
+      if (error) throw error;
+
+      // Update local state
+      setData((prev) =>
+        prev.map((item) =>
+          item.id === complaintId ? { ...item, status: "Dismissed" } : item
+        )
+      );
+
+      toast.success("Complaint dismissed successfully.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to dismiss complaint.");
+      throw err; // Re-throw so Overlay6 can handle it
+    }
+  };
+
   const handleDecision = async (id: string, newStatus: ComplaintStatus) => {
     if (!supabase) return;
 
@@ -186,7 +218,9 @@ const DashboardPage = () => {
     const rowIndex = sortedByOldest.findIndex((item) => item.id === id);
     const displayNumber = rowIndex + 1;
 
-    toast.success(`Submission #${displayNumber} status updated to: ${newStatus}`);
+    toast.success(
+      `Submission #${displayNumber} status updated to: ${newStatus}`
+    );
 
     const { error } = await supabase
       .from("complaints")
@@ -215,8 +249,7 @@ const DashboardPage = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const currentData = data.slice(
@@ -470,40 +503,13 @@ const DashboardPage = () => {
         />
       )}
 
-      {/* 🚧 overlay6.tsx added */}
       {dismissTarget && (
         <Overlay6
           isOpen={!!dismissTarget}
           complaintId={dismissTarget.id}
           complaintUsername={dismissTarget.username}
           onClose={() => setDismissTarget(null)}
-          onSubmit={async (id, reason) => {
-            if (!supabase) return;
-
-            try {
-              const { error } = await supabase
-                .from("complaints")
-                .update({ status: "Dismissed", description: reason })
-                .eq("id", id);
-
-              if (error) throw error;
-
-              setData((prev) =>
-                prev.map((item) =>
-                  item.id === id
-                    ? { ...item, status: "Dismissed", description: reason }
-                    : item
-                )
-              );
-
-              toast.success("Complaint dismissed successfully.");
-            } catch (err) {
-              console.error(err);
-              toast.error("Failed to dismiss complaint.");
-            } finally {
-              setDismissTarget(null);
-            }
-          }}
+          onSubmit={handleDismissComplaint}
         />
       )}
     </>

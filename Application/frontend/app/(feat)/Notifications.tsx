@@ -6,16 +6,32 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from "react-native";
 import "@fontsource/poppins";
 import BackButton from "@/components/Backbutton";
 import EmptyStateIcon from "../../assets/images/empty.svg";
 import { supabase } from "@/scripts/supabase";
 
+// Add interface for notification type
+interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message: string;
+  status?: string;
+  created_at: string;
+  read: boolean;
+}
+
 export default function Notification() {
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("all"); 
+  const [sortBy, setSortBy] = useState("all");
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
 
   useEffect(() => {
     fetchNotifications();
@@ -66,8 +82,15 @@ export default function Notification() {
     }
   };
 
+  const handleNotificationPress = (notif: Notification) => {
+    if (!notif.read) {
+      markAsRead(notif.id);
+    }
+    setSelectedNotification(notif);
+  };
+
   const getNotificationIcon = (type: string) => {
-    const icons = {
+    const icons: { [key: string]: string } = {
       discount_application: "🎫",
       discount_status: "🎫",
       license_application: "🪪",
@@ -79,13 +102,15 @@ export default function Notification() {
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      Pending: "#FFA500",
-      Approved: "#4CAF50",
-      Rejected: "#F44336",
-      "In Review": "#2196F3",
-      Received: "#2196F3",
-      Resolved: "#4CAF50",
+    const colors: { [key: string]: string } = {
+      Pending: "#F7CB73",
+      Approved: "green",
+      Declined: "red",
+      "In-Review": "#F7CB73",
+      Received: "#1E86DA",
+      Resolved: "#D1FAE5",
+      Dismissed: "red",
+      Solved: "green",
     };
     return colors[status] || "#888";
   };
@@ -103,6 +128,44 @@ export default function Notification() {
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
+  };
+
+  const formatFullDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getDateLabel = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const notifDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+
+    if (notifDate.getTime() === today.getTime()) {
+      return "Today";
+    } else if (notifDate.getTime() === yesterday.getTime()) {
+      return "Yesterday";
+    } else if (now.getTime() - notifDate.getTime() < 7 * 24 * 60 * 60 * 1000) {
+      return date.toLocaleDateString("en-US", { weekday: "long" });
+    } else {
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+      });
+    }
   };
 
   const isSubmissionType = (type: string) => {
@@ -123,6 +186,20 @@ export default function Notification() {
     if (sortBy === "complaints") return isComplaintType(notif.type);
     return true;
   });
+
+  // Group notifications by date with proper typing
+  const groupedNotifications: { [key: string]: Notification[] } =
+    filteredNotifications.reduce(
+      (groups, notif) => {
+        const dateLabel = getDateLabel(notif.created_at);
+        if (!groups[dateLabel]) {
+          groups[dateLabel] = [];
+        }
+        groups[dateLabel].push(notif);
+        return groups;
+      },
+      {} as { [key: string]: Notification[] }
+    );
 
   const isEmpty = filteredNotifications.length === 0;
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -216,55 +293,138 @@ export default function Notification() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {filteredNotifications.map((notif) => (
-            <TouchableOpacity
-              key={notif.id}
-              style={[
-                styles.notificationCard,
-                !notif.read && styles.unreadCard,
-              ]}
-              onPress={() => !notif.read && markAsRead(notif.id)}
-            >
-              <View style={styles.notificationIcon}>
-                <Text style={styles.iconText}>
-                  {getNotificationIcon(notif.type)}
-                </Text>
+          {Object.entries(groupedNotifications).map(([dateLabel, notifs]) => (
+            <View key={dateLabel}>
+              {/* Date Divider */}
+              <View style={styles.dateDivider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dateLabel}>{dateLabel}</Text>
+                <View style={styles.dividerLine} />
               </View>
 
-              <View style={styles.notificationContent}>
-                <View style={styles.notificationHeader}>
-                  <Text style={styles.notificationTitle} numberOfLines={1}>
-                    {notif.title}
-                  </Text>
-                  {!notif.read && <View style={styles.unreadDot} />}
-                </View>
+              {/* Notifications for this date */}
+              {notifs.map((notif) => (
+                <TouchableOpacity
+                  key={notif.id}
+                  style={[
+                    styles.notificationCard,
+                    !notif.read && styles.unreadCard,
+                  ]}
+                  onPress={() => handleNotificationPress(notif)}
+                >
+                  <View style={styles.notificationIcon}>
+                    <Text style={styles.iconText}>
+                      {getNotificationIcon(notif.type)}
+                    </Text>
+                  </View>
 
-                <Text style={styles.notificationMessage} numberOfLines={2}>
-                  {notif.message}
-                </Text>
-
-                <View style={styles.notificationFooter}>
-                  <Text style={styles.notificationTime}>
-                    {formatTime(notif.created_at)}
-                  </Text>
-                  {notif.status && (
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: getStatusColor(notif.status) },
-                      ]}
-                    >
-                      <Text style={styles.statusText}>
-                        {notif.status.toUpperCase()}
+                  <View style={styles.notificationContent}>
+                    <View style={styles.notificationHeader}>
+                      <Text style={styles.notificationTitle} numberOfLines={1}>
+                        {notif.title}
                       </Text>
+                      {!notif.read && <View style={styles.unreadDot} />}
                     </View>
-                  )}
-                </View>
-              </View>
-            </TouchableOpacity>
+
+                    <Text style={styles.notificationMessage} numberOfLines={2}>
+                      {notif.message}
+                    </Text>
+
+                    <View style={styles.notificationFooter}>
+                      <Text style={styles.notificationTime}>
+                        {formatTime(notif.created_at)}
+                      </Text>
+                      {notif.status && (
+                        <View
+                          style={[
+                            styles.statusBadge,
+                            { backgroundColor: getStatusColor(notif.status) },
+                          ]}
+                        >
+                          <Text style={styles.statusText}>
+                            {notif.status.toUpperCase()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           ))}
         </ScrollView>
       )}
+
+      {/* Notification Detail Modal */}
+      <Modal
+        visible={selectedNotification !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedNotification(null)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setSelectedNotification(null)}
+        >
+          <Pressable
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setSelectedNotification(null)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+
+            {/* Icon */}
+            <View style={styles.modalIcon}>
+              <Text style={styles.modalIconText}>
+                {selectedNotification &&
+                  getNotificationIcon(selectedNotification.type)}
+              </Text>
+            </View>
+
+            {/* Title */}
+            <Text style={styles.modalTitle}>{selectedNotification?.title}</Text>
+
+            {/* Status Badge */}
+            {selectedNotification?.status && (
+              <View
+                style={[
+                  styles.modalStatusBadge,
+                  {
+                    backgroundColor: getStatusColor(
+                      selectedNotification.status
+                    ),
+                  },
+                ]}
+              >
+                <Text style={styles.modalStatusText}>
+                  {selectedNotification.status.toUpperCase()}
+                </Text>
+              </View>
+            )}
+
+            {/* Message */}
+            <ScrollView
+              style={styles.modalMessageContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.modalMessage}>
+                {selectedNotification?.message}
+              </Text>
+            </ScrollView>
+
+            {/* Timestamp */}
+            <Text style={styles.modalTimestamp}>
+              {selectedNotification &&
+                formatFullDate(selectedNotification.created_at)}
+            </Text>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -331,6 +491,24 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 15,
     paddingBottom: 20,
+  },
+  dateDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 15,
+    marginHorizontal: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E0E0E0",
+  },
+  dateLabel: {
+    paddingHorizontal: 12,
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#073051",
+    fontFamily: "Poppins",
   },
   notificationCard: {
     flexDirection: "row",
@@ -415,5 +593,99 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 100,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 25,
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  closeButton: {
+    position: "absolute",
+    top: 15,
+    right: 15,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#666",
+    fontWeight: "bold",
+  },
+  modalIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#E3F2FD",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginTop: 10,
+    marginBottom: 15,
+  },
+  modalIconText: {
+    fontSize: 30,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#073051",
+    fontFamily: "Poppins",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  modalStatusBadge: {
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    borderRadius: 15,
+    alignSelf: "center",
+    marginBottom: 15,
+  },
+  modalStatusText: {
+    fontSize: 11,
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontFamily: "Poppins",
+  },
+  modalMessageContainer: {
+    maxHeight: 300,
+    marginBottom: 15,
+  },
+  modalMessage: {
+    fontSize: 15,
+    color: "#666",
+    fontFamily: "Poppins",
+    lineHeight: 22,
+    textAlign: "center",
+  },
+  modalTimestamp: {
+    fontSize: 12,
+    color: "#999",
+    fontFamily: "Poppins",
+    textAlign: "center",
+    marginTop: 10,
   },
 });
