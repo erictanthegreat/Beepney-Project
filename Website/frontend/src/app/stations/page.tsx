@@ -486,7 +486,7 @@ const StationsPage = () => {
     <>
       <main className="relative h-screen w-full overflow-hidden">
         <Header ref={headerRef} />
-        
+
         {/* Sidebar */}
         <aside
           className="fixed left-0 w-[425px] border-r border-[#D1D1D1] p-6 z-10 bg-white flex flex-col overflow-y-auto"
@@ -603,7 +603,7 @@ const StationsPage = () => {
                         <th className="p-2 text-center font-medium">
                           Destinations
                         </th>
-                        <th className="p-2 text-center font-medium">Count</th>
+
                         {canEdit() && (
                           <th className="p-2 text-center font-medium">
                             Delete
@@ -736,48 +736,6 @@ const StationsPage = () => {
                               disabled={!canEdit()}
                             />
                           </td>
-                          <td className="p-2">
-                            <div className="flex items-center justify-center gap-2">
-                              {canEdit() && (
-                                <>
-                                  <button
-                                    onClick={() => {
-                                      const newDest = [
-                                        ...stationData.destinations,
-                                      ];
-                                      newDest[index].count = Math.max(
-                                        0,
-                                        newDest[index].count - 1
-                                      );
-                                      setStationData((prev) => ({
-                                        ...prev,
-                                        destinations: newDest,
-                                      }));
-                                    }}
-                                    className="bg-[#1E86DA] text-white px-2 rounded"
-                                  >
-                                    -
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      const newDest = [
-                                        ...stationData.destinations,
-                                      ];
-                                      newDest[index].count += 1;
-                                      setStationData((prev) => ({
-                                        ...prev,
-                                        destinations: newDest,
-                                      }));
-                                    }}
-                                    className="bg-[#1E86DA] text-white px-2 rounded"
-                                  >
-                                    +
-                                  </button>
-                                </>
-                              )}
-                              <span>{d.count}</span>
-                            </div>
-                          </td>
                           {canEdit() && (
                             <td className="p-2">
                               <button
@@ -791,7 +749,7 @@ const StationsPage = () => {
                                     destinations: newDest,
                                   }));
                                 }}
-                                className="text-[#073051] font-bold"
+                                className="text-[#073051] font-bold items-center justify-center"
                               >
                                 ✕
                               </button>
