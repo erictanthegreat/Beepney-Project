@@ -42,7 +42,7 @@ interface FareRule {
 const computeFare = (
   fareRule: FareRule | undefined,
   km: number,
-  discountPercent: number
+  discountPercent: number,
 ) => {
   if (!fareRule || !km) return 0;
 
@@ -121,20 +121,20 @@ export default function CalculatedFare() {
   >(null);
 
   const [pickupAddress, setPickupAddress] = useState<string>(
-    params.origin || ""
+    params.origin || "",
   );
   const [destinationAddress, setDestinationAddress] = useState<string>(
-    params.destination || ""
+    params.destination || "",
   );
 
   const [pickupInput, setPickupInput] = useState(params.origin || "");
   const [destinationInput, setDestinationInput] = useState(
-    params.destination || ""
+    params.destination || "",
   );
 
   const [pickupSuggestions, setPickupSuggestions] = useState<any[]>([]);
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>(
-    []
+    [],
   );
 
   const [routeCoords, setRouteCoords] = useState<[number, number][]>([]);
@@ -202,7 +202,7 @@ export default function CalculatedFare() {
 
   const fetchSuggestions = async (
     query: string,
-    type: "pickup" | "destination"
+    type: "pickup" | "destination",
   ) => {
     if (!query) {
       type === "pickup"
@@ -213,7 +213,7 @@ export default function CalculatedFare() {
 
     try {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-        query
+        query,
       )}.json?autocomplete=true&limit=5&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
 
       const res = await fetch(url);
@@ -230,7 +230,7 @@ export default function CalculatedFare() {
 
   const handleSuggestionSelect = (
     place: any,
-    type: "pickup" | "destination"
+    type: "pickup" | "destination",
   ) => {
     const coords: [number, number] = place.center;
     if (type === "pickup") {
@@ -258,7 +258,7 @@ export default function CalculatedFare() {
 
   const fetchAddress = async (
     coords: [number, number],
-    type: "pickup" | "destination"
+    type: "pickup" | "destination",
   ) => {
     try {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`;
@@ -294,7 +294,6 @@ export default function CalculatedFare() {
           origin: pickupAddress,
           destination: destinationAddress,
           distance_km: distance,
-          vehicle_type: params.vehicleType,
           base_fare: regularFare,
           discount_percent: discountPercent,
           total_fare: fare,
@@ -325,7 +324,7 @@ export default function CalculatedFare() {
     pickupTimeoutRef.current = setTimeout(async () => {
       try {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          pickupInput
+          pickupInput,
         )}.json?limit=1&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -359,7 +358,7 @@ export default function CalculatedFare() {
     destinationTimeoutRef.current = setTimeout(async () => {
       try {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          destinationInput
+          destinationInput,
         )}.json?limit=1&bbox=122.8946,13.4011,123.7439,14.3504&access_token=${MAPBOX_TOKEN}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -387,7 +386,7 @@ export default function CalculatedFare() {
 
   const handleDragEnd = async (
     coords: [number, number],
-    marker: "pickup" | "destination"
+    marker: "pickup" | "destination",
   ) => {
     try {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?access_token=${MAPBOX_TOKEN}`;
@@ -430,7 +429,7 @@ export default function CalculatedFare() {
       const calculatedFare = computeFare(
         fareRules[params.vehicleType],
         distance,
-        discountPercent
+        discountPercent,
       );
       setFare(calculatedFare);
     }
@@ -490,7 +489,7 @@ export default function CalculatedFare() {
           onDragEnd={(e) =>
             handleDragEnd(
               e.geometry.coordinates as [number, number],
-              "destination"
+              "destination",
             )
           }
         >
@@ -523,7 +522,7 @@ export default function CalculatedFare() {
                 if (debounceRef.current) clearTimeout(debounceRef.current);
                 debounceRef.current = setTimeout(
                   () => fetchSuggestions(text, "pickup"),
-                  300
+                  300,
                 );
               }}
               onSubmitEditing={async () => {
@@ -566,14 +565,14 @@ export default function CalculatedFare() {
                 if (debounceRef.current) clearTimeout(debounceRef.current);
                 debounceRef.current = setTimeout(
                   () => fetchSuggestions(text, "destination"),
-                  300
+                  300,
                 );
               }}
               onSubmitEditing={async () => {
                 if (destinationSuggestions.length > 0) {
                   handleSuggestionSelect(
                     destinationSuggestions[0],
-                    "destination"
+                    "destination",
                   );
                 }
               }}
