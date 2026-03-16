@@ -19,6 +19,21 @@ interface Vehicle {
   count: number;
 }
 
+// Converts "HH:MM:SS" or "HH:MM" military time to "H:MM AM/PM"
+const formatTime = (time: string | null | undefined): string => {
+  if (!time) return "N/A";
+
+  const [hourStr, minuteStr] = time.split(":");
+  let hour = parseInt(hourStr, 10);
+  const minute = minuteStr ?? "00";
+  const period = hour >= 12 ? "PM" : "AM";
+
+  if (hour === 0) hour = 12;
+  else if (hour > 12) hour -= 12;
+
+  return `${hour}:${minute} ${period}`;
+};
+
 export default function StationDetails() {
   const { id } = useLocalSearchParams();
   const [station, setStation] = useState<any>(null);
@@ -58,7 +73,7 @@ export default function StationDetails() {
         type: row.vehicle_type,
         destination: row.destination,
         count: row.count,
-      })
+      }),
     );
 
     setVehicleData(transformedData);
@@ -74,8 +89,8 @@ export default function StationDetails() {
           {station && (
             <StationDetailsCard
               location={station.location}
-              operation_time_am={station.operation_time_am}
-              operation_time_pm={station.operation_time_pm}
+              operation_time_am={formatTime(station.operation_time_am)}
+              operation_time_pm={formatTime(station.operation_time_pm)}
               vehicle_types={station.vehicle_types}
             />
           )}

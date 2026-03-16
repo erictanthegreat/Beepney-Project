@@ -74,8 +74,8 @@ export default function Notification() {
 
       setNotifications((prev) =>
         prev.map((notif) =>
-          notif.id === notificationId ? { ...notif, read: true } : notif
-        )
+          notif.id === notificationId ? { ...notif, read: true } : notif,
+        ),
       );
     } catch (err) {
       console.error("Error marking as read:", err);
@@ -111,6 +111,8 @@ export default function Notification() {
       Resolved: "#D1FAE5",
       Dismissed: "red",
       Solved: "green",
+      Verified: "green",
+      "In-Action": "#1E86DA",
     };
     return colors[status] || "#888";
   };
@@ -150,7 +152,7 @@ export default function Notification() {
     const notifDate = new Date(
       date.getFullYear(),
       date.getMonth(),
-      date.getDate()
+      date.getDate(),
     );
 
     if (notifDate.getTime() === today.getTime()) {
@@ -198,7 +200,7 @@ export default function Notification() {
         groups[dateLabel].push(notif);
         return groups;
       },
-      {} as { [key: string]: Notification[] }
+      {} as { [key: string]: Notification[] },
     );
 
   const isEmpty = filteredNotifications.length === 0;
@@ -396,7 +398,7 @@ export default function Notification() {
                   styles.modalStatusBadge,
                   {
                     backgroundColor: getStatusColor(
-                      selectedNotification.status
+                      selectedNotification.status,
                     ),
                   },
                 ]}
@@ -578,8 +580,8 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins",
   },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingHorizontal: 15,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   statusText: {
@@ -587,6 +589,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "600",
     fontFamily: "Poppins",
+    justifyContent: "center",
   },
   loadingContainer: {
     flex: 1,

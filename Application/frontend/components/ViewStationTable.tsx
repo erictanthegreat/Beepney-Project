@@ -22,9 +22,6 @@ export default function ViewStationTable({ data }: TableProps) {
         <View style={[styles.cell, styles.headerCell]}>
           <Text style={styles.headerText}>Destinations</Text>
         </View>
-        <View style={[styles.cell, styles.headerCell, styles.lastHeaderCell]}>
-          <Text style={styles.headerText}>Available</Text>
-        </View>
       </View>
 
       {/* Data rows */}
@@ -39,11 +36,6 @@ export default function ViewStationTable({ data }: TableProps) {
             {/* Destination */}
             <View style={[styles.cell, styles.dataCell]}>
               <Text style={styles.text}>{item.destination}</Text>
-            </View>
-
-            {/* Count */}
-            <View style={[styles.cell, styles.dataCell, styles.lastCell]}>
-              <Text style={styles.text}>{item.count}</Text>
             </View>
           </View>
         ))
